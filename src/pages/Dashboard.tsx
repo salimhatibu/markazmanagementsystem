@@ -1,0 +1,73 @@
+import { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
+import { formatMoney } from "../../shared/format";
+import type { WorkspaceContext } from "../components/Shell";
+import { Notice } from "../components/ui";
+import { api } from "../lib/api";
+import type { DashboardTotals } from "../types";
+
+export function DashboardPage() {
+  const { settings } = useOutletContext<WorkspaceContext>();
+  const [totals, setTotals] = useState<DashboardTotals | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancel = false;
+    api<DashboardTotals>("/api/dashboard")
+      .then((body) => {
+        if (!cancel) setTotals(body);
+      })
+      .catch((caught: unknown) => {
+        if (!cancel) setError(caught instanceof Error ? caught.message : "Could not load the dashboard.");
+      });
+    return () => {
+      cancel = true;
+    };
+  }, []);
+
+  const symbol = settings.currencySymbol;
+  const money = (amount: number) => formatMoney(amount, symbol);
+
+  return (
+    <>
+      <p className="micro">&gt; Overview</p>
+      <h1>{settings.markazName?.trim() || "Markaz"}</h1>
+      {error ? <Notice>{error}</Notice> : null}
+      <div className="board" aria-busy={!totals && !error}>
+        <article className="stat stat-light">
+          <p className="micro">&gt; In hand</p>
+          <p className="figure">{totals ? money(totals.inHand) : "—"}</p>
+        </article>
+        <article className="stat stat-dark">
+          <p className="micro">&gt; Spent</p>
+          <p className="figure figure-sm">{totals ? money(totals.spent) : "—"}</p>
+        </article>
+        <article className="stat stat-light">
+          <p className="micro">&gt; Outstanding</p>
+          <p className="figure figure-sm">{totals ? money(totals.outstanding) : "—"}</p>
+        </article>
+        <article className="stat stat-dark">
+          <p className="micro">&gt; Students</p>
+          <div className="split">
+            <div>
+              <p className="micro">&gt; Morning</p>
+              <p className="figure figure-sm">{totals ? totals.morningStudents : "—"}</p>
+            </div>
+            <div>
+              <p className="micro">&gt; Evening</p>
+              <p className="figure figure-sm">{totals ? totals.eveningStudents : "—"}</p>
+            </div>
+          </div>
+        </article>
+        <article className="stat stat-light">
+          <p className="micro">&gt; Teachers</p>
+          <p className="figure figure-sm">{totals ? totals.teachers : "—"}</p>
+        </article>
+        <article className="stat stat-dark">
+          <p className="micro">&gt; Collected</p>
+          <p className="figure figure-sm">{totals ? money(totals.feesCollected) : "—"}</p>
+        </article>
+      </div>
+    </>
+  );
+}
