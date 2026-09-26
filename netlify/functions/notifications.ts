@@ -2,10 +2,10 @@ import type { Config } from "@netlify/functions";
 import { desc, isNull } from "drizzle-orm";
 import { db } from "../../db/index";
 import { notifications } from "../../db/schema";
-import { fail, handleError, json, requireAdmin } from "./_shared/http";
+import { fail, handleError, json, requireUser } from "./_shared/http";
 
 export default async (req: Request) => {
-  const denied = await requireAdmin();
+  const denied = await requireUser();
   if (denied) return denied;
 
   const url = new URL(req.url);

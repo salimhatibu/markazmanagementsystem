@@ -7,6 +7,7 @@ import {
   logout,
   MissingIdentityError,
   requestPasswordRecovery,
+  signup,
   updateUser,
   type User,
 } from "@netlify/identity";
@@ -18,6 +19,7 @@ type AuthContextValue = {
   inviteToken: string | null;
   recovery: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<"ready" | "confirm">;
   signOut: () => Promise<void>;
   accept: (password: string) => Promise<void>;
   resetPassword: (password: string) => Promise<void>;
@@ -89,6 +91,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           setUser(await login(email, password));
         } catch (error) {
+          throw new Error(messageFrom(error));
+        }
+      },
+      async signUp(email, password) {
+        try {
+          const created = await signup(email, password);
+          if (created.confirmedAt) {
+            setUser(created);
+            return "ready";
+          }
+          return "confirm";
+        } catch (error) {
+          if (error instanceof AuthError && error.status === 403) {
+            throw new Error("Registration is closed on this Netlify site. Set Identity registration to Open, then try again.");
+          }
           throw new Error(messageFrom(error));
         }
       },

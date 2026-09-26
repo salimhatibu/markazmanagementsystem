@@ -1,5 +1,4 @@
 import { getUser } from "@netlify/identity";
-import { hasAdminRole } from "../../../shared/auth";
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -16,10 +15,9 @@ export function fail(message: string, status: number): Response {
   return json({ error: message }, status);
 }
 
-export async function requireAdmin(): Promise<Response | null> {
+export async function requireUser(): Promise<Response | null> {
   const user = await getUser();
   if (!user) return fail("Unauthorized", 401);
-  if (!hasAdminRole(user)) return fail("Forbidden", 403);
   return null;
 }
 
