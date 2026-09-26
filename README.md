@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Open the printed local URL. Create an account there. A new account is signed in immediately and sent to the dashboard.
+Open the printed local URL. The dashboard opens immediately. No account is required.
 
 ```bash
 npm run verify
@@ -27,7 +27,7 @@ The live site runs on Cloudflare with a D1 database.
 3. Build command: `npm run build`. Output directory: `dist`. Production branch: `main`.
 4. Redeploy after the binding exists.
 
-The first request creates the tables. Accounts live in that database. Registering sets a session cookie and opens the dashboard. No Netlify Identity step is required.
+The first request creates the tables. Anyone who opens the site can manage the records. No sign-in is required.
 
 To apply the same SQL yourself:
 

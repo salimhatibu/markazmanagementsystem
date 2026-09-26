@@ -3,12 +3,9 @@ import { desc, isNull } from "drizzle-orm";
 import { db } from "../../db/index";
 import { notifications } from "../../db/schema";
 import { asIso } from "../../shared/format";
-import { fail, handleError, json, requireUser } from "./_shared/http";
+import { fail, handleError, json } from "./_shared/http";
 
 export default async (req: Request) => {
-  const denied = await requireUser();
-  if (denied) return denied;
-
   const url = new URL(req.url);
 
   try {

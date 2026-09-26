@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/index";
 import { teachers } from "../../db/schema";
 import { paymentsForTeacher, teacherOrNull, toTeacher } from "./_shared/data";
-import { fail, handleError, json, parseId, readBody, requireUser } from "./_shared/http";
+import { fail, handleError, json, parseId, readBody } from "./_shared/http";
 import {
   oneOf,
   parseBirthDate,
@@ -14,9 +14,6 @@ import {
 } from "./_shared/validate";
 
 export default async (req: Request, context: Context) => {
-  const denied = await requireUser();
-  if (denied) return denied;
-
   const id = parseId(context.params.id);
   if (id == null) return fail("Teacher not found.", 404);
 

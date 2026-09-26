@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/index";
 import { settings } from "../../db/schema";
 import { loadSettings } from "./_shared/data";
-import { fail, handleError, json, readBody, requireUser } from "./_shared/http";
+import { fail, handleError, json, readBody } from "./_shared/http";
 import { optionalText } from "./_shared/validate";
 
 function present(row: { markazName: string | null; currencySymbol: string | null } | null) {
@@ -14,9 +14,6 @@ function present(row: { markazName: string | null; currencySymbol: string | null
 }
 
 export default async (req: Request) => {
-  const denied = await requireUser();
-  if (denied) return denied;
-
   try {
     if (req.method === "GET") {
       return json({ settings: present(await loadSettings()) });

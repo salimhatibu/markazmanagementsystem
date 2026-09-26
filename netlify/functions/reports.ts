@@ -4,12 +4,9 @@ import { db } from "../../db/index";
 import { reports } from "../../db/schema";
 import { generateOperationsReport } from "./_shared/generate-report";
 import { asIso } from "../../shared/format";
-import { fail, handleError, json, readBody, requireUser } from "./_shared/http";
+import { fail, handleError, json, readBody } from "./_shared/http";
 
 export default async (req: Request) => {
-  const denied = await requireUser();
-  if (denied) return denied;
-
   try {
     if (req.method === "GET") {
       const rows = await db

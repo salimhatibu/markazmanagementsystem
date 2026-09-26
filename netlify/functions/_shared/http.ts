@@ -1,6 +1,3 @@
-import { currentRequest } from "../../../db/index";
-import { currentAccount } from "./accounts";
-
 export class ValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -14,12 +11,6 @@ export function json(body: unknown, status = 200): Response {
 
 export function fail(message: string, status: number): Response {
   return json({ error: message }, status);
-}
-
-export async function requireUser(): Promise<Response | null> {
-  const user = await currentAccount(currentRequest());
-  if (!user) return fail("Unauthorized", 401);
-  return null;
 }
 
 export async function readBody(req: Request): Promise<Record<string, unknown> | null> {

@@ -2,14 +2,11 @@ import type { Config, Context } from "@netlify/functions";
 import nodemailer from "nodemailer";
 import { displayName, formatMoney, formatPercent } from "../../shared/format";
 import { loadSettings, paymentsForStudent, studentOrNull, toStudent } from "./_shared/data";
-import { fail, handleError, json, parseId, requireUser } from "./_shared/http";
+import { fail, handleError, json, parseId } from "./_shared/http";
 import { MAIL_NOT_CONFIGURED, readMailConfig } from "./_shared/mail";
 
 export default async (req: Request, context: Context) => {
   if (req.method !== "POST") return fail("Method not allowed.", 405);
-  const denied = await requireUser();
-  if (denied) return denied;
-
   const mail = readMailConfig();
   if (!mail) return fail(MAIL_NOT_CONFIGURED, 503);
 

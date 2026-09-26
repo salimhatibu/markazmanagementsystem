@@ -1,8 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { bindRequest, createDb } from "../db/index";
 import { D1_SCHEMA_SQL } from "../shared/d1-schema";
-import { loginAccount, logoutAccount, registerAccount, currentAccount } from "../netlify/functions/_shared/accounts";
-import { readBody } from "../netlify/functions/_shared/http";
 import balanceAlert from "../netlify/functions/balance-alert";
 import dashboard from "../netlify/functions/dashboard";
 import feePayments from "../netlify/functions/fee-payments";
@@ -60,20 +58,6 @@ function mailEnv(env: Env): Record<string, string | undefined> {
 async function route(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const pathname = url.pathname.replace(/\/$/, "") || "/";
-
-  if (pathname === "/api/auth/register" && request.method === "POST") {
-    return registerAccount(request, await readBody(request));
-  }
-  if (pathname === "/api/auth/login" && request.method === "POST") {
-    return loginAccount(request, await readBody(request));
-  }
-  if (pathname === "/api/auth/logout" && request.method === "POST") {
-    return logoutAccount(request);
-  }
-  if (pathname === "/api/auth/me" && request.method === "GET") {
-    const user = await currentAccount(request);
-    return Response.json({ user });
-  }
 
   for (const route of routes) {
     const match = route.pattern.exec(pathname);
