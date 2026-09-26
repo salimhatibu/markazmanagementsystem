@@ -12,7 +12,7 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"sign-in" | "sign-up" | "forgot">("sign-in");
 
-  if (auth.ready && auth.user && !auth.recovery) {
+  if (auth.ready && auth.user) {
     return <Navigate to="/" replace />;
   }
 
@@ -46,22 +46,10 @@ export function LoginPage() {
     });
   }
 
-  function onInvite(event: FormEvent) {
-    event.preventDefault();
-    void run(() => auth.accept(password));
-  }
-
-  function onRecovery(event: FormEvent) {
-    event.preventDefault();
-    void run(() => auth.resetPassword(password));
-  }
-
   function onForgot(event: FormEvent) {
     event.preventDefault();
-    void run(async () => {
-      await auth.sendRecovery(email);
-      setInfo("Check that inbox for a recovery link.");
-    });
+    setError("");
+    setInfo("Password recovery is not available. Sign in with the password you chose, or create an account.");
   }
 
   let form = (
@@ -101,30 +89,6 @@ export function LoginPage() {
         </Field>
         <button className="solid" type="submit" disabled={busy}>Send recovery link</button>
         <button className="linkish" type="button" onClick={() => setMode("sign-in")}>Back to sign in</button>
-      </form>
-    );
-  }
-
-  if (auth.inviteToken) {
-    form = (
-      <form onSubmit={onInvite}>
-        <p>Set a password to finish creating this account.</p>
-        <Field id="invite-password" label="Password">
-          <input id="invite-password" type="password" autoComplete="new-password" required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} />
-        </Field>
-        <button className="solid" type="submit" disabled={busy}>Accept invite</button>
-      </form>
-    );
-  }
-
-  if (auth.recovery) {
-    form = (
-      <form onSubmit={onRecovery}>
-        <p>Choose a new password for this account.</p>
-        <Field id="new-password" label="New password">
-          <input id="new-password" type="password" autoComplete="new-password" required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} />
-        </Field>
-        <button className="solid" type="submit" disabled={busy}>Update password</button>
       </form>
     );
   }

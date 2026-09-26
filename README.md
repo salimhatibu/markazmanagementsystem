@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Open the printed local URL. Identity does not run under the Vite dev server, so sign-in works only on a Netlify deploy. The login screen should say that Identity is unavailable.
+Open the printed local URL. Create an account there. A new account is signed in immediately and sent to the dashboard.
 
 ```bash
 npm run verify
@@ -18,25 +18,22 @@ npm run build
 
 `verify` checks balance math, report date ranges, and that a PDF is produced. `build` typechecks and builds the client.
 
-## Database
+## Cloudflare
 
-Schema lives in `db/schema.ts`. Migrations are generated into `netlify/database/migrations` and applied to hosted databases by the Netlify deploy. Do not run `drizzle-kit push` or apply those migrations yourself against a hosted database.
+The live site runs on Cloudflare with a D1 database.
+
+1. In the Cloudflare dashboard, create a D1 database named `markaz`.
+2. Open the Pages project, then **Settings**, then **Bindings**. Add a D1 binding whose variable name is exactly `DB`, pointed at that database.
+3. Build command: `npm run build`. Output directory: `dist`. Production branch: `main`.
+4. Redeploy after the binding exists.
+
+The first request creates the tables. Accounts live in that database. Registering sets a session cookie and opens the dashboard. No Netlify Identity step is required.
+
+To apply the same SQL yourself:
 
 ```bash
-npm run db:generate
-npm run db:migrate
+npx wrangler d1 execute markaz --remote --file=migrations/0001_init.sql
 ```
-
-`db:migrate` applies pending files to the local development database only, and it needs the Netlify CLI signed in.
-
-## Identity
-
-In **Project configuration > Identity**:
-
-1. Leave registration **Open** so anyone can create an account.
-2. Turn **Autoconfirm** on if new accounts should sign in without an email confirmation.
-
-Every API route requires a signed-in account. No admin role is required.
 
 ## Mail
 
@@ -52,8 +49,8 @@ If any are missing, the API responds that mail is not configured and the student
 
 ## Reports
 
-Published deploys run a biweekly PDF at 06:00 UTC on the 1st and the 15th (the half-month that just ended) and a monthly PDF at 06:30 UTC on the 1st (the previous calendar month). Scheduled functions time out after 30 seconds and do not run on unpublished deploys. The Reports page can generate the same files immediately. PDFs are stored in Netlify Blobs. The top bar shows an unread alert when a report is ready.
+The Reports page can generate a biweekly or monthly PDF immediately. The file is stored in D1, and the top bar shows an unread alert when it is ready.
 
 ## Deploy
 
-Link a Netlify site, then deploy. The presence of `@netlify/database` provisions the database, and the deploy applies the committed migration. Leave Identity registration open, and set the SMTP variables when mail should send.
+Push `main`. Cloudflare Pages builds `dist` and serves the Pages Function under `/api`. The D1 binding named `DB` must exist before sign-in will work. Add the SMTP variables on the Pages project when balance emails should send.

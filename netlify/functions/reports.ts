@@ -3,6 +3,7 @@ import { desc } from "drizzle-orm";
 import { db } from "../../db/index";
 import { reports } from "../../db/schema";
 import { generateOperationsReport } from "./_shared/generate-report";
+import { asIso } from "../../shared/format";
 import { fail, handleError, json, readBody, requireUser } from "./_shared/http";
 
 export default async (req: Request) => {
@@ -11,14 +12,23 @@ export default async (req: Request) => {
 
   try {
     if (req.method === "GET") {
-      const rows = await db.select().from(reports).orderBy(desc(reports.createdAt));
+      const rows = await db
+        .select({
+          id: reports.id,
+          period: reports.period,
+          rangeStart: reports.rangeStart,
+          rangeEnd: reports.rangeEnd,
+          createdAt: reports.createdAt,
+        })
+        .from(reports)
+        .orderBy(desc(reports.createdAt));
       return json({
         reports: rows.map((row) => ({
           id: row.id,
           period: row.period,
           rangeStart: row.rangeStart,
           rangeEnd: row.rangeEnd,
-          createdAt: row.createdAt.toISOString(),
+          createdAt: asIso(row.createdAt),
         })),
       });
     }

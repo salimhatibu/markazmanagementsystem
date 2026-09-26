@@ -30,6 +30,12 @@ export function label(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+export function asIso(value: string | Date): string {
+  if (value instanceof Date) return value.toISOString();
+  if (value.includes("T")) return value;
+  return `${value.replace(" ", "T")}Z`;
+}
+
 export function displayName(name: string | null | undefined): string {
   const trimmed = name?.trim() ?? "";
   return trimmed || "Markaz";

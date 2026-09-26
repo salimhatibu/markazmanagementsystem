@@ -2,6 +2,7 @@ import type { Config } from "@netlify/functions";
 import { desc, isNull } from "drizzle-orm";
 import { db } from "../../db/index";
 import { notifications } from "../../db/schema";
+import { asIso } from "../../shared/format";
 import { fail, handleError, json, requireUser } from "./_shared/http";
 
 export default async (req: Request) => {
@@ -13,7 +14,7 @@ export default async (req: Request) => {
   try {
     if (url.pathname === "/api/notifications/read") {
       if (req.method !== "POST") return fail("Method not allowed.", 405);
-      await db.update(notifications).set({ readAt: new Date() }).where(isNull(notifications.readAt));
+      await db.update(notifications).set({ readAt: new Date().toISOString() }).where(isNull(notifications.readAt));
       return json({ ok: true });
     }
 
@@ -23,8 +24,8 @@ export default async (req: Request) => {
       id: row.id,
       title: row.title,
       reportId: row.reportId,
-      readAt: row.readAt ? row.readAt.toISOString() : null,
-      createdAt: row.createdAt.toISOString(),
+      readAt: row.readAt ? asIso(row.readAt) : null,
+      createdAt: asIso(row.createdAt),
     }));
     return json({
       notifications: items,
