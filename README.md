@@ -33,11 +33,10 @@ npm run db:migrate
 
 In **Project configuration > Identity**:
 
-1. Set registration to **Invite only**.
-2. Invite the primary admin.
-3. After they accept, open that user and add the role `admin`.
+1. Leave registration **Open** so anyone can create an account.
+2. Turn **Autoconfirm** on if new accounts should sign in without an email confirmation.
 
-The app does not offer public signup. Every API route requires a signed-in user with the `admin` role.
+Every API route requires a signed-in account. No admin role is required.
 
 ## Mail
 
@@ -57,4 +56,4 @@ Published deploys run a biweekly PDF at 06:00 UTC on the 1st and the 15th (the h
 
 ## Deploy
 
-Link a Netlify site, then deploy. The presence of `@netlify/database` provisions the database, and the deploy applies the committed migration. Set the SMTP variables and the admin role after the first deploy.
+Link a Netlify site, then deploy. The presence of `@netlify/database` provisions the database, and the deploy applies the committed migration. Leave Identity registration open, and set the SMTP variables when mail should send.

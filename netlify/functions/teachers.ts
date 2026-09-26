@@ -1,7 +1,7 @@
 import type { Config } from "@netlify/functions";
 import { teachers, type Teacher } from "../../db/schema";
 import { db } from "../../db/index";
-import { fail, handleError, json, readBody, requireAdmin } from "./_shared/http";
+import { fail, handleError, json, readBody, requireUser } from "./_shared/http";
 import { listSalaryPayments, paymentsForTeacher, toTeacher } from "./_shared/data";
 import {
   oneOf,
@@ -29,7 +29,7 @@ async function withPayments(row: Teacher) {
 }
 
 export default async (req: Request) => {
-  const denied = await requireAdmin();
+  const denied = await requireUser();
   if (denied) return denied;
 
   try {
