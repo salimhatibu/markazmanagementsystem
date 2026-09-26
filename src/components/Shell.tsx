@@ -3,7 +3,6 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { displayName } from "../../shared/format";
 import { api } from "../lib/api";
 import type { Settings } from "../types";
-import { useAuth } from "../auth/AuthProvider";
 
 export type WorkspaceContext = {
   settings: Settings;
@@ -21,7 +20,6 @@ const links = [
 ];
 
 export function Shell() {
-  const { signOut } = useAuth();
   const location = useLocation();
   const [settings, setSettings] = useState<Settings>({ markazName: null, currencySymbol: null });
   const [unread, setUnread] = useState(0);
@@ -75,9 +73,6 @@ export function Shell() {
               &gt; Report ready{unread > 1 ? ` ${unread}` : ""}
             </NavLink>
           ) : null}
-          <button type="button" className="text-button" onClick={() => void signOut()}>
-            Sign out
-          </button>
         </div>
       </header>
       <main id="content" className="content">
