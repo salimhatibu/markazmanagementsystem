@@ -1,8 +1,7 @@
-import { getStore } from "@netlify/blobs";
 import { and, gte, lte } from "drizzle-orm";
 import { db } from "../../../db/index";
 import { feePayments, notifications, reports, salaryPayments } from "../../../db/schema";
-import { ageFromDob, displayName } from "../../../shared/format";
+import { ageFromDob, asIso, displayName } from "../../../shared/format";
 import { operationsTotals, studentFigures, teacherFigures, toCents } from "../../../shared/ledger";
 import { buildOperationsPdf, type OperationsReport } from "../../../shared/pdf";
 import { rangeFor, type DateRange } from "../../../shared/periods";
@@ -15,7 +14,21 @@ import {
   sumCents,
 } from "./data";
 
-const STORE = "markaz-reports";
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunk));
+  }
+  return btoa(binary);
+}
+
+export function base64ToBytes(value: string): Uint8Array {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
 
 export async function generateOperationsReport(period: "biweekly" | "monthly", now = new Date()) {
   const range = rangeFor(period, now);
@@ -74,8 +87,8 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
         admissionNumber: student.admissionNumber,
         name: student.name,
         age: ageFromDob(student.dateOfBirth, now),
-        gender: student.gender,
-        section: student.section,
+        gender: student.gender as "male" | "female",
+        section: student.section as "morning" | "evening",
         expectedCents,
         paidCents,
         balanceCents: figures.balanceCents,
@@ -90,7 +103,7 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
       const figures = teacherFigures(expectedCents, paidCents);
       return {
         name: teacher.name,
-        section: teacher.section,
+        section: teacher.section as "morning" | "evening" | "both",
         expectedCents,
         paidCents,
         balanceCents: figures.balanceCents,
@@ -101,13 +114,8 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
   };
 
   const pdfBytes = await buildOperationsPdf(report);
-  const bytes = new ArrayBuffer(pdfBytes.byteLength);
-  new Uint8Array(bytes).set(pdfBytes);
   const blobKey = `reports/${period}/${range.start}_${range.end}-${now.getTime()}.pdf`;
-  const store = getStore({ name: STORE, consistency: "strong" });
-  await store.set(blobKey, bytes, {
-    metadata: { contentType: "application/pdf" },
-  });
+  const pdf = bytesToBase64(pdfBytes);
 
   const title = `${period === "biweekly" ? "Biweekly" : "Monthly"} report ${range.start} to ${range.end}`;
   const saved = await db.transaction(async (tx) => {
@@ -118,6 +126,7 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
         rangeStart: range.start,
         rangeEnd: range.end,
         blobKey,
+        pdf,
       })
       .returning();
     await tx.insert(notifications).values({
@@ -132,7 +141,7 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
     period: saved.period,
     rangeStart: saved.rangeStart,
     rangeEnd: saved.rangeEnd,
-    createdAt: saved.createdAt.toISOString(),
+    createdAt: asIso(saved.createdAt),
     title,
   };
 }
@@ -148,8 +157,7 @@ async function sumInRange(
   return sumCents(rows);
 }
 
-export async function readReportPdf(blobKey: string): Promise<ArrayBuffer | null> {
-  const store = getStore({ name: STORE, consistency: "strong" });
-  const data = await store.get(blobKey, { type: "arrayBuffer" });
-  return data;
+export async function readReportPdf(pdf: string): Promise<Uint8Array | null> {
+  if (!pdf) return null;
+  return base64ToBytes(pdf);
 }

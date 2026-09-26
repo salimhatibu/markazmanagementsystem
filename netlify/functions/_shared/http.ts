@@ -1,4 +1,5 @@
-import { getUser } from "@netlify/identity";
+import { currentRequest } from "../../../db/index";
+import { currentAccount } from "./accounts";
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -16,7 +17,7 @@ export function fail(message: string, status: number): Response {
 }
 
 export async function requireUser(): Promise<Response | null> {
-  const user = await getUser();
+  const user = await currentAccount(currentRequest());
   if (!user) return fail("Unauthorized", 401);
   return null;
 }
@@ -41,7 +42,8 @@ export function isUniqueViolation(error: unknown): boolean {
   const cause = error instanceof Error && "cause" in error ? String(error.cause) : "";
   const message = error instanceof Error ? error.message : String(error);
   const text = `${message} ${cause}`;
-  return text.includes("23505") || text.toLowerCase().includes("unique");
+  const lower = text.toLowerCase();
+  return text.includes("23505") || lower.includes("unique");
 }
 
 export function handleError(error: unknown): Response {

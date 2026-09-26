@@ -14,10 +14,10 @@ export default async (req: Request, context: Context) => {
   if (id == null) return fail("Report not found.", 404);
   const [row] = await db.select().from(reports).where(eq(reports.id, id)).limit(1);
   if (!row) return fail("Report not found.", 404);
-  const bytes = await readReportPdf(row.blobKey);
+  const bytes = await readReportPdf(row.pdf);
   if (!bytes) return fail("Report file not found.", 404);
   const filename = `markaz-${row.period}-${row.rangeStart}-to-${row.rangeEnd}.pdf`;
-  return new Response(bytes, {
+  return new Response(Uint8Array.from(bytes), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${filename}"`,

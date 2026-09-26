@@ -1,45 +1,21 @@
-import {
-  acceptInvite,
-  AuthError,
-  getUser,
-  handleAuthCallback,
-  login,
-  logout,
-  MissingIdentityError,
-  requestPasswordRecovery,
-  signup,
-  updateUser,
-  type User,
-} from "@netlify/identity";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { ApiError, api } from "../lib/api";
+
+export type Account = { email: string };
 
 type AuthContextValue = {
-  user: User | null;
+  user: Account | null;
   ready: boolean;
-  inviteToken: string | null;
-  recovery: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<"ready" | "confirm">;
   signOut: () => Promise<void>;
-  accept: (password: string) => Promise<void>;
-  resetPassword: (password: string) => Promise<void>;
-  sendRecovery: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function messageFrom(error: unknown): string {
-  const missing =
-    error instanceof MissingIdentityError ||
-    (error instanceof AuthError &&
-      (error.status === 404 || /not found/i.test(error.message)));
-  if (missing) {
-    return "Identity is not available in this environment. Enable it on the deployed Netlify site, then sign in there.";
-  }
-  if (error instanceof AuthError) {
-    if (error.status === 401) return "Email or password is not valid.";
-    return error.message;
-  }
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error && error.message) return error.message;
   return "Something went wrong.";
 }
 
@@ -48,34 +24,21 @@ export function authMessage(error: unknown): string {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Account | null>(null);
   const [ready, setReady] = useState(false);
-  const [inviteToken, setInviteToken] = useState<string | null>(null);
-  const [recovery, setRecovery] = useState(false);
 
   useEffect(() => {
     let cancel = false;
-    (async () => {
-      try {
-        const result = await handleAuthCallback();
-        if (cancel) return;
-        if (result?.type === "invite" && result.token) {
-          setInviteToken(result.token);
-          setUser(null);
-          return;
-        }
-        if (result?.type === "recovery") {
-          setRecovery(true);
-          setUser(result.user);
-          return;
-        }
-        setUser(result?.user ?? (await getUser()));
-      } catch {
-        if (!cancel) setUser(await getUser());
-      } finally {
+    api<{ user: Account | null }>("/api/auth/me")
+      .then((body) => {
+        if (!cancel) setUser(body.user);
+      })
+      .catch(() => {
+        if (!cancel) setUser(null);
+      })
+      .finally(() => {
         if (!cancel) setReady(true);
-      }
-    })();
+      });
     return () => {
       cancel = true;
     };
@@ -85,61 +48,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       ready,
-      inviteToken,
-      recovery,
       async signIn(email, password) {
         try {
-          setUser(await login(email, password));
+          const body = await api<{ user: Account }>("/api/auth/login", {
+            method: "POST",
+            body: JSON.stringify({ email, password }),
+          });
+          setUser(body.user);
         } catch (error) {
           throw new Error(messageFrom(error));
         }
       },
       async signUp(email, password) {
         try {
-          const created = await signup(email, password);
-          if (created.confirmedAt) {
-            setUser(created);
-            return "ready";
-          }
-          return "confirm";
+          const body = await api<{ user: Account }>("/api/auth/register", {
+            method: "POST",
+            body: JSON.stringify({ email, password }),
+          });
+          setUser(body.user);
+          return "ready";
         } catch (error) {
-          if (error instanceof AuthError && error.status === 403) {
-            throw new Error("Registration is closed on this Netlify site. Set Identity registration to Open, then try again.");
-          }
           throw new Error(messageFrom(error));
         }
       },
       async signOut() {
-        await logout();
-        setUser(null);
-        setRecovery(false);
-      },
-      async accept(password) {
-        if (!inviteToken) throw new Error("Invite token is missing.");
         try {
-          setUser(await acceptInvite(inviteToken, password));
-          setInviteToken(null);
-        } catch (error) {
-          throw new Error(messageFrom(error));
-        }
-      },
-      async resetPassword(password) {
-        try {
-          setUser(await updateUser({ password }));
-          setRecovery(false);
-        } catch (error) {
-          throw new Error(messageFrom(error));
-        }
-      },
-      async sendRecovery(email) {
-        try {
-          await requestPasswordRecovery(email);
-        } catch (error) {
-          throw new Error(messageFrom(error));
+          await api("/api/auth/logout", { method: "POST" });
+        } finally {
+          setUser(null);
         }
       },
     }),
-    [user, ready, inviteToken, recovery],
+    [user, ready],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
