@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { formatMoney } from "../../shared/format";
 import type { WorkspaceContext } from "../components/Shell";
+import { HadithBackdrop } from "../components/HadithBackdrop";
 import { HijriDate } from "../components/HijriDate";
 import { BookIcon, PenIcon, QuranIcon } from "../components/Motifs";
 import { Notice } from "../components/ui";
@@ -101,6 +102,7 @@ export function DashboardPage() {
         </article>
       </div>
       <section className="panel panel-light hadith" aria-labelledby="hadith-of-the-day">
+        <HadithBackdrop />
         <p className="kicker kicker-icon">
           <BookIcon /> Hadith of the day
           {daily ? ` · ${daily.dayNumber} of ${daily.total}` : ""}

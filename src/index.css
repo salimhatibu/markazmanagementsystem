@@ -259,7 +259,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-slide, .wave-glow { animation: none; }
+  .page-slide, .wave-glow, .hadith-motif { animation: none; }
+  .hadith-motif-1 { opacity: 0.24; }
 }
 
 .panel-title, .form-section {
@@ -1064,7 +1065,69 @@ legend { padding: 0 8px; color: var(--mute); }
 
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 
-.hadith { padding: 32px 34px; }
+.hadith {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 32px 34px;
+  background:
+    linear-gradient(165deg, rgba(255, 246, 249, 0.88), rgba(255, 255, 255, 0.94) 55%, rgba(247, 236, 241, 0.9)),
+    var(--card);
+}
+
+:root[data-theme="dark"] .hadith {
+  background:
+    linear-gradient(165deg, rgba(80, 40, 56, 0.35), rgba(28, 28, 34, 0.92) 58%, rgba(40, 28, 34, 0.88)),
+    var(--card);
+}
+
+.hadith > *:not(.hadith-backdrop) { position: relative; z-index: 1; }
+
+.hadith-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hadith-wash {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(231, 163, 184, 0.28), transparent 42%),
+    radial-gradient(circle at 86% 72%, rgba(231, 163, 184, 0.24), transparent 48%);
+}
+
+.hadith-motif {
+  position: absolute;
+  right: 4%;
+  top: 18%;
+  width: min(62%, 380px);
+  height: auto;
+  color: #e7a3b8;
+  opacity: 0;
+  animation: hadith-motif-cycle 25s ease-in-out infinite;
+}
+
+.hadith-motif-2 { animation-delay: 5s; }
+.hadith-motif-3 { animation-delay: 10s; }
+.hadith-motif-4 { animation-delay: 15s; }
+.hadith-motif-5 { animation-delay: 20s; }
+
+@keyframes hadith-motif-cycle {
+  0%, 3% { opacity: 0; transform: scale(0.96) translateY(8px); }
+  8%, 17% { opacity: 0.36; transform: scale(1) translateY(0); }
+  22%, 100% { opacity: 0; transform: scale(1.04) translateY(-6px); }
+}
+
+:root[data-theme="dark"] .hadith-motif { color: #e7a3b8; }
+:root[data-theme="dark"] .hadith-wash {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(231, 163, 184, 0.14), transparent 42%),
+    radial-gradient(circle at 88% 78%, rgba(231, 163, 184, 0.12), transparent 46%);
+}
+
 .hadith h2 { font-size: clamp(1.8rem, 3vw, 2.6rem); margin: 14px 0 10px; }
 .hadith .narrator { font-size: 15px; margin: 20px 0 8px; }
 .hadith .hadith-body { font-size: 16px; line-height: 1.8; margin-bottom: 20px; }
