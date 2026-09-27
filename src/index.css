@@ -57,8 +57,14 @@
 *::before,
 *::after { box-sizing: border-box; }
 
-html, body, #root { min-height: 100%; }
-html { overflow-x: hidden; scroll-behavior: smooth; }
+html, body, #root {
+  min-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+html { scroll-behavior: smooth; overscroll-behavior-x: none; }
 
 body {
   margin: 0;
@@ -88,19 +94,35 @@ body::before {
 .app {
   position: relative;
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: clip;
   z-index: 1;
 }
 
-.wave-glow {
+.app.is-guided .content { padding-bottom: 18rem; }
+
+.bg-wash {
   position: fixed;
-  top: -40px;
-  right: -80px;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  contain: paint;
+  isolation: isolate;
+}
+
+.wave-glow {
+  position: absolute;
+  top: 0;
+  right: 0;
   width: min(52vw, 640px);
   aspect-ratio: 1;
   background: radial-gradient(closest-side, rgba(231, 163, 184, 0.48), transparent 70%);
   filter: blur(60px);
-  z-index: 0;
   pointer-events: none;
+  transform: translate(18%, -22%);
   animation: glow-drift 8s ease-in-out infinite;
 }
 
@@ -114,24 +136,28 @@ body::before {
 }
 
 .bg-text {
-  position: fixed;
-  left: 50%;
-  top: 46%;
-  transform: translate(-50%, -50%);
-  z-index: 0;
-  font-family: var(--display);
-  font-size: clamp(120px, 20vw, 280px);
-  line-height: 0.85;
-  letter-spacing: -0.04em;
-  color: transparent;
-  -webkit-text-stroke: 1.5px rgba(15, 15, 25, 0.07);
+  position: absolute;
+  left: 8%;
+  top: 38%;
+  width: 84%;
+  height: 18vmin;
+  overflow: hidden;
+  display: block;
   pointer-events: none;
-  white-space: nowrap;
   user-select: none;
 }
 
-:root[data-theme="dark"] .bg-text {
-  -webkit-text-stroke-color: rgba(255, 255, 255, 0.06);
+.bg-text text {
+  fill: none;
+  stroke: rgba(15, 15, 25, 0.08);
+  stroke-width: 1.15;
+  font-family: var(--display);
+  font-size: 72px;
+  letter-spacing: -2px;
+}
+
+:root[data-theme="dark"] .bg-text text {
+  stroke: rgba(255, 255, 255, 0.07);
 }
 
 @keyframes glow-drift {
@@ -301,11 +327,13 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-family: var(--serif); }
   top: 0;
   z-index: 20;
   padding: 16px clamp(12px, 3vw, 36px) 0;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .nav-measure {
-  position: absolute;
-  left: 0;
+  position: fixed;
+  left: -2400px;
   top: 0;
   display: flex;
   align-items: center;
@@ -1552,7 +1580,7 @@ legend { padding: 0 8px; color: var(--mute); }
   .footer-grid { justify-content: flex-start; gap: 16px 28px; border-radius: 22px; padding: 18px; }
   .actions { width: 100%; }
   .actions .ghost, .actions .solid { flex: 1 1 auto; text-align: center; }
-  .bg-text { font-size: min(28vw, 96px); }
+  .bg-text { height: 14vmin; }
   .hadith-motif { width: min(78%, 260px); top: 28%; }
   .hadith-note-days small { display: none; }
 }
@@ -1564,3 +1592,83 @@ legend { padding: 0 8px; color: var(--mute); }
   .hadith { padding: 14px; }
   .hijri-line { font-size: clamp(1.7rem, 8.5vw, 2.4rem); }
 }
+
+.guide-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 24;
+  padding: 12px clamp(12px, 3vw, 24px) max(14px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(243, 238, 241, 0.96) 42%, transparent);
+  pointer-events: none;
+}
+
+.guide-card {
+  pointer-events: auto;
+  position: relative;
+  width: min(40rem, 100%);
+  margin: 0 auto;
+  padding: 20px 52px 20px 20px;
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: 22px;
+  box-shadow:
+    inset 0 3px 0 var(--green),
+    0 16px 40px rgba(80, 30, 50, 0.12);
+}
+
+.guide-card h2 {
+  font-size: clamp(1.35rem, 4vw, 1.85rem);
+  margin: 8px 0 10px;
+}
+
+.guide-body {
+  margin: 0 0 16px;
+  max-width: 36rem;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.guide-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+
+.guide-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-2);
+}
+
+.guide-dots span.is-done { background: var(--pink); }
+.guide-dots span.is-on { background: var(--green); width: 16px; border-radius: 99px; }
+
+.guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.guide-actions .solid { margin-inline-start: auto; }
+
+.help-toggle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: var(--card);
+  color: var(--text);
+}
+
+.help-toggle svg { width: 18px; height: 18px; }
+
+.guide-replay { margin-top: 8px; }

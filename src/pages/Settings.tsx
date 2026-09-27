@@ -12,6 +12,7 @@ import {
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api } from "../lib/api";
+import { startGuide } from "../lib/guide";
 
 export function SettingsPage() {
   const { settings, refreshSettings } = useOutletContext<WorkspaceContext>();
@@ -140,6 +141,16 @@ export function SettingsPage() {
             {busy ? "Saving…" : "Save settings"}
           </button>
         </form>
+      </Panel>
+      <Panel tone="light">
+        <p className="panel-title">How to use this site</p>
+        <p>
+          A short walkthrough of home, students, fees, teachers, salaries, expenses, reports, and these settings. It
+          is meant for someone opening the books on a new phone.
+        </p>
+        <button type="button" className="ghost guide-replay" onClick={() => startGuide()}>
+          Walk me through the site
+        </button>
       </Panel>
       <Panel tone="dark">
         <p className="panel-title">Fee reminders</p>

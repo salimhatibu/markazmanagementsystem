@@ -210,6 +210,16 @@ export function NavGearIcon({ className }: IconProps) {
   );
 }
 
+export function HelpIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M9.6 9.4 C9.8 7.8 11 7 12.2 7 C13.6 7 14.6 7.9 14.6 9.2 C14.6 10.6 13.4 11.2 12.5 11.8 C12 12.2 11.8 12.6 11.8 13.3" />
+      <path d="M12 16.6 V16.7" />
+    </StrokeIcon>
+  );
+}
+
 export function MenuIcon({ className }: IconProps) {
   return (
     <StrokeIcon className={className}>

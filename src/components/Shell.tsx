@@ -3,17 +3,20 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CURRENCY, displayName, MARKAZ_NAME } from "../../shared/format";
 import { ACCOUNT_NAME, ACCOUNT_NUMBER, BANK_NAME, OFFICIAL_ADDRESS, PAYBILL } from "../../shared/letterhead";
 import { api } from "../lib/api";
+import { GUIDE_START, hasFinishedGuide } from "../lib/guide";
 import { claimFirstVisit, loadDailyHadith, type DailyHadith } from "../lib/hadith";
 import { shouldPlaySalam } from "../lib/sand-salam";
 import { applyTheme, readTheme, type Theme } from "../lib/theme";
 import { useNavFit } from "../lib/use-nav-fit";
 import type { Settings } from "../types";
 import { Footer } from "./Footer";
+import { GuideTour } from "./GuideTour";
 import { HadithDialog } from "./HadithDialog";
 import {
   BooksStackIcon,
   CloseIcon,
   CrescentIcon,
+  HelpIcon,
   MenuIcon,
   NavChartIcon,
   NavFileIcon,
@@ -60,6 +63,8 @@ export function Shell() {
   const [daily, setDaily] = useState<DailyHadith | null>(null);
   const [showHadith, setShowHadith] = useState(false);
   const [showSalam, setShowSalam] = useState(shouldPlaySalam);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [guideStep, setGuideStep] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const barRef = useRef<HTMLElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -114,6 +119,20 @@ export function Shell() {
   }, [showSalam, daily]);
 
   useEffect(() => {
+    if (showSalam || showHadith) return;
+    if (!hasFinishedGuide()) setGuideOpen(true);
+  }, [showSalam, showHadith]);
+
+  useEffect(() => {
+    function open() {
+      setGuideStep(0);
+      setGuideOpen(true);
+    }
+    window.addEventListener(GUIDE_START, open);
+    return () => window.removeEventListener(GUIDE_START, open);
+  }, []);
+
+  useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname, compact]);
 
@@ -137,14 +156,18 @@ export function Shell() {
   const brand = displayName(settings.markazName);
 
   return (
-    <div className="app">
+    <div className={`app${guideOpen ? " is-guided" : ""}`}>
       <a className="skip" href="#content">
         Skip to content
       </a>
-      <div className="wave-glow" aria-hidden="true" />
-      <div className="wave-glow b" aria-hidden="true" />
-      <div className="bg-text" aria-hidden="true">
-        MARKAZ
+      <div className="bg-wash" aria-hidden="true">
+        <div className="wave-glow" />
+        <div className="wave-glow b" />
+        <svg className="bg-text" viewBox="0 0 360 80" preserveAspectRatio="xMidYMid meet">
+          <text x="180" y="62" textAnchor="middle">
+            MARKAZ
+          </text>
+        </svg>
       </div>
       <div className="header-wrap">
         <div className="nav-measure" ref={measureRef} aria-hidden="true">
@@ -211,6 +234,18 @@ export function Shell() {
             ) : null}
             <button
               type="button"
+              className="help-toggle"
+              aria-label="How to use this site"
+              aria-pressed={guideOpen}
+              onClick={() => {
+                setGuideStep(0);
+                setGuideOpen(true);
+              }}
+            >
+              <HelpIcon />
+            </button>
+            <button
+              type="button"
               className={`theme-toggle theme-toggle-${theme}`}
               aria-pressed={theme === "light"}
               aria-label={theme === "light" ? "Switch to dark page" : "Switch to light page"}
@@ -258,6 +293,9 @@ export function Shell() {
       {showSalam ? <SalamSplash onDone={() => setShowSalam(false)} /> : null}
       {showHadith && daily && !showSalam ? (
         <HadithDialog daily={daily} onClose={() => setShowHadith(false)} />
+      ) : null}
+      {guideOpen && !showSalam && !showHadith ? (
+        <GuideTour step={guideStep} onStep={setGuideStep} onClose={() => setGuideOpen(false)} />
       ) : null}
     </div>
   );
