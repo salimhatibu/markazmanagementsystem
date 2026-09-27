@@ -11,7 +11,7 @@ export default async (req: Request) => {
   try {
     if (url.pathname === "/api/notifications/read") {
       if (req.method !== "POST") return fail("Method not allowed.", 405);
-      await db.update(notifications).set({ readAt: new Date().toISOString() }).where(isNull(notifications.readAt));
+      await db.update(notifications).set({ readAt: new Date() }).where(isNull(notifications.readAt));
       return json({ ok: true });
     }
 

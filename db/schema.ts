@@ -1,117 +1,110 @@
-import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  boolean,
+  date,
+  index,
+  integer,
+  numeric,
+  pgEnum,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 
-const timestamp = (name: string) =>
-  text(name)
-    .notNull()
-    .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ','now'))`);
+export const gender = pgEnum("gender", ["male", "female"]);
+export const studentSection = pgEnum("student_section", ["morning", "evening"]);
+export const teacherSection = pgEnum("teacher_section", ["morning", "evening", "both"]);
+export const reportPeriod = pgEnum("report_period", ["biweekly", "monthly"]);
 
-export const users = sqliteTable("users", {
-  id: integer().primaryKey({ autoIncrement: true }),
-  email: text().notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
-  createdAt: timestamp("created_at"),
+const money = (name: string) => numeric(name, { precision: 12, scale: 2 });
+const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
+const updatedAt = () => timestamp("updated_at", { withTimezone: true }).notNull().defaultNow();
+
+export const students = pgTable("students", {
+  id: serial().primaryKey(),
+  admissionNumber: varchar("admission_number", { length: 64 }).notNull().unique(),
+  name: varchar({ length: 255 }).notNull(),
+  dateOfBirth: date("date_of_birth").notNull(),
+  gender: gender().notNull(),
+  section: studentSection().notNull(),
+  expectedFees: money("expected_fees").notNull(),
+  guardianName: varchar("guardian_name", { length: 255 }).notNull(),
+  guardianPhone: varchar("guardian_phone", { length: 64 }).notNull(),
+  guardianEmail: varchar("guardian_email", { length: 255 }).notNull(),
+  secondContactName: varchar("second_contact_name", { length: 255 }),
+  secondContactPhone: varchar("second_contact_phone", { length: 64 }),
+  secondContactEmail: varchar("second_contact_email", { length: 255 }),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
 });
 
-export const sessions = sqliteTable(
-  "sessions",
-  {
-    id: integer().primaryKey({ autoIncrement: true }),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    tokenHash: text("token_hash").notNull().unique(),
-    expiresAt: text("expires_at").notNull(),
-    createdAt: timestamp("created_at"),
-  },
-  (table) => [index("sessions_user_id_idx").on(table.userId)],
-);
-
-export const students = sqliteTable("students", {
-  id: integer().primaryKey({ autoIncrement: true }),
-  admissionNumber: text("admission_number").notNull().unique(),
-  name: text().notNull(),
-  dateOfBirth: text("date_of_birth").notNull(),
-  gender: text().notNull(),
-  section: text().notNull(),
-  expectedFees: text("expected_fees").notNull(),
-  guardianName: text("guardian_name").notNull(),
-  guardianPhone: text("guardian_phone").notNull(),
-  guardianEmail: text("guardian_email").notNull(),
-  secondContactName: text("second_contact_name"),
-  secondContactPhone: text("second_contact_phone"),
-  secondContactEmail: text("second_contact_email"),
-  createdAt: timestamp("created_at"),
-  updatedAt: timestamp("updated_at"),
-});
-
-export const feePayments = sqliteTable(
+export const feePayments = pgTable(
   "fee_payments",
   {
-    id: integer().primaryKey({ autoIncrement: true }),
+    id: serial().primaryKey(),
     studentId: integer("student_id")
       .notNull()
       .references(() => students.id, { onDelete: "cascade" }),
-    amount: text().notNull(),
-    paidOn: text("paid_on").notNull(),
+    amount: money("amount").notNull(),
+    paidOn: date("paid_on").notNull(),
     note: text(),
-    createdAt: timestamp("created_at"),
+    createdAt: createdAt(),
   },
   (table) => [index("fee_payments_student_id_idx").on(table.studentId)],
 );
 
-export const teachers = sqliteTable("teachers", {
-  id: integer().primaryKey({ autoIncrement: true }),
-  name: text().notNull(),
-  dateOfBirth: text("date_of_birth").notNull(),
-  gender: text().notNull(),
-  expectedSalary: text("expected_salary").notNull(),
-  expectedReleaseDate: text("expected_release_date").notNull(),
-  paidInAdvance: integer("paid_in_advance", { mode: "boolean" }).notNull().default(false),
-  section: text().notNull(),
-  createdAt: timestamp("created_at"),
-  updatedAt: timestamp("updated_at"),
+export const teachers = pgTable("teachers", {
+  id: serial().primaryKey(),
+  name: varchar({ length: 255 }).notNull(),
+  dateOfBirth: date("date_of_birth").notNull(),
+  gender: gender().notNull(),
+  expectedSalary: money("expected_salary").notNull(),
+  expectedReleaseDate: date("expected_release_date").notNull(),
+  paidInAdvance: boolean("paid_in_advance").notNull().default(false),
+  section: teacherSection().notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
 });
 
-export const salaryPayments = sqliteTable(
+export const salaryPayments = pgTable(
   "salary_payments",
   {
-    id: integer().primaryKey({ autoIncrement: true }),
+    id: serial().primaryKey(),
     teacherId: integer("teacher_id")
       .notNull()
       .references(() => teachers.id, { onDelete: "cascade" }),
-    amount: text().notNull(),
-    paidOn: text("paid_on").notNull(),
+    amount: money("amount").notNull(),
+    paidOn: date("paid_on").notNull(),
     note: text(),
-    createdAt: timestamp("created_at"),
+    createdAt: createdAt(),
   },
   (table) => [index("salary_payments_teacher_id_idx").on(table.teacherId)],
 );
 
-export const reports = sqliteTable("reports", {
-  id: integer().primaryKey({ autoIncrement: true }),
-  period: text().notNull(),
-  rangeStart: text("range_start").notNull(),
-  rangeEnd: text("range_end").notNull(),
-  blobKey: text("blob_key").notNull(),
-  pdf: text().notNull(),
-  createdAt: timestamp("created_at"),
+export const reports = pgTable("reports", {
+  id: serial().primaryKey(),
+  period: reportPeriod().notNull(),
+  rangeStart: date("range_start").notNull(),
+  rangeEnd: date("range_end").notNull(),
+  blobKey: varchar("blob_key", { length: 600 }).notNull(),
+  createdAt: createdAt(),
 });
 
-export const notifications = sqliteTable("notifications", {
-  id: integer().primaryKey({ autoIncrement: true }),
-  title: text().notNull(),
+export const notifications = pgTable("notifications", {
+  id: serial().primaryKey(),
+  title: varchar({ length: 255 }).notNull(),
   reportId: integer("report_id")
     .notNull()
     .references(() => reports.id, { onDelete: "cascade" }),
-  readAt: text("read_at"),
-  createdAt: timestamp("created_at"),
+  readAt: timestamp("read_at", { withTimezone: true }),
+  createdAt: createdAt(),
 });
 
-export const settings = sqliteTable("settings", {
-  id: integer().primaryKey({ autoIncrement: true }),
-  markazName: text("markaz_name"),
-  currencySymbol: text("currency_symbol"),
+export const settings = pgTable("settings", {
+  id: serial().primaryKey(),
+  markazName: varchar("markaz_name", { length: 255 }),
+  currencySymbol: varchar("currency_symbol", { length: 16 }),
 });
 
 export type Student = typeof students.$inferSelect;
@@ -121,4 +114,3 @@ export type SalaryPayment = typeof salaryPayments.$inferSelect;
 export type ReportRow = typeof reports.$inferSelect;
 export type NotificationRow = typeof notifications.$inferSelect;
 export type SettingsRow = typeof settings.$inferSelect;
-export type UserRow = typeof users.$inferSelect;

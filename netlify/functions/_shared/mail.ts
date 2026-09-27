@@ -6,10 +6,8 @@ export type MailConfig = {
   from: string;
 };
 
-import { envValue } from "../../../db/index";
-
 function setting(name: string): string | undefined {
-  return envValue(name) ?? process.env[name];
+  return Netlify.env.get(name) ?? process.env[name];
 }
 
 export function readMailConfig(): MailConfig | null {
