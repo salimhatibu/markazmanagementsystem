@@ -45,7 +45,19 @@ function student(expected: number, paid: number) {
   assert.equal(totals.spentCents, toCents(30));
   assert.equal(totals.inHandCents, toCents(90));
   assert.equal(totals.outstandingCents, toCents(60));
+  assert.equal(totals.expensesCents, 0);
   assert.equal(teacherFigures(toCents(70), toCents(30)).balanceCents, toCents(40));
+}
+
+{
+  const afterExpense = operationsTotals(
+    [{ expectedCents: toCents(100), paidCents: toCents(100) }],
+    [{ expectedCents: toCents(0), paidCents: toCents(10) }],
+    toCents(25),
+  );
+  assert.equal(afterExpense.inHandCents, toCents(65));
+  assert.equal(afterExpense.spentCents, toCents(35));
+  assert.equal(afterExpense.expensesCents, toCents(25));
 }
 
 assert.deepEqual(biweeklyRange(new Date(Date.UTC(2026, 8, 15))), {

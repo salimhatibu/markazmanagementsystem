@@ -58,7 +58,18 @@ export type DashboardTotals = {
   feesCollected: number;
   inHand: number;
   spent: number;
+  salariesPaid: number;
+  expenses: number;
   outstanding: number;
+};
+
+export type Expense = {
+  id: number;
+  reason: string;
+  amount: number;
+  details: string | null;
+  spentOn: string;
+  createdAt: string;
 };
 
 export type ReportItem = {

@@ -9,6 +9,7 @@ import type { Settings } from "../types";
 import { Footer } from "./Footer";
 import { HadithDialog } from "./HadithDialog";
 import { BookIcon, CrescentIcon, Ornament, SunIcon } from "./Motifs";
+import { PageSlide } from "./PageSlide";
 import { SalamSplash } from "./SalamSplash";
 
 export type WorkspaceContext = {
@@ -23,6 +24,7 @@ const links = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/students", label: "Students", end: false },
   { to: "/teachers", label: "Teachers", end: false },
+  { to: "/expenses", label: "Expenses", end: false },
   { to: "/reports", label: "Reports", end: false },
   { to: "/settings", label: "Settings", end: false },
 ];
@@ -123,7 +125,9 @@ export function Shell() {
         </div>
       </header>
       <main id="content" className="content">
-        <Outlet context={context} />
+        <PageSlide>
+          <Outlet context={context} />
+        </PageSlide>
       </main>
       <Footer />
       <div className="watermark">

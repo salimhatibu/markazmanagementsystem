@@ -1,11 +1,13 @@
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "../../../db/index";
 import {
+  expenses,
   feePayments,
   salaryPayments,
   settings,
   students,
   teachers,
+  type Expense,
   type FeePayment,
   type SalaryPayment,
   type SettingsRow,
@@ -33,6 +35,21 @@ export async function listFeePayments(): Promise<FeePayment[]> {
     .select()
     .from(feePayments)
     .orderBy(desc(feePayments.paidOn), desc(feePayments.id));
+}
+
+export async function listExpenses(): Promise<Expense[]> {
+  return db.select().from(expenses).orderBy(desc(expenses.spentOn), desc(expenses.id));
+}
+
+export function toExpense(row: Expense) {
+  return {
+    id: row.id,
+    reason: row.reason,
+    amount: fromCents(toCents(row.amount)),
+    details: row.details,
+    spentOn: row.spentOn,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt),
+  };
 }
 
 export async function listSalaryPayments(): Promise<SalaryPayment[]> {

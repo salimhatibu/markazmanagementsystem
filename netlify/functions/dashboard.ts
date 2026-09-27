@@ -1,6 +1,7 @@
 import type { Config } from "@netlify/functions";
 import { fail, handleError, json } from "./_shared/http";
 import {
+  listExpenses,
   listFeePayments,
   listSalaryPayments,
   listStudents,
@@ -12,11 +13,12 @@ import { operationsTotals, toCents } from "../../shared/ledger";
 export default async (req: Request) => {
   if (req.method !== "GET") return fail("Method not allowed.", 405);
   try {
-    const [studentRows, teacherRows, feeRows, salaryRows] = await Promise.all([
+    const [studentRows, teacherRows, feeRows, salaryRows, expenseRows] = await Promise.all([
       listStudents(),
       listTeachers(),
       listFeePayments(),
       listSalaryPayments(),
+      listExpenses(),
     ]);
     const feesByStudent = new Map<number, typeof feeRows>();
     for (const payment of feeRows) {
@@ -39,6 +41,7 @@ export default async (req: Request) => {
         expectedCents: toCents(teacher.expectedSalary),
         paidCents: sumCents(salaryByTeacher.get(teacher.id) ?? []),
       })),
+      sumCents(expenseRows),
     );
     return json({
       morningStudents: studentRows.filter((student) => student.section === "morning").length,
@@ -47,6 +50,8 @@ export default async (req: Request) => {
       feesCollected: totals.feesCollectedCents / 100,
       inHand: totals.inHandCents / 100,
       spent: totals.spentCents / 100,
+      salariesPaid: totals.salariesPaidCents / 100,
+      expenses: totals.expensesCents / 100,
       outstanding: totals.outstandingCents / 100,
     });
   } catch (error) {

@@ -77,3 +77,32 @@ export function displayName(name: string | null | undefined): string {
   const trimmed = name?.trim() ?? "";
   return trimmed || MARKAZ_NAME;
 }
+
+export type HijriDate = {
+  day: number;
+  month: string;
+  year: number;
+  english: string;
+  arabic: string;
+};
+
+function hijriPart(
+  date: Date,
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: TIME_ZONE,
+    calendar: "islamic-umalqura",
+    ...options,
+  }).format(date);
+}
+
+export function hijriDate(date = new Date()): HijriDate {
+  const day = Number(hijriPart(date, "en-GB", { day: "numeric" }));
+  const year = Number(hijriPart(date, "en-GB", { year: "numeric" }).replace(/\D/g, ""));
+  const month = hijriPart(date, "en-GB", { month: "long" }).replace(/\sAH$/i, "").trim();
+  const english = hijriPart(date, "en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const arabic = hijriPart(date, "ar-SA", { day: "numeric", month: "long", year: "numeric" });
+  return { day, month, year, english, arabic };
+}

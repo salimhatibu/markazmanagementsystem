@@ -39,6 +39,7 @@ export type OperationsReport = {
   outstandingCents: number;
   feesInPeriodCents: number;
   salariesInPeriodCents: number;
+  expensesInPeriodCents?: number;
   students: ReportStudent[];
   teachers: ReportTeacher[];
 };
@@ -117,6 +118,10 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
   );
   draw(
     `> SALARIES_IN_PERIOD  ${money(report.salariesInPeriodCents, report.currencySymbol)}`,
+    { font: mono },
+  );
+  draw(
+    `> EXPENSES_IN_PERIOD  ${money(report.expensesInPeriodCents ?? 0, report.currencySymbol)}`,
     { font: mono, gap: 8 },
   );
   rule();

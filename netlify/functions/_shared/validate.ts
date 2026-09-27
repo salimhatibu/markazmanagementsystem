@@ -172,6 +172,15 @@ export function studentFields(body: Record<string, unknown>) {
   };
 }
 
+export function expenseFields(body: Record<string, unknown>) {
+  return {
+    reason: requiredText(body.reason, "Reason", 255),
+    amount: parseMoney(body.amount, "Amount", false),
+    details: optionalText(body.details, "Details", 2000),
+    spentOn: parseDate(body.spentOn, "Date"),
+  };
+}
+
 export function teacherFields(body: Record<string, unknown>) {
   return {
     name: requiredText(body.name, "Name", 255),

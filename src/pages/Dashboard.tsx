@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { displayName, formatMoney } from "../../shared/format";
+import { formatMoney } from "../../shared/format";
 import type { WorkspaceContext } from "../components/Shell";
+import { HijriDate } from "../components/HijriDate";
 import { BookIcon, PenIcon, QuranIcon } from "../components/Motifs";
 import { Notice } from "../components/ui";
 import { api } from "../lib/api";
@@ -34,7 +35,7 @@ export function DashboardPage() {
       <p className="kicker kicker-icon">
         <QuranIcon /> Today at a glance
       </p>
-      <h1>{displayName(settings.markazName)}</h1>
+      <HijriDate />
       <p className="page-lead">A quiet view of what is in the office, what is still owed, and how many are enrolled.</p>
       {error ? <Notice>{error}</Notice> : null}
       <div className="board" aria-busy={!totals && !error}>
@@ -43,11 +44,11 @@ export function DashboardPage() {
             <PenIcon /> In the office
           </p>
           <p className="figure">{totals ? money(totals.inHand) : "—"}</p>
-          <p className="stat-note">Fees collected minus salaries paid</p>
+          <p className="stat-note">Fees collected minus salaries and expenses</p>
         </article>
         <article className="stat stat-dark">
           <p className="kicker">Salaries paid</p>
-          <p className="figure figure-sm">{totals ? money(totals.spent) : "—"}</p>
+          <p className="figure figure-sm">{totals ? money(totals.salariesPaid) : "—"}</p>
         </article>
         <article className="stat stat-light">
           <p className="kicker">Still owed</p>
@@ -73,6 +74,11 @@ export function DashboardPage() {
         <article className="stat stat-dark">
           <p className="kicker">Fees collected</p>
           <p className="figure figure-sm">{totals ? money(totals.feesCollected) : "—"}</p>
+        </article>
+        <article className="stat stat-light">
+          <p className="kicker">Expenses</p>
+          <p className="figure figure-sm">{totals ? money(totals.expenses) : "—"}</p>
+          <p className="stat-note">Taken from the funds in the office</p>
         </article>
       </div>
       <section className="panel panel-light hadith" aria-labelledby="hadith-of-the-day">

@@ -113,6 +113,19 @@ export const settings = pgTable("settings", {
   currencySymbol: varchar("currency_symbol", { length: 16 }),
 });
 
+export const expenses = pgTable(
+  "expenses",
+  {
+    id: serial().primaryKey(),
+    reason: varchar({ length: 255 }).notNull(),
+    amount: money("amount").notNull(),
+    details: text(),
+    spentOn: date("spent_on").notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [index("expenses_spent_on_idx").on(table.spentOn)],
+);
+
 export type Student = typeof students.$inferSelect;
 export type Teacher = typeof teachers.$inferSelect;
 export type FeePayment = typeof feePayments.$inferSelect;
@@ -120,3 +133,4 @@ export type SalaryPayment = typeof salaryPayments.$inferSelect;
 export type ReportRow = typeof reports.$inferSelect;
 export type NotificationRow = typeof notifications.$inferSelect;
 export type SettingsRow = typeof settings.$inferSelect;
+export type Expense = typeof expenses.$inferSelect;

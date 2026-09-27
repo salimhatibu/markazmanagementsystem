@@ -33,7 +33,11 @@ export type PersonMoney = {
   paidCents: number;
 };
 
-export function operationsTotals(students: PersonMoney[], teachers: PersonMoney[]) {
+export function operationsTotals(
+  students: PersonMoney[],
+  teachers: PersonMoney[],
+  expensesCents = 0,
+) {
   const feesCollectedCents = students.reduce((sum, student) => sum + student.paidCents, 0);
   const salariesPaidCents = teachers.reduce((sum, teacher) => sum + teacher.paidCents, 0);
   const outstandingCents = students.reduce((sum, student) => {
@@ -42,8 +46,9 @@ export function operationsTotals(students: PersonMoney[], teachers: PersonMoney[
   return {
     feesCollectedCents,
     salariesPaidCents,
-    inHandCents: feesCollectedCents - salariesPaidCents,
-    spentCents: salariesPaidCents,
+    expensesCents,
+    inHandCents: feesCollectedCents - salariesPaidCents - expensesCents,
+    spentCents: salariesPaidCents + expensesCents,
     outstandingCents,
   };
 }

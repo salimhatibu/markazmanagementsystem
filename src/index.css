@@ -143,6 +143,52 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   line-height: 1.6;
 }
 
+.page-slide {
+  animation: page-slide-forward 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.page-slide[data-direction="back"] {
+  animation-name: page-slide-back;
+}
+
+@keyframes page-slide-forward {
+  from { opacity: 0; transform: translateX(36px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes page-slide-back {
+  from { opacity: 0; transform: translateX(-36px); }
+  to { opacity: 1; transform: none; }
+}
+
+.hijri {
+  margin: 8px 0 18px;
+}
+
+.hijri-line {
+  margin: 6px 0 0;
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  text-transform: none;
+}
+
+.hijri-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.hijri-arabic {
+  margin-top: 8px;
+  font-size: 22px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-slide { animation: none; }
+}
+
 .panel-title, .form-section {
   margin: 0 0 14px;
   font-size: 13px;
@@ -450,6 +496,20 @@ tbody tr:hover { background: var(--wash); }
 .form-grid > * { min-width: 0; }
 
 .form-grid > button { align-self: end; justify-self: start; }
+
+.expense-form {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.expense-details textarea {
+  min-height: 7.5rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.expense-form .solid { margin-top: 18px; }
 
 fieldset {
   border: 1px solid currentColor;

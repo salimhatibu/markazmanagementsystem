@@ -1,13 +1,14 @@
 import { getStore } from "@netlify/blobs";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "../../../db/index";
-import { feePayments, notifications, reports, salaryPayments, type ReportRow } from "../../../db/schema";
+import { expenses, feePayments, notifications, reports, salaryPayments, type ReportRow } from "../../../db/schema";
 import { isUniqueViolation } from "./http";
 import { ageFromDob, asIso, CURRENCY, displayName } from "../../../shared/format";
 import { operationsTotals, studentFigures, teacherFigures, toCents } from "../../../shared/ledger";
 import { buildOperationsPdf, type OperationsReport } from "../../../shared/pdf";
 import { rangeFor, type DateRange } from "../../../shared/periods";
 import {
+  listExpenses,
   listFeePayments,
   listSalaryPayments,
   listStudents,
@@ -51,11 +52,12 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
   const range = rangeFor(period, now);
   const already = await existingReport(period, range);
   if (already) return presentReport(already, false);
-  const [studentRows, teacherRows, feeRows, salaryRows, settingsRow] = await Promise.all([
+  const [studentRows, teacherRows, feeRows, salaryRows, expenseRows, settingsRow] = await Promise.all([
     listStudents(),
     listTeachers(),
     listFeePayments(),
     listSalaryPayments(),
+    listExpenses(),
     loadSettings(),
   ]);
 
@@ -80,9 +82,10 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
     expectedCents: toCents(teacher.expectedSalary),
     paidCents: sumCents(salaryByTeacher.get(teacher.id) ?? []),
   }));
-  const totals = operationsTotals(studentMoney, teacherMoney);
+  const totals = operationsTotals(studentMoney, teacherMoney, sumCents(expenseRows));
   const feesInPeriod = await sumInRange(feePayments, range);
   const salariesInPeriod = await sumInRange(salaryPayments, range);
+  const expensesInPeriod = await sumExpensesInRange(range);
 
   const symbol = settingsRow?.currencySymbol?.trim() || CURRENCY;
   const report: OperationsReport = {
@@ -98,6 +101,7 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
     outstandingCents: totals.outstandingCents,
     feesInPeriodCents: feesInPeriod,
     salariesInPeriodCents: salariesInPeriod,
+    expensesInPeriodCents: expensesInPeriod,
     students: studentRows.map((student) => {
       const paidCents = sumCents(feesByStudent.get(student.id) ?? []);
       const expectedCents = toCents(student.expectedFees);
@@ -172,6 +176,14 @@ async function sumInRange(
     .select({ amount: table.amount })
     .from(table)
     .where(and(gte(table.paidOn, range.start), lte(table.paidOn, range.end)));
+  return sumCents(rows);
+}
+
+async function sumExpensesInRange(range: DateRange): Promise<number> {
+  const rows = await db
+    .select({ amount: expenses.amount })
+    .from(expenses)
+    .where(and(gte(expenses.spentOn, range.start), lte(expenses.spentOn, range.end)));
   return sumCents(rows);
 }
 
