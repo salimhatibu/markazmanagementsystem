@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { displayName, formatMoney } from "../../shared/format";
 import type { WorkspaceContext } from "../components/Shell";
-import { PenIcon, QuranIcon } from "../components/Motifs";
+import { BookIcon, PenIcon, QuranIcon } from "../components/Motifs";
 import { Notice } from "../components/ui";
 import { api } from "../lib/api";
 import type { DashboardTotals } from "../types";
 
 export function DashboardPage() {
-  const { settings } = useOutletContext<WorkspaceContext>();
+  const { settings, daily } = useOutletContext<WorkspaceContext>();
   const [totals, setTotals] = useState<DashboardTotals | null>(null);
   const [error, setError] = useState("");
 
@@ -69,6 +69,26 @@ export function DashboardPage() {
           <p className="figure figure-sm">{totals ? money(totals.feesCollected) : "—"}</p>
         </article>
       </div>
+      <section className="panel panel-light hadith" aria-labelledby="hadith-of-the-day">
+        <p className="micro micro-icon">
+          <BookIcon /> &gt; Hadith of the day{daily ? ` ${daily.dayNumber} of ${daily.total}` : ""}
+        </p>
+        {daily ? (
+          <>
+            <h2 id="hadith-of-the-day">{daily.hadith.chapter.replace(/^Chapter:\s*/, "")}</h2>
+            <p className="arabic-line">{daily.hadith.chapterArabic}</p>
+            <p className="narrator">{daily.hadith.narrator}</p>
+            <p className="hadith-body">{daily.hadith.english}</p>
+            <p className="arabic-line hadith-arabic">{daily.hadith.arabic}</p>
+            <p className="micro">
+              &gt; {daily.hadith.reference} &middot; {daily.hadith.inBook} &middot; Sahih al-Bukhari, Wedlock,
+              Marriage (Nikaah)
+            </p>
+          </>
+        ) : (
+          <h2 id="hadith-of-the-day">Loading today&rsquo;s hadith</h2>
+        )}
+      </section>
     </>
   );
 }
