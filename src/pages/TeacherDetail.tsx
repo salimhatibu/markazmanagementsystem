@@ -24,6 +24,7 @@ export function TeacherDetailPage() {
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [removingPayment, setRemovingPayment] = useState<number | null>(null);
 
   async function load() {
     const body = await api<{ teacher: Teacher }>(`/api/teachers/${id}`);
@@ -32,7 +33,9 @@ export function TeacherDetailPage() {
   }
 
   useEffect(() => {
-    load().catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Could not load the teacher."));
+    load().catch((caught: unknown) =>
+      setError(caught instanceof Error ? caught.message : "This teacher record could not be opened."),
+    );
   }, [id]);
 
   async function save() {
@@ -46,9 +49,9 @@ export function TeacherDetailPage() {
       });
       setTeacher(body.teacher);
       setDraft(teacherToInput(body.teacher));
-      setInfo("Teacher record saved.");
+      setInfo("Saved. The details are up to date.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save the teacher.");
+      setError(caught instanceof Error ? caught.message : "The teacher could not be saved.");
     } finally {
       setBusy(false);
     }
@@ -69,7 +72,7 @@ export function TeacherDetailPage() {
       setNote("");
       setInfo("Salary payment recorded.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not record the payment.");
+      setError(caught instanceof Error ? caught.message : "The payment could not be recorded.");
     } finally {
       setBusy(false);
     }
@@ -81,8 +84,10 @@ export function TeacherDetailPage() {
       const body = await api<{ teacher: Teacher }>(`/api/salary-payments/${paymentId}`, { method: "DELETE" });
       setTeacher(body.teacher);
       setDraft(teacherToInput(body.teacher));
+      setRemovingPayment(null);
+      setInfo("That payment was removed.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not remove the payment.");
+      setError(caught instanceof Error ? caught.message : "The payment could not be removed.");
     } finally {
       setBusy(false);
     }
@@ -94,59 +99,113 @@ export function TeacherDetailPage() {
       await api(`/api/teachers/${id}`, { method: "DELETE" });
       navigate("/teachers");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not delete the teacher.");
+      setError(caught instanceof Error ? caught.message : "The teacher could not be deleted.");
       setBusy(false);
     }
   }
 
   const symbol = settings.currencySymbol;
   if (!teacher || !draft) {
-    return error ? <Notice>{error}</Notice> : <p className="micro">&gt; Loading</p>;
+    return error ? <Notice>{error}</Notice> : <p className="loading-line">Opening this record…</p>;
   }
 
   return (
     <>
-      <PageHeader kicker="Teacher" title={teacher.name}>
-        <Link to="/teachers">All teachers</Link>
+      <PageHeader kicker="Teacher" title={teacher.name} person>
+        <Link className="ghost" to="/teachers">
+          Back to teachers
+        </Link>
       </PageHeader>
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
       <div className="meta-row">
-        <div><span className="micro">&gt; Age</span><strong>{teacher.age}</strong></div>
-        <div><span className="micro">&gt; Section</span><strong>{label(teacher.section)}</strong></div>
-        <div><span className="micro">&gt; Salary balance</span><strong>{formatMoney(teacher.balance, symbol)}</strong></div>
-        <div><span className="micro">&gt; Release</span><strong>{teacher.expectedReleaseDate}</strong></div>
+        <div>
+          <span className="kicker">Age</span>
+          <strong>{teacher.age}</strong>
+        </div>
+        <div>
+          <span className="kicker">Class time</span>
+          <strong className="meta-word">{label(teacher.section)}</strong>
+        </div>
+        <div>
+          <span className="kicker">Salary still owed</span>
+          <strong>{formatMoney(teacher.balance, symbol)}</strong>
+        </div>
+        <div>
+          <span className="kicker">Last day</span>
+          <strong className="meta-word">{teacher.expectedReleaseDate}</strong>
+        </div>
       </div>
       <Panel tone="light">
-        <p className="micro">&gt; Edit record</p>
+        <p className="panel-title">Edit this record</p>
         <TeacherForm value={draft} onChange={setDraft} onSubmit={() => void save()} submitLabel="Save changes" busy={busy} />
       </Panel>
       <Panel tone="dark">
-        <p className="micro">&gt; Salary payment</p>
+        <p className="panel-title">Record a salary payment</p>
         <form className="form-grid" onSubmit={(event) => void addPayment(event)}>
-          <Field id="salary-amount" label="Amount">
-            <input id="salary-amount" inputMode="decimal" required value={amount} onChange={(event) => setAmount(event.target.value)} />
+          <Field id="salary-amount" label="Amount" hint="Kenyan shillings">
+            <input
+              id="salary-amount"
+              inputMode="decimal"
+              required
+              placeholder="0.00"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+            />
           </Field>
-          <Field id="salary-date" label="Date">
-            <input id="salary-date" type="date" required value={paidOn} onChange={(event) => setPaidOn(event.target.value)} />
+          <Field id="salary-date" label="Date paid">
+            <input
+              id="salary-date"
+              type="date"
+              required
+              value={paidOn}
+              onChange={(event) => setPaidOn(event.target.value)}
+            />
           </Field>
-          <Field id="salary-note" label="Note">
+          <Field id="salary-note" label="Note" hint="Optional, such as M-Pesa or cash.">
             <input id="salary-note" value={note} onChange={(event) => setNote(event.target.value)} />
           </Field>
-          <button className="ghost" type="submit" disabled={busy}>Record payment</button>
+          <button className="ghost" type="submit" disabled={busy}>
+            Add payment
+          </button>
         </form>
-        {teacher.payments.length === 0 ? <p>No salary payments yet.</p> : (
+        {teacher.payments.length === 0 ? (
+          <p>No salary payments yet.</p>
+        ) : (
           <div className="table-wrap">
             <table>
-              <caption className="micro">&gt; Salary history</caption>
-              <thead><tr><th>Date</th><th>Amount</th><th>Note</th><th>Remove</th></tr></thead>
+              <caption className="table-caption">Salary history</caption>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Note</th>
+                  <th></th>
+                </tr>
+              </thead>
               <tbody>
                 {teacher.payments.map((payment) => (
                   <tr key={payment.id}>
                     <td>{payment.paidOn}</td>
                     <td>{formatMoney(payment.amount, symbol)}</td>
                     <td>{payment.note || "—"}</td>
-                    <td><button type="button" className="ghost" onClick={() => void removePayment(payment.id)}>Remove</button></td>
+                    <td>
+                      {removingPayment === payment.id ? (
+                        <span className="inline-confirm">
+                          Remove this payment?
+                          <button type="button" className="ghost" onClick={() => void removePayment(payment.id)}>
+                            Yes, remove
+                          </button>
+                          <button type="button" className="text-button" onClick={() => setRemovingPayment(null)}>
+                            Keep it
+                          </button>
+                        </span>
+                      ) : (
+                        <button type="button" className="text-button" onClick={() => setRemovingPayment(payment.id)}>
+                          Remove
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -156,13 +215,21 @@ export function TeacherDetailPage() {
       </Panel>
       <div className="actions">
         {confirming ? (
-          <div role="group" aria-label="Confirm deletion">
-            <p>Delete this teacher and the salary history?</p>
-            <button type="button" className="solid" onClick={() => void removeTeacher()}>Delete record</button>
-            <button type="button" className="ghost" onClick={() => setConfirming(false)}>Keep record</button>
+          <div className="confirm-box" role="group" aria-label="Confirm deletion">
+            <p>
+              This removes {teacher.name} and every salary payment on this record. That cannot be undone.
+            </p>
+            <button type="button" className="solid" onClick={() => void removeTeacher()}>
+              Yes, delete this record
+            </button>
+            <button type="button" className="ghost" onClick={() => setConfirming(false)}>
+              Keep this record
+            </button>
           </div>
         ) : (
-          <button type="button" className="ghost" onClick={() => setConfirming(true)}>Delete teacher</button>
+          <button type="button" className="text-button" onClick={() => setConfirming(true)}>
+            Delete this teacher
+          </button>
         )}
       </div>
     </>

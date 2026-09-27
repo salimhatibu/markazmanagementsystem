@@ -102,14 +102,15 @@ export function Shell() {
           type="button"
           className="theme-toggle"
           aria-pressed={theme === "light"}
+          aria-label={theme === "light" ? "Switch to dark page" : "Switch to light page"}
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
         >
           {theme === "light" ? <CrescentIcon /> : <SunIcon />}
-          {theme === "light" ? "Dark" : "Light"}
+          {theme === "light" ? "Dark page" : "Light page"}
         </button>
         {unread > 0 ? (
             <NavLink to="/reports" className="alert-pill">
-              &gt; Report ready{unread > 1 ? ` ${unread}` : ""}
+              Report ready{unread > 1 ? ` · ${unread}` : ""}
             </NavLink>
           ) : null}
         </div>

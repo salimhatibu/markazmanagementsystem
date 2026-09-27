@@ -37,7 +37,7 @@ export default async (req: Request) => {
         return fail("Period must be biweekly or monthly.", 400);
       }
       const report = await generateOperationsReport(period);
-      return json({ report }, 201);
+      return json({ report }, report.created ? 201 : 200);
     }
 
     return fail("Method not allowed.", 405);

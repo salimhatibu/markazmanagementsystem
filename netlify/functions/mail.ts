@@ -1,11 +1,9 @@
 import type { Config } from "@netlify/functions";
-import { json } from "./_shared/http";
+import { fail, json } from "./_shared/http";
 import { readMailConfig } from "./_shared/mail";
 
 export default async (req: Request) => {
-  if (req.method !== "GET") {
-    return json({ error: "Method not allowed." }, 405);
-  }
+  if (req.method !== "GET") return fail("Method not allowed.", 405);
   return json({ configured: readMailConfig() !== null });
 };
 

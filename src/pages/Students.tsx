@@ -15,14 +15,18 @@ export function StudentsPage() {
   const [draft, setDraft] = useState<StudentInput>(emptyStudent());
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [ready, setReady] = useState(false);
 
   async function load() {
     const body = await api<{ students: Student[] }>("/api/students");
     setStudents(body.students);
+    setReady(true);
   }
 
   useEffect(() => {
-    load().catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Could not load students."));
+    load().catch((caught: unknown) =>
+      setError(caught instanceof Error ? caught.message : "The student list could not be opened."),
+    );
   }, []);
 
   const filtered = useMemo(() => {
@@ -45,7 +49,7 @@ export function StudentsPage() {
       setOpen(false);
       await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save the student.");
+      setError(caught instanceof Error ? caught.message : "The student could not be saved.");
     } finally {
       setBusy(false);
     }
@@ -55,41 +59,67 @@ export function StudentsPage() {
 
   return (
     <>
-      <PageHeader kicker="Records" title="Students">
+      <PageHeader
+        kicker="Records"
+        title="Students"
+        lead="Keep each student's admission number, fees, and guardian details in one place."
+      >
         <button type="button" className="ghost" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-          {open ? "Close form" : "Add student"}
+          {open ? "Close form" : "Add a student"}
         </button>
       </PageHeader>
       {error ? <Notice>{error}</Notice> : null}
       {open ? (
         <Panel tone="light">
-          <p className="micro">&gt; New student</p>
-          <StudentForm value={draft} onChange={setDraft} onSubmit={() => void create()} submitLabel="Save student" busy={busy} />
+          <p className="panel-title">New student</p>
+          <StudentForm
+            value={draft}
+            onChange={setDraft}
+            onSubmit={() => void create()}
+            submitLabel="Save student"
+            busy={busy}
+          />
         </Panel>
       ) : null}
       <div className="toolbar">
-        <Field id="student-search" label="Search">
-          <input id="student-search" className="search" value={query} onChange={(event) => setQuery(event.target.value)} />
+        <Field id="student-search" label="Find a student">
+          <input
+            id="student-search"
+            className="search"
+            type="search"
+            autoComplete="off"
+            placeholder="Name, admission number, or guardian"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
         </Field>
-        <p className="micro">&gt; {filtered.length} shown</p>
+        <p className="count-label">
+          {filtered.length} {filtered.length === 1 ? "student" : "students"}
+        </p>
       </div>
-      {filtered.length === 0 ? (
-        <Empty>No students match this view.</Empty>
+      {!ready && !error ? (
+        <p className="loading-line">Opening the student list…</p>
+      ) : filtered.length === 0 ? (
+        <Empty>
+          {students.length === 0
+            ? "No students yet. Add the first one when you are ready — fees and payments will stay here."
+            : "Nothing matches that search. Try a name or admission number."}
+        </Empty>
       ) : (
         <div className="table-wrap">
           <table>
-            <caption className="micro">&gt; Student ledger</caption>
+            <caption className="table-caption">Student fees</caption>
             <thead>
               <tr>
                 <th>Admission</th>
                 <th>Name</th>
-                <th>Section</th>
+                <th>Class time</th>
                 <th>Age</th>
                 <th>Expected</th>
                 <th>Paid</th>
                 <th>Balance</th>
-                <th>Percent</th>
-                <th>Open</th>
+                <th>Paid so far</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -104,7 +134,9 @@ export function StudentsPage() {
                   <td>{formatMoney(student.balance, symbol)}</td>
                   <td>{formatPercent(student.percentPaid)}</td>
                   <td>
-                    <Link to={`/students/${student.id}`}>Record</Link>
+                    <Link className="row-link" to={`/students/${student.id}`}>
+                      Open record
+                    </Link>
                   </td>
                 </tr>
               ))}

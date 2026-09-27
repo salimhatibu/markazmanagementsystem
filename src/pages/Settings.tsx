@@ -38,7 +38,7 @@ export function SettingsPage() {
       await refreshSettings();
       setInfo("Settings saved.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save settings.");
+      setError(caught instanceof Error ? caught.message : "Settings could not be saved.");
     } finally {
       setBusy(false);
     }
@@ -46,31 +46,47 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader kicker="Office" title="Settings" />
+      <PageHeader
+        kicker="Office"
+        title="Settings"
+        lead="The name on the dashboard and the currency on every amount. Leave a field blank to keep the usual default."
+      />
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
       <Panel tone="light">
         <form onSubmit={(event) => void save(event)} className="form-grid">
-          <Field id="markaz-name" label="Markaz name">
-            <input id="markaz-name" value={markazName} onChange={(event) => setMarkazName(event.target.value)} />
+          <Field id="markaz-name" label="Markaz name" hint="Shown at the top of the home page.">
+            <input
+              id="markaz-name"
+              value={markazName}
+              onChange={(event) => setMarkazName(event.target.value)}
+              placeholder="markaz"
+            />
           </Field>
-          <Field id="currency" label="Currency symbol">
-            <input id="currency" value={currencySymbol} maxLength={16} onChange={(event) => setCurrencySymbol(event.target.value)} />
+          <Field id="currency" label="Currency" hint="Amounts are in Kenyan shillings.">
+            <input
+              id="currency"
+              value={currencySymbol}
+              maxLength={16}
+              onChange={(event) => setCurrencySymbol(event.target.value)}
+              placeholder="KES"
+            />
           </Field>
-          <button className="solid" type="submit" disabled={busy}>Save settings</button>
+          <button className="solid" type="submit" disabled={busy}>
+            {busy ? "Saving…" : "Save settings"}
+          </button>
         </form>
-        <p>The name is markaz and amounts are in KES. Leave a field blank to keep that default.</p>
       </Panel>
       <Panel tone="dark">
-        <p className="micro">&gt; Mail</p>
+        <p className="panel-title">Fee reminders</p>
         {mailConfigured === null ? (
-          <p className="micro">&gt; Checking mail</p>
+          <p>Checking whether email is ready…</p>
         ) : mailConfigured ? (
-          <p>Balance alerts can be sent from a student record.</p>
+          <p>You can send a balance reminder from a student&rsquo;s record.</p>
         ) : (
           <p>
-            Mail is not configured. Balance alerts stay off until SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and
-            MARKAZ_FROM are set in the Netlify environment. The app will not pretend a message was sent.
+            Reminders stay off until the office mailbox is connected on the hosting site. The app will never pretend a
+            message was sent.
           </p>
         )}
       </Panel>

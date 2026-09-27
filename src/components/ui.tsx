@@ -3,19 +3,24 @@ import type { ReactNode } from "react";
 export function PageHeader({
   kicker,
   title,
+  lead,
+  person,
   children,
 }: {
   kicker: string;
   title: string;
+  lead?: string;
+  person?: boolean;
   children?: ReactNode;
 }) {
   return (
     <header className="page-header">
-      <p className="micro">&gt; {kicker}</p>
+      <p className="kicker">{kicker}</p>
       <div className="page-header-row">
-        <h1>{title}</h1>
+        <h1 className={person ? "person-title" : undefined}>{title}</h1>
         {children}
       </div>
+      {lead ? <p className="page-lead">{lead}</p> : null}
     </header>
   );
 }
@@ -23,18 +28,25 @@ export function PageHeader({
 export function Field({
   id,
   label,
+  hint,
   children,
 }: {
   id: string;
   label: string;
+  hint?: string;
   children: ReactNode;
 }) {
   return (
     <div className="field">
-      <label className="micro" htmlFor={id}>
-        &gt; {label}
+      <label className="field-label" htmlFor={id}>
+        {label}
       </label>
       {children}
+      {hint ? (
+        <p className="field-hint" id={`${id}-hint`}>
+          {hint}
+        </p>
+      ) : null}
     </div>
   );
 }

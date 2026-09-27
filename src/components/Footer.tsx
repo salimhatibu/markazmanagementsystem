@@ -10,7 +10,7 @@ export function Footer() {
     <footer className="footer">
       <dl className="footer-grid">
         <div>
-          <dt className="micro">&gt; Sponsored by</dt>
+          <dt className="kicker">Sponsored by</dt>
           <dd>
             <a href="https://maktabahruhayn.com" target="_blank" rel="noreferrer noopener">
               maktabahruhayn.com
@@ -19,7 +19,7 @@ export function Footer() {
         </div>
         {credits.map((credit) => (
           <div key={credit.label}>
-            <dt className="micro">&gt; {credit.label}</dt>
+            <dt className="kicker">{credit.label}</dt>
             <dd>{credit.value}</dd>
           </div>
         ))}

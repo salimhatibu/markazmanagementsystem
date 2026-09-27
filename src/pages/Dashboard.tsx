@@ -19,7 +19,7 @@ export function DashboardPage() {
         if (!cancel) setTotals(body);
       })
       .catch((caught: unknown) => {
-        if (!cancel) setError(caught instanceof Error ? caught.message : "Could not load the dashboard.");
+        if (!cancel) setError(caught instanceof Error ? caught.message : "The dashboard could not be opened.");
       });
     return () => {
       cancel = true;
@@ -31,47 +31,54 @@ export function DashboardPage() {
 
   return (
     <>
-      <p className="micro micro-icon"><QuranIcon /> &gt; Overview</p>
+      <p className="kicker kicker-icon">
+        <QuranIcon /> Today at a glance
+      </p>
       <h1>{displayName(settings.markazName)}</h1>
+      <p className="page-lead">A quiet view of what is in the office, what is still owed, and how many are enrolled.</p>
       {error ? <Notice>{error}</Notice> : null}
       <div className="board" aria-busy={!totals && !error}>
         <article className="stat stat-light">
-          <p className="micro micro-icon"><PenIcon /> &gt; In hand</p>
+          <p className="kicker kicker-icon">
+            <PenIcon /> In the office
+          </p>
           <p className="figure">{totals ? money(totals.inHand) : "—"}</p>
+          <p className="stat-note">Fees collected minus salaries paid</p>
         </article>
         <article className="stat stat-dark">
-          <p className="micro">&gt; Spent</p>
+          <p className="kicker">Salaries paid</p>
           <p className="figure figure-sm">{totals ? money(totals.spent) : "—"}</p>
         </article>
         <article className="stat stat-light">
-          <p className="micro">&gt; Outstanding</p>
+          <p className="kicker">Still owed</p>
           <p className="figure figure-sm">{totals ? money(totals.outstanding) : "—"}</p>
         </article>
         <article className="stat stat-dark">
-          <p className="micro">&gt; Students</p>
+          <p className="kicker">Students</p>
           <div className="split">
             <div>
-              <p className="micro">&gt; Morning</p>
+              <p className="kicker">Morning</p>
               <p className="figure figure-sm">{totals ? totals.morningStudents : "—"}</p>
             </div>
             <div>
-              <p className="micro">&gt; Evening</p>
+              <p className="kicker">Evening</p>
               <p className="figure figure-sm">{totals ? totals.eveningStudents : "—"}</p>
             </div>
           </div>
         </article>
         <article className="stat stat-light">
-          <p className="micro">&gt; Teachers</p>
+          <p className="kicker">Teachers</p>
           <p className="figure figure-sm">{totals ? totals.teachers : "—"}</p>
         </article>
         <article className="stat stat-dark">
-          <p className="micro">&gt; Collected</p>
+          <p className="kicker">Fees collected</p>
           <p className="figure figure-sm">{totals ? money(totals.feesCollected) : "—"}</p>
         </article>
       </div>
       <section className="panel panel-light hadith" aria-labelledby="hadith-of-the-day">
-        <p className="micro micro-icon">
-          <BookIcon /> &gt; Hadith of the day{daily ? ` ${daily.dayNumber} of ${daily.total}` : ""}
+        <p className="kicker kicker-icon">
+          <BookIcon /> Hadith of the day
+          {daily ? ` · ${daily.dayNumber} of ${daily.total}` : ""}
         </p>
         {daily ? (
           <>
@@ -80,13 +87,12 @@ export function DashboardPage() {
             <p className="narrator">{daily.hadith.narrator}</p>
             <p className="hadith-body">{daily.hadith.english}</p>
             <p className="arabic-line hadith-arabic">{daily.hadith.arabic}</p>
-            <p className="micro">
-              &gt; {daily.hadith.reference} &middot; {daily.hadith.inBook} &middot; Sahih al-Bukhari, Wedlock,
-              Marriage (Nikaah)
+            <p className="hadith-ref">
+              {daily.hadith.reference} · {daily.hadith.inBook} · Sahih al-Bukhari, Wedlock, Marriage (Nikaah)
             </p>
           </>
         ) : (
-          <h2 id="hadith-of-the-day">Loading today&rsquo;s hadith</h2>
+          <h2 id="hadith-of-the-day">Today&rsquo;s reading is on its way</h2>
         )}
       </section>
     </>

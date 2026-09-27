@@ -10,6 +10,8 @@ function setting(name: string): string | undefined {
   return Netlify.env.get(name) ?? process.env[name];
 }
 
+const FROM = /^(?:[\w .,'-]{1,80} <[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+>|[^\s@]+@[^\s@]+\.[^\s@]+)$/;
+
 export function readMailConfig(): MailConfig | null {
   const host = setting("SMTP_HOST")?.trim();
   const portText = setting("SMTP_PORT")?.trim();
@@ -18,7 +20,9 @@ export function readMailConfig(): MailConfig | null {
   const from = setting("MARKAZ_FROM")?.trim();
   const port = Number(portText);
   if (!host || !portText || !user || !pass || !from) return null;
+  if (host.includes("\n") || host.includes("\r") || host.length > 255) return null;
   if (!Number.isInteger(port) || port < 1 || port > 65535) return null;
+  if (!FROM.test(from) || /[\r\n]/.test(from)) return null;
   return { host, port, user, pass, from };
 }
 

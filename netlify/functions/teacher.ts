@@ -4,14 +4,7 @@ import { db } from "../../db/index";
 import { teachers } from "../../db/schema";
 import { paymentsForTeacher, teacherOrNull, toTeacher } from "./_shared/data";
 import { fail, handleError, json, parseId, readBody } from "./_shared/http";
-import {
-  oneOf,
-  parseBirthDate,
-  parseBoolean,
-  parseDate,
-  parseMoney,
-  requiredText,
-} from "./_shared/validate";
+import { teacherFields } from "./_shared/validate";
 
 export default async (req: Request, context: Context) => {
   const id = parseId(context.params.id);
@@ -31,13 +24,7 @@ export default async (req: Request, context: Context) => {
       const [updated] = await db
         .update(teachers)
         .set({
-          name: requiredText(body.name, "Name", 255),
-          dateOfBirth: parseBirthDate(body.dateOfBirth, "Date of birth"),
-          gender: oneOf(body.gender, ["male", "female"] as const, "Gender"),
-          expectedSalary: parseMoney(body.expectedSalary, "Expected salary", true),
-          expectedReleaseDate: parseDate(body.expectedReleaseDate, "Expected release date"),
-          paidInAdvance: parseBoolean(body.paidInAdvance, "Paid in advance"),
-          section: oneOf(body.section, ["morning", "evening", "both"] as const, "Section"),
+          ...teacherFields(body),
           updatedAt: new Date(),
         })
         .where(eq(teachers.id, id))

@@ -7,32 +7,7 @@ import {
   paymentsForStudent,
   toStudent,
 } from "./_shared/data";
-import {
-  oneOf,
-  optionalEmail,
-  optionalText,
-  parseBirthDate,
-  parseMoney,
-  requiredEmail,
-  requiredText,
-} from "./_shared/validate";
-
-function studentInput(body: Record<string, unknown>) {
-  return {
-    admissionNumber: requiredText(body.admissionNumber, "Admission number", 64),
-    name: requiredText(body.name, "Name", 255),
-    dateOfBirth: parseBirthDate(body.dateOfBirth, "Date of birth"),
-    gender: oneOf(body.gender, ["male", "female"] as const, "Gender"),
-    section: oneOf(body.section, ["morning", "evening"] as const, "Section"),
-    expectedFees: parseMoney(body.expectedFees, "Expected fees", true),
-    guardianName: requiredText(body.guardianName, "Guardian name", 255),
-    guardianPhone: requiredText(body.guardianPhone, "Guardian phone", 64),
-    guardianEmail: requiredEmail(body.guardianEmail, "Guardian email"),
-    secondContactName: optionalText(body.secondContactName, "Second contact name", 255),
-    secondContactPhone: optionalText(body.secondContactPhone, "Second contact phone", 64),
-    secondContactEmail: optionalEmail(body.secondContactEmail, "Second contact email"),
-  };
-}
+import { studentFields } from "./_shared/validate";
 
 async function withPayments(row: Student) {
   const payments = await paymentsForStudent(row.id);
@@ -60,7 +35,7 @@ export default async (req: Request) => {
     if (req.method === "POST") {
       const body = await readBody(req);
       if (!body) return fail("Request body must be an object.", 400);
-      const input = studentInput(body);
+      const input = studentFields(body);
       const [created] = await db.insert(students).values(input).returning();
       return json({ student: await withPayments(created) }, 201);
     }
