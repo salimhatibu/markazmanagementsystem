@@ -4,12 +4,13 @@ import { db } from "../../db/index";
 import { settings } from "../../db/schema";
 import { loadSettings } from "./_shared/data";
 import { fail, handleError, json, readBody } from "./_shared/http";
+import { CURRENCY, MARKAZ_NAME } from "../../shared/format";
 import { optionalText } from "./_shared/validate";
 
 function present(row: { markazName: string | null; currencySymbol: string | null } | null) {
   return {
-    markazName: row?.markazName?.trim() || null,
-    currencySymbol: row?.currencySymbol?.trim() || null,
+    markazName: row?.markazName?.trim() || MARKAZ_NAME,
+    currencySymbol: row?.currencySymbol?.trim() || CURRENCY,
   };
 }
 

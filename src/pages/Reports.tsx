@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import { formatEat } from "../../shared/format";
 import type { WorkspaceContext } from "../components/Shell";
 import { Empty, Notice, PageHeader } from "../components/ui";
 import { api, downloadReport } from "../lib/api";
@@ -62,7 +63,7 @@ export function ReportsPage() {
           </button>
         </div>
       </PageHeader>
-      <p>Each file is a full operations pack for the period that just ended. Schedules run on the 1st and the 15th in UTC after the site is published.</p>
+      <p>Each file is a full operations pack for the period that just ended. Dates and times are East Africa Time.</p>
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
       {reports.length === 0 ? <Empty>No reports yet.</Empty> : (
@@ -77,7 +78,7 @@ export function ReportsPage() {
                 <tr key={report.id}>
                   <td>{report.period}</td>
                   <td>{report.rangeStart} to {report.rangeEnd}</td>
-                  <td>{report.createdAt.slice(0, 16).replace("T", " ")} UTC</td>
+                  <td>{formatEat(report.createdAt)}</td>
                   <td>
                     <button
                       type="button"

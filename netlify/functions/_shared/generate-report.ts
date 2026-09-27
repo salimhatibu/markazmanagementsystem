@@ -1,7 +1,7 @@
 import { and, gte, lte } from "drizzle-orm";
 import { db } from "../../../db/index";
 import { feePayments, notifications, reports, salaryPayments } from "../../../db/schema";
-import { ageFromDob, asIso, displayName } from "../../../shared/format";
+import { ageFromDob, asIso, CURRENCY, displayName } from "../../../shared/format";
 import { operationsTotals, studentFigures, teacherFigures, toCents } from "../../../shared/ledger";
 import { buildOperationsPdf, type OperationsReport } from "../../../shared/pdf";
 import { rangeFor, type DateRange } from "../../../shared/periods";
@@ -65,7 +65,7 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
   const feesInPeriod = await sumInRange(feePayments, range);
   const salariesInPeriod = await sumInRange(salaryPayments, range);
 
-  const symbol = settingsRow?.currencySymbol?.trim() || null;
+  const symbol = settingsRow?.currencySymbol?.trim() || CURRENCY;
   const report: OperationsReport = {
     markazName: displayName(settingsRow?.markazName),
     currencySymbol: symbol,

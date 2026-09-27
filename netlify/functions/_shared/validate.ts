@@ -1,3 +1,4 @@
+import { eatDate } from "../../../shared/format";
 import { ValidationError } from "./http";
 
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -53,8 +54,7 @@ export function parseDate(value: unknown, field: string): string {
 
 export function parseBirthDate(value: unknown, field: string): string {
   const date = parseDate(value, field);
-  const now = new Date();
-  const today = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}`;
+  const today = eatDate();
   if (date > today) throw new ValidationError(`${field} cannot be in the future.`);
   return date;
 }

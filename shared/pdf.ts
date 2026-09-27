@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
-import { formatMoney, formatPercent, label } from "./format";
+import { formatEat, formatMoney, formatPercent, label, MARKAZ_NAME } from "./format";
 import { fromCents } from "./ledger";
 
 export type ReportStudent = {
@@ -98,12 +98,12 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
     y -= 10;
   }
 
-  const title = report.markazName.trim() || "Markaz";
+  const title = report.markazName.trim() || MARKAZ_NAME;
   draw(title.toUpperCase(), { size: 22, font: bold, gap: 6 });
   draw("OPERATIONS REPORT", { size: 14, font: bold, gap: 8 });
   draw(`> PERIOD  ${report.period.toUpperCase()}`, { size: 9, font: mono });
   draw(`> RANGE  ${report.rangeStart}  TO  ${report.rangeEnd}`, { size: 9, font: mono });
-  draw(`> GENERATED  ${report.generatedAt}`, { size: 9, font: mono, gap: 8 });
+  draw(`> GENERATED  ${formatEat(report.generatedAt)}`, { size: 9, font: mono, gap: 8 });
   rule();
 
   draw("FINANCE", { size: 13, font: bold, gap: 8 });

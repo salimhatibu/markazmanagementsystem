@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { displayName } from "../../shared/format";
+import { CURRENCY, displayName, MARKAZ_NAME } from "../../shared/format";
 import { api } from "../lib/api";
 import type { Settings } from "../types";
+import { BookIcon, CrescentIcon, Ornament } from "./Motifs";
 
 export type WorkspaceContext = {
   settings: Settings;
@@ -21,7 +22,7 @@ const links = [
 
 export function Shell() {
   const location = useLocation();
-  const [settings, setSettings] = useState<Settings>({ markazName: null, currencySymbol: null });
+  const [settings, setSettings] = useState<Settings>({ markazName: MARKAZ_NAME, currencySymbol: CURRENCY });
   const [unread, setUnread] = useState(0);
 
   const refreshSettings = useCallback(async () => {
@@ -38,7 +39,7 @@ export function Shell() {
     let cancel = false;
     refreshSettings()
       .catch(() => {
-        if (!cancel) setSettings({ markazName: null, currencySymbol: null });
+        if (!cancel) setSettings({ markazName: MARKAZ_NAME, currencySymbol: CURRENCY });
       });
     refreshAlerts().catch(() => {
       if (!cancel) setUnread(0);
@@ -58,8 +59,10 @@ export function Shell() {
       </a>
       <header className="topbar">
         <NavLink to="/" className="brand" end>
+          <CrescentIcon className="brand-mark" />
           {brand}
         </NavLink>
+        <Ornament />
         <nav aria-label="Primary">
           {links.map((link) => (
             <NavLink key={link.to} to={link.to} end={link.end}>
@@ -78,6 +81,9 @@ export function Shell() {
       <main id="content" className="content">
         <Outlet context={context} />
       </main>
+      <div className="watermark">
+        <BookIcon />
+      </div>
     </div>
   );
 }

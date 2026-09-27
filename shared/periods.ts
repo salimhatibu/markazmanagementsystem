@@ -1,3 +1,5 @@
+import { eatParts } from "./format";
+
 export type DateRange = {
   start: string;
   end: string;
@@ -9,11 +11,12 @@ function iso(year: number, monthIndex: number, day: number): string {
   return `${year}-${month}-${date}`;
 }
 
-/** Most recently completed half-month in UTC. Used by the 1st/15th schedule and manual generate. */
+/** Most recently completed half-month in East Africa Time. */
 export function biweeklyRange(now: Date): DateRange {
-  const day = now.getUTCDate();
-  const year = now.getUTCFullYear();
-  const month = now.getUTCMonth();
+  const eat = eatParts(now);
+  const day = eat.day;
+  const year = eat.year;
+  const month = eat.month - 1;
 
   if (day >= 15) {
     return { start: iso(year, month, 1), end: iso(year, month, 14) };
@@ -30,9 +33,10 @@ export function biweeklyRange(now: Date): DateRange {
   };
 }
 
-/** Previous calendar month in UTC. */
+/** Previous calendar month in East Africa Time. */
 export function monthlyRange(now: Date): DateRange {
-  const lastOfPrevious = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
+  const eat = eatParts(now);
+  const lastOfPrevious = new Date(Date.UTC(eat.year, eat.month - 1, 0));
   return {
     start: iso(lastOfPrevious.getUTCFullYear(), lastOfPrevious.getUTCMonth(), 1),
     end: iso(
