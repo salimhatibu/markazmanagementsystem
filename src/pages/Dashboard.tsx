@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { formatMoney } from "../../shared/format";
+import { displayName, formatMoney } from "../../shared/format";
 import type { WorkspaceContext } from "../components/Shell";
+import { PenIcon, QuranIcon } from "../components/Motifs";
 import { Notice } from "../components/ui";
 import { api } from "../lib/api";
 import type { DashboardTotals } from "../types";
@@ -30,12 +31,12 @@ export function DashboardPage() {
 
   return (
     <>
-      <p className="micro">&gt; Overview</p>
-      <h1>{settings.markazName?.trim() || "Markaz"}</h1>
+      <p className="micro micro-icon"><QuranIcon /> &gt; Overview</p>
+      <h1>{displayName(settings.markazName)}</h1>
       {error ? <Notice>{error}</Notice> : null}
       <div className="board" aria-busy={!totals && !error}>
         <article className="stat stat-light">
-          <p className="micro">&gt; In hand</p>
+          <p className="micro micro-icon"><PenIcon /> &gt; In hand</p>
           <p className="figure">{totals ? money(totals.inHand) : "—"}</p>
         </article>
         <article className="stat stat-dark">

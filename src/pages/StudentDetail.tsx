@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
-import { formatMoney, formatPercent, label } from "../../shared/format";
+import { eatDate, formatMoney, formatPercent, label } from "../../shared/format";
 import { StudentForm } from "../components/StudentForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
@@ -8,10 +8,7 @@ import { api } from "../lib/api";
 import { studentToInput, type Student, type StudentInput } from "../types";
 
 function today() {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
+  return eatDate();
 }
 
 export function StudentDetailPage() {

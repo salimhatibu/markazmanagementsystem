@@ -1,8 +1,10 @@
 :root {
   color-scheme: dark;
-  --ink: #000;
-  --paper: #fff;
-  --line: rgba(255, 255, 255, 0.72);
+  --ink: #121213;
+  --paper: #d7d9d0;
+  --line: rgba(215, 217, 208, 0.72);
+  --green: #1f8a4c;
+  --pink: #e7a3b8;
   --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", monospace;
   font-synthesis: none;
@@ -15,12 +17,43 @@ html, body, #root { min-height: 100%; }
 
 body {
   margin: 0;
-  background: var(--ink);
+  background:
+    linear-gradient(180deg, rgba(231, 163, 184, 0.12), transparent 220px),
+    var(--ink);
   color: var(--paper);
   font-family: var(--mono);
   font-size: 14px;
   line-height: 1.45;
 }
+
+.app {
+  position: relative;
+  min-height: 100vh;
+}
+
+.app::before,
+.app::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(231, 163, 184, 0.14) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(180deg, rgba(231, 163, 184, 0.14) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(90deg, rgba(231, 163, 184, 0.3) 0 1px, transparent 1px 230px),
+    repeating-linear-gradient(180deg, rgba(231, 163, 184, 0.3) 0 1px, transparent 1px 230px);
+}
+
+/* Blurred copy sits under the crisp grid so the lines carry a faint pink glow. */
+.app::before {
+  filter: blur(2.5px);
+  opacity: 0.75;
+}
+
+.app::after { opacity: 0.55; }
+
+.topbar, .content { position: relative; z-index: 1; }
 
 a { color: inherit; }
 
@@ -86,16 +119,23 @@ h2 { font-size: 2.4rem; }
   padding: 0 28px;
   min-height: 64px;
   border-bottom: 1px solid var(--paper);
+  box-shadow: inset 0 -3px 0 var(--green);
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--display);
   font-size: 28px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-decoration: none;
   line-height: 1;
+  color: var(--paper);
 }
+
+.brand-mark { width: 22px; height: 22px; color: var(--green); }
 
 .topbar nav {
   display: flex;
@@ -112,12 +152,44 @@ h2 { font-size: 2.4rem; }
   border-bottom: 2px solid transparent;
 }
 
-.topbar nav a[aria-current="page"] { border-bottom-color: var(--paper); }
+.topbar nav a[aria-current="page"] { border-bottom-color: var(--pink); }
+
+.ornament {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--green);
+}
+
+.ornament svg { width: 22px; height: 22px; }
+.ornament svg:nth-child(2),
+.ornament svg:nth-child(4) { color: var(--pink); }
+
+.watermark {
+  position: absolute;
+  right: 36px;
+  top: 72px;
+  width: 120px;
+  height: 120px;
+  color: var(--green);
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.watermark svg { width: 100%; height: 100%; }
+
+.micro-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.micro-icon svg { width: 16px; height: 16px; color: var(--green); }
 
 .top-actions { display: flex; align-items: center; gap: 16px; }
 
 .alert-pill {
-  background: var(--paper);
+  background: var(--pink);
   color: var(--ink);
   text-decoration: none;
   padding: 8px 10px;
@@ -134,9 +206,9 @@ h2 { font-size: 2.4rem; }
 }
 
 .solid {
-  background: var(--ink);
+  background: var(--green);
   color: var(--paper);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--green);
   padding: 12px 16px;
 }
 
@@ -174,6 +246,8 @@ h2 { font-size: 2.4rem; }
 
 .stat-light { background: var(--paper); color: var(--ink); }
 .stat-dark { background: var(--ink); color: var(--paper); }
+.stat-light:nth-child(3n + 1) { box-shadow: inset 4px 0 0 var(--green); }
+.stat-dark:nth-child(3n) { box-shadow: inset 4px 0 0 var(--pink); }
 
 .figure { font-size: clamp(3.4rem, 5.4vw, 5.6rem); max-width: 100%; }
 .figure-sm { font-size: clamp(2.8rem, 4vw, 4.2rem); }
@@ -338,4 +412,5 @@ legend { padding: 0 8px; }
   .topbar nav { order: 3; width: 100%; overflow-x: auto; }
   .login-panel { min-height: auto; }
   .page-header-row { align-items: flex-start; flex-direction: column; }
+  .ornament, .watermark { display: none; }
 }

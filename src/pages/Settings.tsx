@@ -1,21 +1,22 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import { CURRENCY, MARKAZ_NAME } from "../../shared/format";
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api } from "../lib/api";
 
 export function SettingsPage() {
   const { settings, refreshSettings } = useOutletContext<WorkspaceContext>();
-  const [markazName, setMarkazName] = useState(settings.markazName ?? "");
-  const [currencySymbol, setCurrencySymbol] = useState(settings.currencySymbol ?? "");
+  const [markazName, setMarkazName] = useState(settings.markazName ?? MARKAZ_NAME);
+  const [currencySymbol, setCurrencySymbol] = useState(settings.currencySymbol ?? CURRENCY);
   const [mailConfigured, setMailConfigured] = useState<boolean | null>(null);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setMarkazName(settings.markazName ?? "");
-    setCurrencySymbol(settings.currencySymbol ?? "");
+    setMarkazName(settings.markazName ?? MARKAZ_NAME);
+    setCurrencySymbol(settings.currencySymbol ?? CURRENCY);
   }, [settings.markazName, settings.currencySymbol]);
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export function SettingsPage() {
           </Field>
           <button className="solid" type="submit" disabled={busy}>Save settings</button>
         </form>
-        <p>Leave the name blank to show Markaz. Leave the symbol blank and amounts appear without a currency mark.</p>
+        <p>The name is markaz and amounts are in KES. Leave a field blank to keep that default.</p>
       </Panel>
       <Panel tone="dark">
         <p className="micro">&gt; Mail</p>
