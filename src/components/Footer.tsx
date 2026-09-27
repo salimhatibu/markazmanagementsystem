@@ -1,6 +1,6 @@
 const credits = [
   { label: "Design by", value: "Abu Ruhayn" },
-  { label: "Owner", value: "Fahima Ali" },
+  { label: "Owner", value: "Meemy" },
   { label: "Institute", value: "Markaz Imam ash-Shafi'i" },
   { label: "Location", value: "Mombasa, Kenya" },
 ];
