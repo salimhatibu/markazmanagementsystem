@@ -1,8 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { eatDate, formatMoney, formatPercent, label } from "../../shared/format";
-import { EVENING_FEES, MORNING_FEES, presentLetterhead } from "../../shared/letterhead";
-import { BankDetails } from "../components/OfficialLetterhead";
+import { EVENING_FEES, MORNING_FEES } from "../../shared/letterhead";
 import { StudentForm } from "../components/StudentForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
@@ -192,7 +191,6 @@ export function StudentDetailPage() {
             Add payment
           </button>
         </form>
-        <BankDetails letterhead={presentLetterhead(settings)} />
         {student.payments.length === 0 ? (
           <p>No payments yet. The balance stays open until something is recorded.</p>
         ) : (

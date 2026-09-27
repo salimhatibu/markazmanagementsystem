@@ -9,6 +9,7 @@
   node_bundler = "esbuild"
   directory = "netlify/functions"
   external_node_modules = ["nodemailer"]
+  included_files = ["shared/fonts/*.ttf"]
 
 [[headers]]
   for = "/*"
