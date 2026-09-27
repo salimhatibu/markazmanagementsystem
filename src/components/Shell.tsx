@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CURRENCY, displayName, MARKAZ_NAME } from "../../shared/format";
+import { ACCOUNT_NAME, ACCOUNT_NUMBER, BANK_NAME, OFFICIAL_ADDRESS, PAYBILL } from "../../shared/letterhead";
 import { api } from "../lib/api";
 import { claimFirstVisit, loadDailyHadith, type DailyHadith } from "../lib/hadith";
 import { shouldPlaySalam } from "../lib/sand-salam";
@@ -31,7 +32,16 @@ const links = [
 
 export function Shell() {
   const location = useLocation();
-  const [settings, setSettings] = useState<Settings>({ markazName: MARKAZ_NAME, currencySymbol: CURRENCY });
+  const fallbackSettings = (): Settings => ({
+    markazName: MARKAZ_NAME,
+    currencySymbol: CURRENCY,
+    address: OFFICIAL_ADDRESS,
+    accountName: ACCOUNT_NAME,
+    bankName: BANK_NAME,
+    paybill: PAYBILL,
+    accountNumber: ACCOUNT_NUMBER,
+  });
+  const [settings, setSettings] = useState<Settings>(fallbackSettings);
   const [unread, setUnread] = useState(0);
   const [theme, setTheme] = useState<Theme>(readTheme);
   const [daily, setDaily] = useState<DailyHadith | null>(null);
@@ -71,7 +81,7 @@ export function Shell() {
     let cancel = false;
     refreshSettings()
       .catch(() => {
-        if (!cancel) setSettings({ markazName: MARKAZ_NAME, currencySymbol: CURRENCY });
+        if (!cancel) setSettings(fallbackSettings());
       });
     refreshAlerts().catch(() => {
       if (!cancel) setUnread(0);

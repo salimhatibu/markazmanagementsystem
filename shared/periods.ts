@@ -33,6 +33,15 @@ export function biweeklyRange(now: Date): DateRange {
   };
 }
 
+/** First day of this East Africa Time month through today. */
+export function monthToDateRange(now: Date): DateRange {
+  const eat = eatParts(now);
+  return {
+    start: iso(eat.year, eat.month - 1, 1),
+    end: iso(eat.year, eat.month - 1, eat.day),
+  };
+}
+
 /** Previous calendar month in East Africa Time. */
 export function monthlyRange(now: Date): DateRange {
   const eat = eatParts(now);
@@ -49,4 +58,12 @@ export function monthlyRange(now: Date): DateRange {
 
 export function rangeFor(period: "biweekly" | "monthly", now: Date): DateRange {
   return period === "biweekly" ? biweeklyRange(now) : monthlyRange(now);
+}
+
+export type ReceiptScope = "current" | "monthly" | "biweekly";
+
+export function rangeForScope(scope: ReceiptScope, now: Date): DateRange {
+  if (scope === "current") return monthToDateRange(now);
+  if (scope === "biweekly") return biweeklyRange(now);
+  return monthlyRange(now);
 }

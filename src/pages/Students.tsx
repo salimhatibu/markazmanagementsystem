@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { formatMoney, formatPercent, label } from "../../shared/format";
+import { FeesStructure } from "../components/FeesStructure";
 import { StudentForm } from "../components/StudentForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
@@ -62,7 +63,7 @@ export function StudentsPage() {
       <PageHeader
         kicker="Records"
         title="Students"
-        lead="Keep each student's admission number, fees, and guardian details in one place."
+        lead="Admission, section, and term fees. Morning is 15,000 a term; evening is 9,000, or 10,000 for Hadhaanah."
       >
         <button type="button" className="ghost" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
           {open ? "Close form" : "Add a student"}
@@ -144,6 +145,10 @@ export function StudentsPage() {
           </table>
         </div>
       )}
+      <Panel tone="dark">
+        <p className="panel-title">Fees structure</p>
+        <FeesStructure symbol={symbol} />
+      </Panel>
     </>
   );
 }

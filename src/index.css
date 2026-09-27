@@ -511,6 +511,140 @@ tbody tr:hover { background: var(--wash); }
 
 .expense-form .solid { margin-top: 18px; }
 
+.letterhead {
+  text-align: center;
+  margin: 0 0 22px;
+}
+
+.letterhead-name {
+  margin: 0 0 4px;
+  font-family: var(--display);
+  font-size: clamp(1.15rem, 2.4vw, 1.55rem);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.letterhead-address,
+.letterhead-date {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.78;
+}
+
+.letterhead-title {
+  margin: 16px 0 6px;
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.bank-block {
+  margin: 8px 0 22px;
+  max-width: 36rem;
+}
+
+.bank-block p { margin: 0 0 4px; }
+
+.bank-name {
+  font-family: var(--display);
+  font-size: 1.2rem;
+  letter-spacing: 0.02em;
+}
+
+.fees-structure p { max-width: 46rem; }
+
+.structure-grid {
+  display: grid;
+  gap: 22px;
+  margin: 18px 0;
+}
+
+@media (min-width: 880px) {
+  .structure-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.structure-card {
+  border: 1px solid currentColor;
+  padding: 16px;
+}
+
+.structure-card h3,
+.fees-structure h3 {
+  margin: 0 0 10px;
+  font-family: var(--display);
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.structure-label {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.structure-list {
+  margin: 0 0 12px;
+  padding-left: 1.15rem;
+}
+
+.blessing {
+  font-family: var(--display);
+  letter-spacing: 0.08em;
+  margin: 18px 0 0;
+}
+
+.ledger { margin-bottom: 28px; }
+
+.ledger-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.ledger-title {
+  text-transform: none;
+  letter-spacing: -0.03em;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 0.95;
+}
+
+.ledger-date, .ledger-range {
+  margin: 0;
+  font-size: 15px;
+}
+
+.ledger-range { margin: 0 0 18px; opacity: 0.72; }
+
+.ledger-summary {
+  max-width: 40rem;
+  margin: 18px 0 10px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.ledger-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+  margin: 0 0 18px;
+  font-size: 16px;
+}
+
+.ledger-total strong {
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  letter-spacing: -0.03em;
+}
+
+.actions button[aria-pressed="true"] {
+  border-bottom-color: var(--accent);
+}
+
 fieldset {
   border: 1px solid currentColor;
   margin: 18px 0;

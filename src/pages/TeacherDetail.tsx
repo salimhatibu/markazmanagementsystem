@@ -128,6 +128,14 @@ export function TeacherDetailPage() {
           <strong className="meta-word">{label(teacher.section)}</strong>
         </div>
         <div>
+          <span className="kicker">Phone number</span>
+          <strong className="meta-word">{teacher.mpesaNumber || teacher.phone || "—"}</strong>
+        </div>
+        <div>
+          <span className="kicker">ID number</span>
+          <strong className="meta-word">{teacher.nationalId || "—"}</strong>
+        </div>
+        <div>
           <span className="kicker">Salary still owed</span>
           <strong>{formatMoney(teacher.balance, symbol)}</strong>
         </div>

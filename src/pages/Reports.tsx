@@ -1,23 +1,40 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { formatEat } from "../../shared/format";
+import { formatEat, formatMoney, formatShortDate, label } from "../../shared/format";
+import { LATE_ARRIVAL_DEDUCTION, applicantName, payoutPhone } from "../../shared/letterhead";
+import { FeesStructure } from "../components/FeesStructure";
+import { BankDetails, OfficialLetterhead } from "../components/OfficialLetterhead";
 import type { WorkspaceContext } from "../components/Shell";
-import { Empty, Notice, PageHeader } from "../components/ui";
+import { Empty, Notice, PageHeader, Panel } from "../components/ui";
 import { api, downloadReport } from "../lib/api";
-import type { ReportItem } from "../types";
+import type { FeeReceiptPreview, ReceiptScope, ReportItem } from "../types";
+
+const VIEWS: { scope: ReceiptScope; period: "biweekly" | "monthly"; label: string }[] = [
+  { scope: "current", period: "monthly", label: "This month" },
+  { scope: "monthly", period: "monthly", label: "Last month" },
+  { scope: "biweekly", period: "biweekly", label: "Mid-month" },
+];
 
 export function ReportsPage() {
-  const { refreshAlerts } = useOutletContext<WorkspaceContext>();
+  const { settings, refreshAlerts } = useOutletContext<WorkspaceContext>();
+  const [scope, setScope] = useState<ReceiptScope>("current");
+  const [preview, setPreview] = useState<FeeReceiptPreview | null>(null);
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
-  const [busy, setBusy] = useState<"biweekly" | "monthly" | null>(null);
+  const [busy, setBusy] = useState<ReceiptScope | null>(null);
   const [ready, setReady] = useState(false);
 
-  async function load() {
+  const period = VIEWS.find((view) => view.scope === scope)?.period ?? "monthly";
+
+  async function loadList() {
     const body = await api<{ reports: ReportItem[] }>("/api/reports");
     setReports(body.reports);
-    setReady(true);
+  }
+
+  async function loadPreview(next: ReceiptScope) {
+    const body = await api<FeeReceiptPreview>(`/api/reports?scope=${next}`);
+    setPreview(body);
   }
 
   useEffect(() => {
@@ -26,7 +43,8 @@ export function ReportsPage() {
       try {
         await api("/api/notifications/read", { method: "POST" });
         await refreshAlerts();
-        await load();
+        await Promise.all([loadList(), loadPreview(scope)]);
+        if (!cancel) setReady(true);
       } catch (caught) {
         if (!cancel) setError(caught instanceof Error ? caught.message : "Reports could not be opened.");
       }
@@ -36,24 +54,32 @@ export function ReportsPage() {
     };
   }, [refreshAlerts]);
 
-  async function generate(period: "biweekly" | "monthly") {
-    setBusy(period);
+  async function show(next: ReceiptScope) {
+    setScope(next);
+    setError("");
+    try {
+      await loadPreview(next);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "This table could not be opened.");
+    }
+  }
+
+  async function generate() {
+    setBusy(scope);
     setError("");
     setInfo("");
     try {
-      const body = await api<{ report: { created: boolean } }>("/api/reports", {
+      const body = await api<{ report: { created: boolean; id?: number } }>("/api/reports", {
         method: "POST",
-        body: JSON.stringify({ period }),
+        body: JSON.stringify({ period, scope }),
       });
       await api("/api/notifications/read", { method: "POST" });
       await refreshAlerts();
-      await load();
+      await loadList();
       setInfo(
         body.report.created === false
           ? "That report is already ready to download."
-          : period === "biweekly"
-            ? "The mid-month report is ready to download."
-            : "The monthly report is ready to download.",
+          : "The report is ready to download.",
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The report could not be prepared.");
@@ -62,32 +88,134 @@ export function ReportsPage() {
     }
   }
 
+  const symbol = preview?.currencySymbol || settings.currencySymbol;
+  const month = preview?.monthName?.toUpperCase() ?? "";
+
   return (
     <>
       <PageHeader
         kicker="Files"
         title="Reports"
-        lead="Each file is a full operations pack for the period that just ended. Dates and times are East Africa Time."
+        lead="The same letterhead, fees table, bank details, and salary sheet used on the official papers. Dates are East Africa Time."
       >
         <div className="actions">
-          <button type="button" className="ghost" disabled={busy !== null} onClick={() => void generate("biweekly")}>
-            {busy === "biweekly" ? "Preparing…" : "Prepare mid-month report"}
-          </button>
-          <button type="button" className="ghost" disabled={busy !== null} onClick={() => void generate("monthly")}>
-            {busy === "monthly" ? "Preparing…" : "Prepare monthly report"}
-          </button>
+          {VIEWS.map((view) => (
+            <button
+              key={view.scope}
+              type="button"
+              className="ghost"
+              aria-pressed={scope === view.scope}
+              onClick={() => void show(view.scope)}
+            >
+              {view.label}
+            </button>
+          ))}
         </div>
       </PageHeader>
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
       {!ready && !error ? (
-        <p className="loading-line">Opening reports…</p>
-      ) : reports.length === 0 ? (
-        <Empty>No reports yet. Prepare one when you want a PDF of the last period.</Empty>
+        <p className="loading-line">Opening this month’s fees…</p>
+      ) : preview ? (
+        <Panel tone="light" className="ledger">
+          <OfficialLetterhead
+            letterhead={preview.letterhead}
+            title={`${month} REPORT`}
+            preparedOn={formatShortDate(preview.preparedOn)}
+          />
+          <p className="ledger-range">
+            {formatShortDate(preview.rangeStart)} to {formatShortDate(preview.rangeEnd)}
+          </p>
+          <h3 className="panel-title">Fees received</h3>
+          {preview.lines.length === 0 ? (
+            <Empty>No fees have entered the account in this period yet.</Empty>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <caption className="table-caption">Money that entered the account</caption>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Student</th>
+                    <th>Section</th>
+                    <th>M-Pesa ref no</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.lines.map((line, index) => (
+                    <tr key={`${line.paidOn}-${line.mpesaRef}-${index}`}>
+                      <td data-label="#">{index + 1}</td>
+                      <td data-label="Student">{line.studentName || line.admissionNumber || "—"}</td>
+                      <td data-label="Section">{label(line.section)}</td>
+                      <td data-label="M-Pesa ref no">{line.mpesaRef || "—"}</td>
+                      <td data-label="Amount">{formatMoney(line.amount, symbol)}</td>
+                      <td data-label="Date">{formatShortDate(line.paidOn)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="ledger-summary">{preview.summary}</p>
+          <p className="ledger-total">
+            Total amount received <strong>{formatMoney(preview.totalReceived, symbol)}</strong>
+          </p>
+          <BankDetails letterhead={preview.letterhead} />
+          <h3 className="panel-title">Teachers&rsquo; salary{month ? ` (${month})` : ""}</h3>
+          {preview.salaries.length === 0 ? (
+            <Empty>No teachers recorded.</Empty>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <caption className="table-caption">Teachers&rsquo; salary</caption>
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Name of the applicant</th>
+                    <th>Phone number</th>
+                    <th>ID number</th>
+                    <th>Salary</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.salaries.map((line, index) => (
+                    <tr key={`${line.name}-${index}`}>
+                      <td data-label="No.">{index + 1}</td>
+                      <td data-label="Name of the applicant">{applicantName(line.name, line.mpesaName)}</td>
+                      <td data-label="Phone number">{payoutPhone(line.phone, line.mpesaNumber) || "—"}</td>
+                      <td data-label="ID number">{line.nationalId || "—"}</td>
+                      <td data-label="Salary">{formatMoney(line.salary, symbol)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="ledger-summary">
+            NB: For each day&rsquo;s late arrival, Ksh {LATE_ARRIVAL_DEDUCTION} is deducted from the salary.
+          </p>
+          <p className="ledger-total">
+            Total salaries <strong>{formatMoney(preview.totalSalaries, symbol)}</strong>
+          </p>
+          <button type="button" className="solid" disabled={busy !== null} onClick={() => void generate()}>
+            {busy ? "Preparing…" : "Save this report as a PDF"}
+          </button>
+        </Panel>
+      ) : null}
+      {preview ? (
+        <Panel tone="dark">
+          <p className="panel-title">Fees structure</p>
+          <FeesStructure symbol={symbol} />
+        </Panel>
+      ) : null}
+      {!ready && !error ? null : reports.length === 0 ? (
+        <Empty>No saved PDFs yet. Save one when you want a copy of the tables above.</Empty>
       ) : (
         <div className="table-wrap">
           <table>
-            <caption className="table-caption">Prepared reports</caption>
+            <caption className="table-caption">Saved PDFs</caption>
             <thead>
               <tr>
                 <th>Period</th>
@@ -101,7 +229,7 @@ export function ReportsPage() {
                 <tr key={report.id}>
                   <td data-label="Period">{report.period === "biweekly" ? "Mid-month" : "Monthly"}</td>
                   <td data-label="Range">
-                    {report.rangeStart} to {report.rangeEnd}
+                    {formatShortDate(report.rangeStart)} to {formatShortDate(report.rangeEnd)}
                   </td>
                   <td data-label="Created">{formatEat(report.createdAt)}</td>
                   <td>

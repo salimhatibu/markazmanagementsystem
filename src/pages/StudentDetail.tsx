@@ -1,6 +1,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { eatDate, formatMoney, formatPercent, label } from "../../shared/format";
+import { EVENING_FEES, MORNING_FEES, presentLetterhead } from "../../shared/letterhead";
+import { BankDetails } from "../components/OfficialLetterhead";
 import { StudentForm } from "../components/StudentForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
@@ -162,7 +164,15 @@ export function StudentDetailPage() {
       <Panel tone="dark">
         <p className="panel-title">Record a fee payment</p>
         <form className="form-grid" onSubmit={(event) => void addPayment(event)}>
-          <Field id="pay-amount" label="Amount" hint="Kenyan shillings">
+          <Field
+            id="pay-amount"
+            label="Amount"
+            hint={
+              student.section === "evening"
+                ? `Evening installments: ${EVENING_FEES.installments.map((row) => row.amount.toLocaleString("en-GB")).join(", ")}.`
+                : `Morning installments: ${MORNING_FEES.installments.map((row) => row.amount.toLocaleString("en-GB")).join(", ")}.`
+            }
+          >
             <input
               id="pay-amount"
               inputMode="decimal"
@@ -175,13 +185,14 @@ export function StudentDetailPage() {
           <Field id="pay-date" label="Date paid">
             <input id="pay-date" type="date" required value={paidOn} onChange={(event) => setPaidOn(event.target.value)} />
           </Field>
-          <Field id="pay-note" label="Note" hint="Optional, such as M-Pesa or cash.">
-            <input id="pay-note" value={note} onChange={(event) => setNote(event.target.value)} />
+          <Field id="pay-note" label="M-Pesa ref no" hint="The SMS reference, such as TD12ABC123. Leave blank for cash.">
+            <input id="pay-note" placeholder="TD12ABC123" value={note} onChange={(event) => setNote(event.target.value)} />
           </Field>
           <button className="ghost" type="submit" disabled={busy}>
             Add payment
           </button>
         </form>
+        <BankDetails letterhead={presentLetterhead(settings)} />
         {student.payments.length === 0 ? (
           <p>No payments yet. The balance stays open until something is recorded.</p>
         ) : (
@@ -192,7 +203,7 @@ export function StudentDetailPage() {
                 <tr>
                   <th>Date</th>
                   <th>Amount</th>
-                  <th>Note</th>
+                  <th>M-Pesa ref</th>
                   <th></th>
                 </tr>
               </thead>
@@ -201,7 +212,7 @@ export function StudentDetailPage() {
                   <tr key={payment.id}>
                     <td data-label="Date">{payment.paidOn}</td>
                     <td data-label="Amount">{formatMoney(payment.amount, symbol)}</td>
-                    <td data-label="Note">{payment.note || "—"}</td>
+                    <td data-label="M-Pesa ref">{payment.note || "—"}</td>
                     <td>
                       {removingPayment === payment.id ? (
                         <span className="inline-confirm">

@@ -78,7 +78,11 @@ export function StudentForm({
             <option value="evening">Evening</option>
           </select>
         </Field>
-        <Field id="expected-fees" label="Expected fees" hint="Amount in Kenyan shillings.">
+        <Field
+          id="expected-fees"
+          label="Expected fees"
+          hint="Morning is KES 15,000 a term. Evening is KES 9,000, or 10,000 for Hadhaanah. Admission is 3,000 (morning) or 1,500 (evening)."
+        >
           <input
             id="expected-fees"
             inputMode="decimal"

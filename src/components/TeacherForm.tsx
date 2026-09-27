@@ -69,7 +69,46 @@ export function TeacherForm({
             <option value="both">Morning and evening</option>
           </select>
         </Field>
-        <Field id="expected-salary" label="Expected salary" hint="Amount in Kenyan shillings.">
+        <Field id="teacher-phone" label="Phone number">
+          <input
+            id="teacher-phone"
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder="0712 000 000"
+            value={value.phone}
+            onChange={(event) => set("phone", event.target.value)}
+          />
+        </Field>
+        <Field id="teacher-id" label="ID number">
+          <input
+            id="teacher-id"
+            placeholder="National ID"
+            value={value.nationalId}
+            onChange={(event) => set("nationalId", event.target.value)}
+          />
+        </Field>
+        <Field id="mpesa-name" label="M-Pesa name" hint="The name on the phone that receives salary.">
+          <input
+            id="mpesa-name"
+            placeholder="Fahima"
+            value={value.mpesaName}
+            onChange={(event) => set("mpesaName", event.target.value)}
+          />
+        </Field>
+        <Field id="mpesa-number" label="M-Pesa number">
+          <input
+            id="mpesa-number"
+            inputMode="tel"
+            placeholder="0712 000 000"
+            value={value.mpesaNumber}
+            onChange={(event) => set("mpesaNumber", event.target.value)}
+          />
+        </Field>
+        <Field
+          id="expected-salary"
+          label="Salary"
+          hint="Kenyan shillings. Late arrival deducts Ksh 100 a day from this amount."
+        >
           <input
             id="expected-salary"
             inputMode="decimal"

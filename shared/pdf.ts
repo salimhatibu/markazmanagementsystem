@@ -1,6 +1,39 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
-import { formatEat, formatMoney, formatPercent, label, MARKAZ_NAME } from "./format";
+import { formatMoney, formatPercent, formatShortDate, label, monthName } from "./format";
+import {
+  BLESSING,
+  BOOKS_NOTE,
+  BOYS_SECTION_NOTE,
+  CHANGES_NOTE,
+  DRESS_CODE,
+  LATE_ARRIVAL_DEDUCTION,
+  PAYMENT_LEAD,
+  SECTION_FEES,
+  TERMS,
+  applicantName,
+  payoutPhone,
+  type Letterhead,
+} from "./letterhead";
 import { fromCents } from "./ledger";
+
+export type FeeReceiptLine = {
+  studentName: string;
+  admissionNumber: string;
+  section: "morning" | "evening";
+  mpesaRef: string;
+  amountCents: number;
+  paidOn: string;
+};
+
+export type SalaryLine = {
+  name: string;
+  phone: string;
+  nationalId: string;
+  mpesaName?: string;
+  mpesaNumber?: string;
+  section: "morning" | "evening" | "both";
+  salaryCents: number;
+};
 
 export type ReportStudent = {
   admissionNumber: string;
@@ -19,6 +52,8 @@ export type ReportStudent = {
 export type ReportTeacher = {
   name: string;
   section: "morning" | "evening" | "both";
+  phone?: string;
+  nationalId?: string;
   expectedCents: number;
   paidCents: number;
   balanceCents: number;
@@ -28,6 +63,7 @@ export type ReportTeacher = {
 
 export type OperationsReport = {
   markazName: string;
+  letterhead?: Letterhead;
   currencySymbol: string | null;
   period: "biweekly" | "monthly";
   rangeStart: string;
@@ -40,6 +76,8 @@ export type OperationsReport = {
   feesInPeriodCents: number;
   salariesInPeriodCents: number;
   expensesInPeriodCents?: number;
+  feeLines?: FeeReceiptLine[];
+  salaryLines?: SalaryLine[];
   students: ReportStudent[];
   teachers: ReportTeacher[];
 };
@@ -99,31 +137,46 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
     y -= 10;
   }
 
-  const title = report.markazName.trim() || MARKAZ_NAME;
-  draw(title.toUpperCase(), { size: 22, font: bold, gap: 6 });
-  draw("OPERATIONS REPORT", { size: 14, font: bold, gap: 8 });
-  draw(`> PERIOD  ${report.period.toUpperCase()}`, { size: 9, font: mono });
-  draw(`> RANGE  ${report.rangeStart}  TO  ${report.rangeEnd}`, { size: 9, font: mono });
-  draw(`> GENERATED  ${formatEat(report.generatedAt)}`, { size: 9, font: mono, gap: 8 });
+  const head = report.letterhead;
+  const month = monthName(report.rangeStart);
+  draw((head?.markazName || report.markazName).toUpperCase(), { size: 13, font: bold, gap: 4 });
+  if (head?.address) draw(head.address, { size: 10, gap: 10 });
+  draw(`${month.toUpperCase()} REPORT`, { size: 16, font: bold, gap: 4 });
+  draw(formatShortDate(report.rangeEnd), { size: 11, gap: 6 });
+  draw(`${formatShortDate(report.rangeStart)} to ${formatShortDate(report.rangeEnd)}`, { size: 10, gap: 12 });
   rule();
 
-  draw("FINANCE", { size: 13, font: bold, gap: 8 });
-  draw(`> COLLECTED  ${money(report.feesCollectedCents, report.currencySymbol)}`, { font: mono });
-  draw(`> IN_HAND  ${money(report.inHandCents, report.currencySymbol)}`, { font: mono });
-  draw(`> SPENT  ${money(report.spentCents, report.currencySymbol)}`, { font: mono });
-  draw(`> OUTSTANDING  ${money(report.outstandingCents, report.currencySymbol)}`, { font: mono });
+  draw("FEES RECEIVED", { size: 13, font: bold, gap: 8 });
+  drawFeeTable(report.feeLines ?? []);
+  const received = report.feeLines?.reduce((sum, line) => sum + line.amountCents, 0) ?? report.feesInPeriodCents;
   draw(
-    `> FEES_IN_PERIOD  ${money(report.feesInPeriodCents, report.currencySymbol)}`,
-    { font: mono },
+    `By the end of ${month} this amount of money has entered the account.`,
+    { size: 11, gap: 10 },
   );
+  draw(`Total amount received    ${money(received, report.currencySymbol)}`, { size: 13, font: bold, gap: 12 });
+  if (head) {
+    draw(PAYMENT_LEAD, { size: 10, gap: 4 });
+    draw(head.accountName, { size: 10, font: bold, gap: 2 });
+    draw(head.bankName, { size: 10, gap: 2 });
+    draw(`Paybill ${head.paybill}`, { size: 10, gap: 2 });
+    draw(`Account ${head.accountNumber}`, { size: 10, gap: 8 });
+    draw(BOOKS_NOTE, { size: 10, gap: 10 });
+  }
+  rule();
+
+  draw(`TEACHERS' SALARY (${month.toUpperCase()})`, { size: 13, font: bold, gap: 8 });
+  drawSalaryTable(report.salaryLines ?? []);
   draw(
-    `> SALARIES_IN_PERIOD  ${money(report.salariesInPeriodCents, report.currencySymbol)}`,
-    { font: mono },
+    `NB: For each day's late arrival, Ksh ${LATE_ARRIVAL_DEDUCTION} is deducted from the salary.`,
+    { size: 9, gap: 10 },
   );
-  draw(
-    `> EXPENSES_IN_PERIOD  ${money(report.expensesInPeriodCents ?? 0, report.currencySymbol)}`,
-    { font: mono, gap: 8 },
-  );
+  rule();
+
+  draw("Also this period", { size: 13, font: bold, gap: 8 });
+  draw(`Salaries paid    ${money(report.salariesInPeriodCents, report.currencySymbol)}`, { size: 11 });
+  draw(`Expenses    ${money(report.expensesInPeriodCents ?? 0, report.currencySymbol)}`, { size: 11 });
+  draw(`Still in the office    ${money(report.inHandCents, report.currencySymbol)}`, { size: 11 });
+  draw(`Still owed    ${money(report.outstandingCents, report.currencySymbol)}`, { size: 11, gap: 10 });
   rule();
 
   draw("MORNING STUDENTS", { size: 13, font: bold, gap: 8 });
@@ -177,14 +230,123 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
     );
   }
 
+  draw("FEES STRUCTURE", { size: 13, font: bold, gap: 6 });
+  draw("One academic year consists of two terms of six months each.", { size: 10, gap: 4 });
+  for (const term of TERMS) {
+    draw(`${term.name}: ${term.months}`, { size: 10, gap: 2 });
+  }
+  y -= 6;
+  for (const section of SECTION_FEES) {
+    draw(section.title.toUpperCase(), { size: 11, font: bold, gap: 4 });
+    draw(section.yearNote, { size: 9, gap: 3 });
+    draw(`Fees per term  Ksh ${section.feePerTerm.toLocaleString("en-GB")}`, { size: 9, gap: 2 });
+    draw(`Admission for new students  Ksh ${section.admission.toLocaleString("en-GB")}`, { size: 9, gap: 3 });
+    for (const row of section.installments) {
+      draw(`${row.label}    ${row.amount.toLocaleString("en-GB")}/=`, { size: 9, gap: 2 });
+    }
+    if (section.clearance) draw(section.clearance, { size: 9, gap: 3 });
+    draw("Time schedule", { size: 9, font: bold, gap: 2 });
+    for (const line of section.schedule) draw(line, { size: 9, gap: 2 });
+    draw("Yearly madrasa holidays", { size: 9, font: bold, gap: 2 });
+    for (const line of section.holidays) draw(line, { size: 9, gap: 2 });
+    if (section.extraNote) draw(section.extraNote, { size: 9, gap: 4 });
+    y -= 4;
+  }
+  draw("DRESS CODE FOR THE STUDENTS", { size: 11, font: bold, gap: 4 });
+  draw(BOYS_SECTION_NOTE, { size: 9, gap: 4 });
+  for (const row of DRESS_CODE) {
+    const price = row.price ? `  (Price – ${row.price.toLocaleString("en-GB")}/=)` : "";
+    draw(`${row.who}${price}`, { size: 9, font: bold, gap: 2 });
+    draw(row.dress, { size: 9, gap: 4 });
+  }
+  draw(CHANGES_NOTE, { size: 9, gap: 10 });
+  rule();
+
   draw("Open running balances. Outstanding ignores overpayment.", {
     size: 8,
     font: mono,
-    gap: 2,
+    gap: 8,
   });
+  draw(BLESSING, { size: 11, font: bold, gap: 2 });
 
   const bytes = await pdf.save();
   return bytes;
+
+  function drawFeeTable(lines: FeeReceiptLine[]) {
+    const cols = [MARGIN, MARGIN + 22, MARGIN + 148, MARGIN + 210, MARGIN + 330, MARGIN + 430];
+    const rowH = 16;
+    function cell(text: string, col: number, font: PDFFont, size: number) {
+      const clipped = text.length > 22 ? `${text.slice(0, 21)}…` : text;
+      page.drawText(clipped, { x: cols[col], y: y - 11, size, font, color: black });
+    }
+    ensure(rowH + 6);
+    cell("#", 0, bold, 8);
+    cell("Student", 1, bold, 8);
+    cell("Section", 2, bold, 8);
+    cell("M-Pesa ref no", 3, bold, 8);
+    cell("Amount", 4, bold, 8);
+    cell("Date", 5, bold, 8);
+    y -= rowH;
+    page.drawLine({
+      start: { x: MARGIN, y },
+      end: { x: PAGE_WIDTH - MARGIN, y },
+      thickness: 0.5,
+      color: black,
+    });
+    y -= 4;
+    if (lines.length === 0) {
+      draw("No fees have entered the account in this period.", { size: 10, gap: 10 });
+      return;
+    }
+    lines.forEach((line, index) => {
+      ensure(rowH);
+      cell(String(index + 1), 0, regular, 9);
+      cell(line.studentName || line.admissionNumber || "—", 1, regular, 9);
+      cell(label(line.section), 2, regular, 9);
+      cell(line.mpesaRef || "—", 3, regular, 9);
+      cell(money(line.amountCents, report.currencySymbol), 4, regular, 9);
+      cell(formatShortDate(line.paidOn), 5, regular, 9);
+      y -= rowH;
+    });
+    y -= 8;
+  }
+
+  function drawSalaryTable(lines: SalaryLine[]) {
+    const cols = [MARGIN, MARGIN + 22, MARGIN + 200, MARGIN + 320, MARGIN + 430];
+    const rowH = 16;
+    function cell(text: string, col: number, font: PDFFont, size: number) {
+      const clipped = text.length > 24 ? `${text.slice(0, 23)}…` : text;
+      page.drawText(clipped, { x: cols[col], y: y - 11, size, font, color: black });
+    }
+    ensure(rowH + 6);
+    cell("No.", 0, bold, 8);
+    cell("Name of the applicant", 1, bold, 8);
+    cell("Phone number", 2, bold, 8);
+    cell("ID number", 3, bold, 8);
+    cell("Salary", 4, bold, 8);
+    y -= rowH;
+    page.drawLine({
+      start: { x: MARGIN, y },
+      end: { x: PAGE_WIDTH - MARGIN, y },
+      thickness: 0.5,
+      color: black,
+    });
+    y -= 4;
+    if (lines.length === 0) {
+      draw("No teachers recorded.", { size: 10, gap: 10 });
+      return;
+    }
+    lines.forEach((line, index) => {
+      ensure(rowH);
+      cell(String(index + 1), 0, regular, 9);
+      cell(applicantName(line.name, line.mpesaName), 1, regular, 9);
+      cell(payoutPhone(line.phone, line.mpesaNumber) || "—", 2, regular, 9);
+      cell(line.nationalId || "—", 3, regular, 9);
+      cell(money(line.salaryCents, report.currencySymbol), 4, regular, 9);
+      y -= rowH;
+    });
+    y -= 8;
+  }
 
   function writeRoster(students: ReportStudent[]) {
     if (students.length === 0) {

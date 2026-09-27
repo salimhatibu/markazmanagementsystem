@@ -61,6 +61,10 @@ export const teachers = pgTable("teachers", {
   name: varchar({ length: 255 }).notNull(),
   dateOfBirth: date("date_of_birth").notNull(),
   gender: gender().notNull(),
+  phone: varchar({ length: 64 }),
+  nationalId: varchar("national_id", { length: 64 }),
+  mpesaName: varchar("mpesa_name", { length: 255 }),
+  mpesaNumber: varchar("mpesa_number", { length: 64 }),
   expectedSalary: money("expected_salary").notNull(),
   expectedReleaseDate: date("expected_release_date").notNull(),
   paidInAdvance: boolean("paid_in_advance").notNull().default(false),
@@ -111,6 +115,11 @@ export const settings = pgTable("settings", {
   id: serial().primaryKey(),
   markazName: varchar("markaz_name", { length: 255 }),
   currencySymbol: varchar("currency_symbol", { length: 16 }),
+  address: varchar({ length: 255 }),
+  accountName: varchar("account_name", { length: 255 }),
+  bankName: varchar("bank_name", { length: 255 }),
+  paybill: varchar({ length: 32 }),
+  accountNumber: varchar("account_number", { length: 64 }),
 });
 
 export const expenses = pgTable(

@@ -35,6 +35,21 @@ export function formatEat(value: string | Date): string {
   return `${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)} EAT`;
 }
 
+/** Notebook-style date, such as 27/9/26. */
+export function formatShortDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return value;
+  return `${Number(match[3])}/${Number(match[2])}/${match[1].slice(2)}`;
+}
+
+export function monthName(isoDate: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  if (!match) return "";
+  return new Intl.DateTimeFormat("en-GB", { month: "long", timeZone: "UTC" }).format(
+    new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)),
+  );
+}
+
 export function ageFromDob(dateOfBirth: string, today = new Date()): number {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOfBirth);
   if (!match) return 0;

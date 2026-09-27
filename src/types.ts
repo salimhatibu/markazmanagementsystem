@@ -38,6 +38,10 @@ export type Teacher = {
   age: number;
   gender: Gender;
   section: TeacherSection;
+  phone: string | null;
+  nationalId: string | null;
+  mpesaName: string | null;
+  mpesaNumber: string | null;
   expectedSalary: number;
   paid: number;
   balance: number;
@@ -49,6 +53,11 @@ export type Teacher = {
 export type Settings = {
   markazName: string | null;
   currencySymbol: string | null;
+  address: string | null;
+  accountName: string | null;
+  bankName: string | null;
+  paybill: string | null;
+  accountNumber: string | null;
 };
 
 export type DashboardTotals = {
@@ -80,6 +89,46 @@ export type ReportItem = {
   createdAt: string;
 };
 
+export type ReceiptScope = "current" | "monthly" | "biweekly";
+
+export type FeeReceiptPreview = {
+  scope: ReceiptScope;
+  rangeStart: string;
+  rangeEnd: string;
+  title: string;
+  preparedOn: string;
+  monthName: string;
+  currencySymbol: string;
+  letterhead: {
+    markazName: string;
+    address: string;
+    accountName: string;
+    bankName: string;
+    paybill: string;
+    accountNumber: string;
+  };
+  lines: {
+    studentName: string;
+    admissionNumber: string;
+    section: StudentSection;
+    mpesaRef: string;
+    amount: number;
+    paidOn: string;
+  }[];
+  salaries: {
+    name: string;
+    phone: string;
+    nationalId: string;
+    mpesaName: string;
+    mpesaNumber: string;
+    section: TeacherSection;
+    salary: number;
+  }[];
+  totalReceived: number;
+  totalSalaries: number;
+  summary: string;
+};
+
 export type StudentInput = {
   admissionNumber: string;
   name: string;
@@ -100,6 +149,10 @@ export type TeacherInput = {
   dateOfBirth: string;
   gender: Gender;
   section: TeacherSection;
+  phone: string;
+  nationalId: string;
+  mpesaName: string;
+  mpesaNumber: string;
   expectedSalary: string;
   expectedReleaseDate: string;
   paidInAdvance: boolean;
@@ -125,6 +178,10 @@ export const emptyTeacher = (): TeacherInput => ({
   dateOfBirth: "",
   gender: "female",
   section: "morning",
+  phone: "",
+  nationalId: "",
+  mpesaName: "",
+  mpesaNumber: "",
   expectedSalary: "",
   expectedReleaseDate: "",
   paidInAdvance: false,
@@ -153,6 +210,10 @@ export function teacherToInput(teacher: Teacher): TeacherInput {
     dateOfBirth: teacher.dateOfBirth,
     gender: teacher.gender,
     section: teacher.section,
+    phone: teacher.phone ?? "",
+    nationalId: teacher.nationalId ?? "",
+    mpesaName: teacher.mpesaName ?? "",
+    mpesaNumber: teacher.mpesaNumber ?? "",
     expectedSalary: String(teacher.expectedSalary),
     expectedReleaseDate: teacher.expectedReleaseDate,
     paidInAdvance: teacher.paidInAdvance,

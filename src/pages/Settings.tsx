@@ -1,6 +1,15 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { CURRENCY, MARKAZ_NAME } from "../../shared/format";
+import {
+  ACCOUNT_NAME,
+  ACCOUNT_NUMBER,
+  BANK_NAME,
+  OFFICIAL_ADDRESS,
+  OFFICIAL_NAME,
+  PAYBILL,
+} from "../../shared/letterhead";
+import { FeesStructure } from "../components/FeesStructure";
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api } from "../lib/api";
@@ -9,6 +18,11 @@ export function SettingsPage() {
   const { settings, refreshSettings } = useOutletContext<WorkspaceContext>();
   const [markazName, setMarkazName] = useState(settings.markazName ?? MARKAZ_NAME);
   const [currencySymbol, setCurrencySymbol] = useState(settings.currencySymbol ?? CURRENCY);
+  const [address, setAddress] = useState(settings.address ?? OFFICIAL_ADDRESS);
+  const [accountName, setAccountName] = useState(settings.accountName ?? ACCOUNT_NAME);
+  const [bankName, setBankName] = useState(settings.bankName ?? BANK_NAME);
+  const [paybill, setPaybill] = useState(settings.paybill ?? PAYBILL);
+  const [accountNumber, setAccountNumber] = useState(settings.accountNumber ?? ACCOUNT_NUMBER);
   const [mailConfigured, setMailConfigured] = useState<boolean | null>(null);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -17,7 +31,12 @@ export function SettingsPage() {
   useEffect(() => {
     setMarkazName(settings.markazName ?? MARKAZ_NAME);
     setCurrencySymbol(settings.currencySymbol ?? CURRENCY);
-  }, [settings.markazName, settings.currencySymbol]);
+    setAddress(settings.address ?? OFFICIAL_ADDRESS);
+    setAccountName(settings.accountName ?? ACCOUNT_NAME);
+    setBankName(settings.bankName ?? BANK_NAME);
+    setPaybill(settings.paybill ?? PAYBILL);
+    setAccountNumber(settings.accountNumber ?? ACCOUNT_NUMBER);
+  }, [settings]);
 
   useEffect(() => {
     api<{ configured: boolean }>("/api/mail")
@@ -33,7 +52,15 @@ export function SettingsPage() {
     try {
       await api("/api/settings", {
         method: "PUT",
-        body: JSON.stringify({ markazName, currencySymbol }),
+        body: JSON.stringify({
+          markazName,
+          currencySymbol,
+          address,
+          accountName,
+          bankName,
+          paybill,
+          accountNumber,
+        }),
       });
       await refreshSettings();
       setInfo("Settings saved.");
@@ -49,18 +76,29 @@ export function SettingsPage() {
       <PageHeader
         kicker="Office"
         title="Settings"
-        lead="The name on the dashboard and the currency on every amount. Leave a field blank to keep the usual default."
+        lead="The short name on the home page, and the letterhead and bank details printed on every report."
       />
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
       <Panel tone="light">
         <form onSubmit={(event) => void save(event)} className="form-grid">
-          <Field id="markaz-name" label="Markaz name" hint="Shown at the top of the home page.">
+          <Field id="markaz-name" label="Short name" hint="Shown at the top of the pages.">
             <input
               id="markaz-name"
               value={markazName}
               onChange={(event) => setMarkazName(event.target.value)}
               placeholder="markaz"
+            />
+          </Field>
+          <Field id="official-name" label="Name on letters" hint="Printed on fees and salary papers.">
+            <input id="official-name" value={OFFICIAL_NAME} readOnly />
+          </Field>
+          <Field id="address" label="Postal address">
+            <input
+              id="address"
+              value={address}
+              onChange={(event) => setAddress(event.target.value)}
+              placeholder={OFFICIAL_ADDRESS}
             />
           </Field>
           <Field id="currency" label="Currency" hint="Amounts are in Kenyan shillings.">
@@ -72,10 +110,41 @@ export function SettingsPage() {
               placeholder="KES"
             />
           </Field>
+          <Field id="account-name" label="Account name">
+            <input
+              id="account-name"
+              value={accountName}
+              onChange={(event) => setAccountName(event.target.value)}
+              placeholder={ACCOUNT_NAME}
+            />
+          </Field>
+          <Field id="bank-name" label="Bank">
+            <input
+              id="bank-name"
+              value={bankName}
+              onChange={(event) => setBankName(event.target.value)}
+              placeholder={BANK_NAME}
+            />
+          </Field>
+          <Field id="paybill" label="Paybill">
+            <input id="paybill" value={paybill} onChange={(event) => setPaybill(event.target.value)} placeholder={PAYBILL} />
+          </Field>
+          <Field id="account-number" label="Account number">
+            <input
+              id="account-number"
+              value={accountNumber}
+              onChange={(event) => setAccountNumber(event.target.value)}
+              placeholder={ACCOUNT_NUMBER}
+            />
+          </Field>
           <button className="solid" type="submit" disabled={busy}>
             {busy ? "Saving…" : "Save settings"}
           </button>
         </form>
+      </Panel>
+      <Panel tone="dark">
+        <p className="panel-title">Fees structure</p>
+        <FeesStructure symbol={currencySymbol} compact />
       </Panel>
       <Panel tone="dark">
         <p className="panel-title">Fee reminders</p>

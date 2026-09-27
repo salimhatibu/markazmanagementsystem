@@ -32,7 +32,13 @@ export function TeachersPage() {
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return teachers;
-    return teachers.filter((teacher) => `${teacher.name} ${teacher.section}`.toLowerCase().includes(needle));
+    return teachers.filter((teacher) =>
+      [teacher.name, teacher.section, teacher.phone, teacher.nationalId, teacher.mpesaName, teacher.mpesaNumber]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(needle),
+    );
   }, [query, teachers]);
 
   async function create() {
@@ -57,7 +63,7 @@ export function TeachersPage() {
       <PageHeader
         kicker="Records"
         title="Teachers"
-        lead="Salaries, class times, and expected last days stay on an open ledger."
+        lead="Name, phone, ID number, and salary — the same columns as the official salary sheet."
       >
         <button type="button" className="ghost" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
           {open ? "Close form" : "Add a teacher"}
@@ -83,7 +89,7 @@ export function TeachersPage() {
             className="search"
             type="search"
             autoComplete="off"
-            placeholder="Name or class time"
+            placeholder="Name, phone, or ID"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
@@ -106,28 +112,34 @@ export function TeachersPage() {
             <caption className="table-caption">Teacher salaries</caption>
             <thead>
               <tr>
-                <th>Name</th>
+                <th>No.</th>
+                <th>Name of the applicant</th>
+                <th>Phone number</th>
+                <th>ID number</th>
                 <th>Class time</th>
-                <th>Age</th>
-                <th>Expected</th>
+                <th>Salary</th>
                 <th>Paid</th>
                 <th>Balance</th>
                 <th>Last day</th>
-                <th>Advance</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((teacher) => (
+              {filtered.map((teacher, index) => (
                 <tr key={teacher.id}>
-                  <td data-label="Name">{teacher.name}</td>
+                  <td data-label="No.">{index + 1}</td>
+                  <td data-label="Name of the applicant">
+                    {teacher.mpesaName && teacher.mpesaName !== teacher.name
+                      ? `${teacher.name} (${teacher.mpesaName})`
+                      : teacher.name}
+                  </td>
+                  <td data-label="Phone number">{teacher.mpesaNumber || teacher.phone || "—"}</td>
+                  <td data-label="ID number">{teacher.nationalId || "—"}</td>
                   <td data-label="Class time">{label(teacher.section)}</td>
-                  <td data-label="Age">{teacher.age}</td>
-                  <td data-label="Expected">{formatMoney(teacher.expectedSalary, symbol)}</td>
+                  <td data-label="Salary">{formatMoney(teacher.expectedSalary, symbol)}</td>
                   <td data-label="Paid">{formatMoney(teacher.paid, symbol)}</td>
                   <td data-label="Balance">{formatMoney(teacher.balance, symbol)}</td>
                   <td data-label="Last day">{teacher.expectedReleaseDate}</td>
-                  <td data-label="Advance">{teacher.paidInAdvance ? "Yes" : "No"}</td>
                   <td>
                     <Link className="row-link" to={`/teachers/${teacher.id}`}>
                       Open record

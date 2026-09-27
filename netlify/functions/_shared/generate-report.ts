@@ -3,10 +3,11 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "../../../db/index";
 import { expenses, feePayments, notifications, reports, salaryPayments, type ReportRow } from "../../../db/schema";
 import { isUniqueViolation } from "./http";
-import { ageFromDob, asIso, CURRENCY, displayName } from "../../../shared/format";
-import { operationsTotals, studentFigures, teacherFigures, toCents } from "../../../shared/ledger";
-import { buildOperationsPdf, type OperationsReport } from "../../../shared/pdf";
-import { rangeFor, type DateRange } from "../../../shared/periods";
+import { ageFromDob, asIso, CURRENCY, displayName, eatDate, monthName } from "../../../shared/format";
+import { presentLetterhead } from "../../../shared/letterhead";
+import { fromCents, operationsTotals, studentFigures, teacherFigures, toCents } from "../../../shared/ledger";
+import { buildOperationsPdf, type FeeReceiptLine, type OperationsReport, type SalaryLine } from "../../../shared/pdf";
+import { rangeFor, rangeForScope, type DateRange, type ReceiptScope } from "../../../shared/periods";
 import {
   listExpenses,
   listFeePayments,
@@ -48,8 +49,115 @@ async function existingReport(period: "biweekly" | "monthly", range: DateRange) 
   return row ?? null;
 }
 
-export async function generateOperationsReport(period: "biweekly" | "monthly", now = new Date()) {
-  const range = rangeFor(period, now);
+function feeLinesInRange(
+  feeRows: { id: number; studentId: number; amount: string; paidOn: string; note: string | null }[],
+  students: { id: number; name: string; admissionNumber: string; section: "morning" | "evening" }[],
+  range: DateRange,
+): FeeReceiptLine[] {
+  const byId = new Map(students.map((student) => [student.id, student]));
+  return feeRows
+    .filter((row) => row.paidOn >= range.start && row.paidOn <= range.end)
+    .sort((a, b) => a.paidOn.localeCompare(b.paidOn) || a.id - b.id)
+    .map((row) => {
+      const student = byId.get(row.studentId);
+      return {
+        studentName: student?.name ?? "",
+        admissionNumber: student?.admissionNumber ?? "",
+        section: student?.section ?? "morning",
+        mpesaRef: row.note?.trim() || "",
+        amountCents: toCents(row.amount),
+        paidOn: row.paidOn,
+      };
+    });
+}
+
+function salaryLinesFor(
+  teachers: {
+    id: number;
+    name: string;
+    phone: string | null;
+    nationalId: string | null;
+    mpesaName: string | null;
+    mpesaNumber: string | null;
+    section: "morning" | "evening" | "both";
+    expectedSalary: string;
+  }[],
+  salaryRows: { teacherId: number; amount: string; paidOn: string }[],
+  range: DateRange,
+): SalaryLine[] {
+  return teachers.map((teacher) => {
+    const paid = salaryRows.filter(
+      (row) => row.teacherId === teacher.id && row.paidOn >= range.start && row.paidOn <= range.end,
+    );
+    const paidCents = sumCents(paid);
+    return {
+      name: teacher.name,
+      phone: teacher.phone?.trim() || "",
+      nationalId: teacher.nationalId?.trim() || "",
+      mpesaName: teacher.mpesaName?.trim() || "",
+      mpesaNumber: teacher.mpesaNumber?.trim() || "",
+      section: teacher.section,
+      salaryCents: paidCents > 0 ? paidCents : toCents(teacher.expectedSalary),
+    };
+  });
+}
+
+export async function feeReceiptPreview(scope: ReceiptScope, now = new Date()) {
+  const range = rangeForScope(scope, now);
+  const [feeRows, studentRows, teacherRows, salaryRows, settingsRow] = await Promise.all([
+    listFeePayments(),
+    listStudents(),
+    listTeachers(),
+    listSalaryPayments(),
+    loadSettings(),
+  ]);
+  const lines = feeLinesInRange(feeRows, studentRows, range);
+  const salaries = salaryLinesFor(teacherRows, salaryRows, range);
+  const totalCents = lines.reduce((sum, line) => sum + line.amountCents, 0);
+  const salaryCents = salaries.reduce((sum, line) => sum + line.salaryCents, 0);
+  const month = monthName(range.start);
+  const complete = scope !== "current";
+  const letterhead = presentLetterhead(settingsRow);
+  return {
+    scope,
+    rangeStart: range.start,
+    rangeEnd: range.end,
+    title: `${month} report`,
+    preparedOn: eatDate(now),
+    monthName: month,
+    currencySymbol: settingsRow?.currencySymbol?.trim() || CURRENCY,
+    letterhead,
+    lines: lines.map((line) => ({
+      studentName: line.studentName,
+      admissionNumber: line.admissionNumber,
+      section: line.section,
+      mpesaRef: line.mpesaRef,
+      amount: fromCents(line.amountCents),
+      paidOn: line.paidOn,
+    })),
+    salaries: salaries.map((line) => ({
+      name: line.name,
+      phone: line.phone,
+      nationalId: line.nationalId,
+      mpesaName: line.mpesaName,
+      mpesaNumber: line.mpesaNumber,
+      section: line.section,
+      salary: fromCents(line.salaryCents),
+    })),
+    totalReceived: fromCents(totalCents),
+    totalSalaries: fromCents(salaryCents),
+    summary: complete
+      ? `By the end of ${month} this amount of money has entered the account.`
+      : `This amount of money has entered the account so far in ${month}.`,
+  };
+}
+
+export async function generateOperationsReport(
+  period: "biweekly" | "monthly",
+  now = new Date(),
+  scope?: ReceiptScope,
+) {
+  const range = scope ? rangeForScope(scope, now) : rangeFor(period, now);
   const already = await existingReport(period, range);
   if (already) return presentReport(already, false);
   const [studentRows, teacherRows, feeRows, salaryRows, expenseRows, settingsRow] = await Promise.all([
@@ -102,6 +210,9 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
     feesInPeriodCents: feesInPeriod,
     salariesInPeriodCents: salariesInPeriod,
     expensesInPeriodCents: expensesInPeriod,
+    letterhead: presentLetterhead(settingsRow),
+    feeLines: feeLinesInRange(feeRows, studentRows, range),
+    salaryLines: salaryLinesFor(teacherRows, salaryRows, range),
     students: studentRows.map((student) => {
       const paidCents = sumCents(feesByStudent.get(student.id) ?? []);
       const expectedCents = toCents(student.expectedFees);
@@ -127,6 +238,8 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
       return {
         name: teacher.name,
         section: teacher.section as "morning" | "evening" | "both",
+        phone: teacher.phone ?? "",
+        nationalId: teacher.nationalId ?? "",
         expectedCents,
         paidCents,
         balanceCents: figures.balanceCents,

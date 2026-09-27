@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { biweeklyRange, monthlyRange } from "../shared/periods";
+import { formatShortDate, monthName } from "../shared/format";
+import { applicantName, presentLetterhead, payoutPhone } from "../shared/letterhead";
+import { biweeklyRange, monthlyRange, monthToDateRange } from "../shared/periods";
 import {
   operationsTotals,
   studentFigures,
@@ -84,9 +86,27 @@ assert.deepEqual(monthlyRange(new Date(Date.UTC(2026, 0, 15))), {
   start: "2025-12-01",
   end: "2025-12-31",
 });
+assert.deepEqual(monthToDateRange(new Date("2026-09-27T10:00:00+03:00")), {
+  start: "2026-09-01",
+  end: "2026-09-27",
+});
+assert.equal(applicantName("Khadija Omar", "Fahima"), "Khadija Omar (Fahima)");
+assert.equal(payoutPhone("0711", "0712"), "0712");
+assert.equal(presentLetterhead(null).paybill, "985050");
+assert.equal(formatShortDate("2026-09-27"), "27/9/26");
+assert.equal(formatShortDate("2026-09-06"), "6/9/26");
+assert.equal(monthName("2026-09-01"), "September");
 
 const pdf = await buildOperationsPdf({
   markazName: "",
+  letterhead: {
+    markazName: "MARKAZ AL-IMAAM ASH-SHAAFI'IY AL-ISLAAMIY",
+    address: "P.O. Box 3011-80100 Mombasa, Kenya.",
+    accountName: "AHLUL ATHAR REGISTERED TRUSTEES",
+    bankName: "GULF AFRICAN BANK",
+    paybill: "985050",
+    accountNumber: "0700004102",
+  },
   currencySymbol: null,
   period: "biweekly",
   rangeStart: "2026-09-01",
@@ -98,6 +118,35 @@ const pdf = await buildOperationsPdf({
   outstandingCents: 6000,
   feesInPeriodCents: 4000,
   salariesInPeriodCents: 3000,
+  feeLines: [
+    {
+      studentName: "Amina Hassan",
+      admissionNumber: "A-1",
+      section: "morning",
+      mpesaRef: "UD12ABC",
+      amountCents: 6000000,
+      paidOn: "2026-09-06",
+    },
+    {
+      studentName: "Fatma Ali",
+      admissionNumber: "A-2",
+      section: "evening",
+      mpesaRef: "",
+      amountCents: 2100000,
+      paidOn: "2026-09-10",
+    },
+  ],
+  salaryLines: [
+    {
+      name: "Omar Ali",
+      phone: "0712000000",
+      nationalId: "12345678",
+      mpesaName: "Fahima",
+      mpesaNumber: "0712000000",
+      section: "both",
+      salaryCents: 2000000,
+    },
+  ],
   students: [
     {
       admissionNumber: "A-1",
@@ -117,6 +166,8 @@ const pdf = await buildOperationsPdf({
     {
       name: "Omar Ali",
       section: "both",
+      phone: "0712000000",
+      nationalId: "12345678",
       expectedCents: 8000,
       paidCents: 3000,
       balanceCents: 5000,
