@@ -46,8 +46,8 @@ type ReformGrain = {
 type Phase = "hold" | "salam" | "falling" | "pile" | "hiddenFadeIn" | "reform" | "hiddenHold" | "leave";
 
 const settings = {
-  startText: "السلام عليكم",
-  hiddenText: "Welcome Fahima!",
+  startText: "السَّلام عليكُم وَرحمَة الله وَبَرَكَاتُه",
+  hiddenText: "Kazi Kwako Fahima!",
   releaseTestsPerFrame: 1500,
   releaseChance: 0.022,
   gravity: 850,
