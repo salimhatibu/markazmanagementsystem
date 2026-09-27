@@ -272,13 +272,10 @@ h2 { font-size: 2.4rem; }
 .ornament {
   display: flex;
   align-items: center;
-  gap: 10px;
   color: var(--green);
 }
 
-.ornament svg { width: 24px; height: 24px; }
-.ornament svg:nth-child(2),
-.ornament svg:nth-child(4) { color: var(--accent); }
+.ornament svg { width: 36px; height: 36px; }
 
 .watermark {
   position: absolute;
@@ -314,18 +311,53 @@ h2 { font-size: 2.4rem; }
 }
 
 .theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: transparent;
+  --toggle-size: 40px;
+  position: relative;
+  width: var(--toggle-size);
+  height: var(--toggle-size);
+  padding: 0;
+  border: 1px solid var(--glass-edge);
+  border-radius: 50%;
+  background: var(--bg);
   color: inherit;
-  border: 1px solid currentColor;
-  padding: 8px 12px;
-  font-size: 12px;
-  letter-spacing: 0.02em;
+  box-shadow: inset 0 0 0 1px var(--glass-edge);
 }
 
-.theme-toggle svg { width: 14px; height: 14px; color: var(--green); }
+.theme-toggle-knob {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.theme-toggle-knob svg {
+  grid-area: 1 / 1;
+  width: 18px;
+  height: 18px;
+  color: var(--green);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.theme-toggle-dark .theme-icon-sun,
+.theme-toggle-light .theme-icon-moon {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.theme-toggle-dark .theme-icon-moon,
+.theme-toggle-light .theme-icon-sun {
+  opacity: 0;
+  transform: scale(0.6) rotate(-30deg);
+}
+
+.theme-toggle-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
 
 .alert-pill {
   background: var(--pink);
@@ -907,7 +939,10 @@ legend { padding: 0 8px; }
     padding: 12px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
   }
   .top-actions { position: static; transform: none; }
-  .theme-toggle, .alert-pill, .ghost, .solid {
+  .theme-toggle {
+    --toggle-size: 44px;
+  }
+  .alert-pill, .ghost, .solid {
     min-height: 44px;
   }
   .topbar nav {
@@ -987,8 +1022,7 @@ legend { padding: 0 8px; }
   body { font-size: 16px; }
   input, select, textarea { font-size: 16px; }
   .brand { font-size: 26px; }
-  .theme-toggle { padding: 8px; min-width: 44px; }
-  .theme-toggle-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .theme-toggle { --toggle-size: 44px; }
   .content > h1,
   .page-header h1 {
     font-size: clamp(2.5rem, 13vw, 3.6rem);

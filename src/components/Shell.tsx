@@ -119,12 +119,15 @@ export function Shell() {
       <div className="top-actions">
         <button
           type="button"
-          className="theme-toggle"
+          className={`theme-toggle theme-toggle-${theme}`}
           aria-pressed={theme === "light"}
           aria-label={theme === "light" ? "Switch to dark page" : "Switch to light page"}
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
         >
-          {theme === "light" ? <CrescentIcon /> : <SunIcon />}
+          <span className="theme-toggle-knob" aria-hidden="true">
+            <SunIcon className="theme-icon-sun" />
+            <CrescentIcon className="theme-icon-moon" />
+          </span>
           <span className="theme-toggle-label">{theme === "light" ? "Dark page" : "Light page"}</span>
         </button>
         {unread > 0 ? (
