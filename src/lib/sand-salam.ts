@@ -93,11 +93,12 @@ const canvasHandle = new WeakMap<HTMLCanvasElement, SalamHandle>();
 export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void): SalamHandle {
   canvasHandle.get(canvas)?.stop();
 
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
+  const surface = canvas.getContext("2d");
+  if (!surface) {
     onComplete();
     return { stop() {} };
   }
+  const ctx: CanvasRenderingContext2D = surface;
 
   let stopped = false;
   let frame = 0;
