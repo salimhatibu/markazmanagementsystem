@@ -80,8 +80,8 @@ export function SettingsPage() {
       />
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
-      <Panel tone="light">
-        <form onSubmit={(event) => void save(event)} className="form-grid">
+      <Panel tone="light" className="settings-letterhead">
+        <form onSubmit={(event) => void save(event)} className="form-grid" data-guide="settings">
           <Field id="markaz-name" label="Short name" hint="Shown at the top of the pages.">
             <input
               id="markaz-name"

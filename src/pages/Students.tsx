@@ -64,7 +64,13 @@ export function StudentsPage() {
         title="Students"
         lead="Admission, section, and term fees. Morning is 15,000 a term; evening is 9,000, or 10,000 for Hadhaanah."
       >
-        <button type="button" className="ghost" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+        <button
+          type="button"
+          className="ghost"
+          data-guide="add-student"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+        >
           {open ? "Close form" : "Add a student"}
         </button>
       </PageHeader>
@@ -106,7 +112,7 @@ export function StudentsPage() {
             : "Nothing matches that search. Try a name or admission number."}
         </Empty>
       ) : (
-        <div className="table-wrap">
+        <div className="table-wrap" data-guide="student-list">
           <table>
             <caption className="table-caption">Student fees</caption>
             <thead>

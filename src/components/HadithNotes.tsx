@@ -92,6 +92,7 @@ export function HadithNotes() {
       <button
         type="button"
         className={`hadith-pen${open ? " is-open" : ""}`}
+        data-guide="hadith-notes"
         aria-expanded={open}
         aria-controls="hadith-notepad"
         aria-label={open ? "Close notes" : "Open notes"}

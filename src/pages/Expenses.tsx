@@ -96,7 +96,13 @@ export function ExpensesPage() {
         title="Expenses"
         lead="Books, repairs, and other office costs come out of the funds held at the markaz."
       >
-        <button type="button" className="ghost" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+        <button
+          type="button"
+          className="ghost"
+          data-guide="add-expense"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+        >
           {open ? "Close form" : "Add an expense"}
         </button>
       </PageHeader>

@@ -184,8 +184,9 @@ export function Shell() {
         <header
           ref={barRef}
           className={`topbar${compact ? " is-compact" : ""}${menuOpen ? " is-open" : ""}`}
+          data-guide="nav"
         >
-          <NavLink to="/" className="brand" end>
+          <NavLink to="/" className="brand" end data-guide="brand">
             <span className="logo-mark" aria-hidden="true">
               <BooksStackIcon />
             </span>
@@ -235,6 +236,7 @@ export function Shell() {
             <button
               type="button"
               className="help-toggle"
+              data-guide="help"
               aria-label="How to use this site"
               aria-pressed={guideOpen}
               onClick={() => {

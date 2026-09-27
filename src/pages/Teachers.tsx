@@ -65,7 +65,13 @@ export function TeachersPage() {
         title="Teachers"
         lead="Name, phone, ID number, and salary — the same columns as the official salary sheet."
       >
-        <button type="button" className="ghost" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+        <button
+          type="button"
+          className="ghost"
+          data-guide="add-teacher"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+        >
           {open ? "Close form" : "Add a teacher"}
         </button>
       </PageHeader>
@@ -107,7 +113,7 @@ export function TeachersPage() {
             : "Nothing matches that search. Try a name or morning / evening."}
         </Empty>
       ) : (
-        <div className="table-wrap">
+        <div className="table-wrap" data-guide="teacher-list">
           <table>
             <caption className="table-caption">Teacher salaries</caption>
             <thead>

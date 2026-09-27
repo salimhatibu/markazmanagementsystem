@@ -113,7 +113,7 @@ export function ReportsPage() {
         title="Reports"
         lead="The same letterhead, fees table, salary sheet, and paybill details used on the official papers. Dates are East Africa Time."
       >
-        <div className="actions">
+        <div className="actions" data-guide="report-views">
           {VIEWS.map((view) => (
             <button
               key={view.scope}
@@ -217,7 +217,7 @@ export function ReportsPage() {
           <p className="ledger-total">
             Total salaries <strong>{formatMoney(preview.totalSalaries, symbol)}</strong>
           </p>
-          <button type="button" className="solid" disabled={busy !== null} onClick={() => void generate()}>
+          <button type="button" className="solid" data-guide="save-report" disabled={busy !== null} onClick={() => void generate()}>
             {busy ? "Preparing…" : "Save this report as a PDF"}
           </button>
         </Panel>

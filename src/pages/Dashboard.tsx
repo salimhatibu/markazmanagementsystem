@@ -55,7 +55,7 @@ export function DashboardPage() {
       </section>
       {error ? <Notice>{error}</Notice> : null}
       <div className="board" aria-busy={!totals && !error} aria-live="polite">
-        <article className="stat">
+        <article className="stat" data-guide="figures">
           <p className="kicker kicker-icon">
             <PenIcon /> In the office
           </p>
@@ -102,7 +102,7 @@ export function DashboardPage() {
           <p className="stat-note">Paid from the funds in the office</p>
         </article>
       </div>
-      <section className="panel panel-light hadith" aria-labelledby="hadith-of-the-day">
+      <section className="panel panel-light hadith" data-guide="hadith" aria-labelledby="hadith-of-the-day">
         <HadithBackdrop />
         <div className="hadith-head">
           <p className="kicker kicker-icon">
