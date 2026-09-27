@@ -101,23 +101,81 @@ export type HijriDate = {
   arabic: string;
 };
 
-function hijriPart(
-  date: Date,
-  locale: string,
-  options: Intl.DateTimeFormatOptions,
-): string {
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: TIME_ZONE,
-    calendar: "islamic-umalqura",
-    ...options,
-  }).format(date);
+const HIJRI_MONTHS_EN = [
+  "Muharram",
+  "Safar",
+  "Rabiʻ I",
+  "Rabiʻ II",
+  "Jumada I",
+  "Jumada II",
+  "Rajab",
+  "Shaʻban",
+  "Ramadan",
+  "Shawwal",
+  "Dhul-Qaʻdah",
+  "Dhul-Hijjah",
+] as const;
+
+const HIJRI_MONTHS_AR = [
+  "محرم",
+  "صفر",
+  "ربيع الأول",
+  "ربيع الآخر",
+  "جمادى الأولى",
+  "جمادى الآخرة",
+  "رجب",
+  "شعبان",
+  "رمضان",
+  "شوال",
+  "ذو القعدة",
+  "ذو الحجة",
+] as const;
+
+const HIJRI_CALENDARS = ["islamic-umalqura", "islamic-rgsa", "islamic-civil", "islamic"] as const;
+
+function hijriDigits(value: number): string {
+  return String(value).replace(/\d/g, (digit) => "٠١٢٣٤٥٦٧٨٩"[Number(digit)] ?? digit);
+}
+
+function hijriPartsFrom(date: Date, calendar: string): { day: number; month: number; year: number } | null {
+  try {
+    const parts = new Intl.DateTimeFormat(`en-u-ca-${calendar}`, {
+      timeZone: TIME_ZONE,
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+    }).formatToParts(date);
+    const read = (type: Intl.DateTimeFormatPartTypes) =>
+      Number((parts.find((part) => part.type === type)?.value ?? "").replace(/\D/g, ""));
+    const day = read("day");
+    const month = read("month");
+    const year = read("year");
+    if (day >= 1 && day <= 30 && month >= 1 && month <= 12 && year >= 1300 && year < 2000) {
+      return { day, month, year };
+    }
+  } catch {
+    /* engine missing this calendar */
+  }
+  return null;
+}
+
+function hijriParts(date: Date): { day: number; month: number; year: number } {
+  for (const calendar of HIJRI_CALENDARS) {
+    const parts = hijriPartsFrom(date, calendar);
+    if (parts) return parts;
+  }
+  return { day: 1, month: 1, year: 1448 };
 }
 
 export function hijriDate(date = new Date()): HijriDate {
-  const day = Number(hijriPart(date, "en-GB", { day: "numeric" }));
-  const year = Number(hijriPart(date, "en-GB", { year: "numeric" }).replace(/\D/g, ""));
-  const month = hijriPart(date, "en-GB", { month: "long" }).replace(/\sAH$/i, "").trim();
-  const english = hijriPart(date, "en-GB", { day: "numeric", month: "long", year: "numeric" });
-  const arabic = hijriPart(date, "ar-SA", { day: "numeric", month: "long", year: "numeric" });
-  return { day, month, year, english, arabic };
+  const { day, month, year } = hijriParts(date);
+  const monthNameEn = HIJRI_MONTHS_EN[month - 1] ?? HIJRI_MONTHS_EN[0];
+  const monthNameAr = HIJRI_MONTHS_AR[month - 1] ?? HIJRI_MONTHS_AR[0];
+  return {
+    day,
+    month: monthNameEn,
+    year,
+    english: `${day} ${monthNameEn} ${year} AH`,
+    arabic: `${hijriDigits(day)} ${monthNameAr} ${hijriDigits(year)} هـ`,
+  };
 }

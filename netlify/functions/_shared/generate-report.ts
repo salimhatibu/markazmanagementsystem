@@ -324,3 +324,12 @@ export async function readReportPdf(blobKey: string): Promise<Uint8Array | null>
   const stored = await reportStore().get(blobKey, { type: "arrayBuffer" });
   return stored ? new Uint8Array(stored) : null;
 }
+
+export async function deleteReportPdf(blobKey: string): Promise<void> {
+  if (!isReportBlobKey(blobKey)) return;
+  try {
+    await reportStore().delete(blobKey);
+  } catch {
+    /* already gone */
+  }
+}

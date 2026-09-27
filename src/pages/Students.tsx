@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { formatMoney, formatPercent, label } from "../../shared/format";
-import { FeesStructure } from "../components/FeesStructure";
 import { StudentForm } from "../components/StudentForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
@@ -145,10 +144,6 @@ export function StudentsPage() {
           </table>
         </div>
       )}
-      <Panel tone="dark">
-        <p className="panel-title">Fees structure</p>
-        <FeesStructure symbol={symbol} />
-      </Panel>
     </>
   );
 }

@@ -9,7 +9,6 @@ import {
   OFFICIAL_NAME,
   PAYBILL,
 } from "../../shared/letterhead";
-import { FeesStructure } from "../components/FeesStructure";
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api } from "../lib/api";
@@ -141,10 +140,6 @@ export function SettingsPage() {
             {busy ? "Saving…" : "Save settings"}
           </button>
         </form>
-      </Panel>
-      <Panel tone="dark">
-        <p className="panel-title">Fees structure</p>
-        <FeesStructure symbol={currencySymbol} compact />
       </Panel>
       <Panel tone="dark">
         <p className="panel-title">Fee reminders</p>

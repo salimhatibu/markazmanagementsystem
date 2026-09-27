@@ -34,6 +34,10 @@ export function saveHadithNotes(notes: HadithNote[]): HadithNote[] {
   return next;
 }
 
+export function deleteHadithNote(id: string): HadithNote[] {
+  return saveHadithNotes(loadHadithNotes().filter((note) => note.id !== id));
+}
+
 export function createDraft(): HadithNote {
   const now = new Date();
   return {

@@ -31,6 +31,33 @@ export function PenIcon({ className }: IconProps) {
   );
 }
 
+export function FeatherIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <path
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6.5 27.2 11.2 20.4C8.6 14.8 12.2 8.2 20 4.8c2.2-1 4.6-.6 5.6 1.2 1.2 2 .2 4.6-2.2 6.8-4.8 4.4-10.2 6.6-12.2 6.2"
+      />
+      <path
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6.5 27.2 13 24.6 11.2 20.4"
+      />
+      <path
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        d="M10.8 19.2c2.6-1.6 7-5 9.8-9.2M13.6 15.8c2.2-1.8 5.4-4.8 7.2-7.4M16.4 12.6c1.6-1.6 3.6-3.6 4.8-5.4"
+      />
+    </svg>
+  );
+}
+
 export function CrescentIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 32 32" aria-hidden="true">
@@ -195,6 +222,17 @@ export function PlusIcon({ className }: IconProps) {
   return (
     <StrokeIcon className={className}>
       <path d="M12 5 V19 M5 12 H19" />
+    </StrokeIcon>
+  );
+}
+
+export function TrashIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <path d="M5 8 H19" />
+      <path d="M8 8 V6 H16 V8" />
+      <path d="M7 8 V20 H17 V8" />
+      <path d="M10 11 V17 M14 11 V17" />
     </StrokeIcon>
   );
 }

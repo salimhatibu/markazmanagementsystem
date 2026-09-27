@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { formatShortDate, monthName } from "../shared/format";
+import { formatShortDate, hijriDate, monthName } from "../shared/format";
 import { applicantName, presentLetterhead, payoutPhone } from "../shared/letterhead";
 import { biweeklyRange, monthlyRange, monthToDateRange } from "../shared/periods";
 import {
@@ -96,6 +96,15 @@ assert.equal(presentLetterhead(null).paybill, "985050");
 assert.equal(formatShortDate("2026-09-27"), "27/9/26");
 assert.equal(formatShortDate("2026-09-06"), "6/9/26");
 assert.equal(monthName("2026-09-01"), "September");
+
+{
+  const hijri = hijriDate(new Date("2026-09-27T15:00:00+03:00"));
+  assert.equal(hijri.day, 16);
+  assert.equal(hijri.month, "Rabiʻ II");
+  assert.equal(hijri.year, 1448);
+  assert.equal(hijri.english.includes("April"), false);
+  assert.equal(hijri.arabic.includes("ربيع الآخر"), true);
+}
 
 const pdf = await buildOperationsPdf({
   markazName: "",

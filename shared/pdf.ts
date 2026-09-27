@@ -2,13 +2,8 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 import { formatMoney, formatPercent, formatShortDate, label, monthName } from "./format";
 import {
   BLESSING,
-  BOYS_SECTION_NOTE,
-  CHANGES_NOTE,
-  DRESS_CODE,
   LATE_ARRIVAL_DEDUCTION,
   PAYMENT_LEAD,
-  SECTION_FEES,
-  TERMS,
   applicantName,
   payoutPhone,
   type Letterhead,
@@ -222,38 +217,6 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
       { size: 10, gap: 3 },
     );
   }
-
-  draw("FEES STRUCTURE", { size: 13, font: bold, gap: 6 });
-  draw("One academic year consists of two terms of six months each.", { size: 10, gap: 4 });
-  for (const term of TERMS) {
-    draw(`${term.name}: ${term.months}`, { size: 10, gap: 2 });
-  }
-  y -= 6;
-  for (const section of SECTION_FEES) {
-    draw(section.title.toUpperCase(), { size: 11, font: bold, gap: 4 });
-    draw(section.yearNote, { size: 9, gap: 3 });
-    draw(`Fees per term  Ksh ${section.feePerTerm.toLocaleString("en-GB")}`, { size: 9, gap: 2 });
-    draw(`Admission for new students  Ksh ${section.admission.toLocaleString("en-GB")}`, { size: 9, gap: 3 });
-    for (const row of section.installments) {
-      draw(`${row.label}    ${row.amount.toLocaleString("en-GB")}/=`, { size: 9, gap: 2 });
-    }
-    if (section.clearance) draw(section.clearance, { size: 9, gap: 3 });
-    draw("Time schedule", { size: 9, font: bold, gap: 2 });
-    for (const line of section.schedule) draw(line, { size: 9, gap: 2 });
-    draw("Yearly madrasa holidays", { size: 9, font: bold, gap: 2 });
-    for (const line of section.holidays) draw(line, { size: 9, gap: 2 });
-    if (section.extraNote) draw(section.extraNote, { size: 9, gap: 4 });
-    y -= 4;
-  }
-  draw("DRESS CODE FOR THE STUDENTS", { size: 11, font: bold, gap: 4 });
-  draw(BOYS_SECTION_NOTE, { size: 9, gap: 4 });
-  for (const row of DRESS_CODE) {
-    const price = row.price ? `  (Price – ${row.price.toLocaleString("en-GB")}/=)` : "";
-    draw(`${row.who}${price}`, { size: 9, font: bold, gap: 2 });
-    draw(row.dress, { size: 9, gap: 4 });
-  }
-  draw(CHANGES_NOTE, { size: 9, gap: 10 });
-  rule();
 
   if (head) {
     draw("TRUSTEES AND PAYBILL", { size: 13, font: bold, gap: 6 });

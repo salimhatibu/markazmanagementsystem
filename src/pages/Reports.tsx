@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { formatEat, formatMoney, formatShortDate, label } from "../../shared/format";
 import { LATE_ARRIVAL_DEDUCTION, applicantName, payoutPhone } from "../../shared/letterhead";
-import { FeesStructure } from "../components/FeesStructure";
 import { BankDetails, OfficialLetterhead } from "../components/OfficialLetterhead";
 import type { WorkspaceContext } from "../components/Shell";
 import { Empty, Notice, PageHeader, Panel } from "../components/ui";
@@ -23,6 +22,7 @@ export function ReportsPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState<ReceiptScope | null>(null);
+  const [removing, setRemoving] = useState<number | null>(null);
   const [ready, setReady] = useState(false);
 
   const period = VIEWS.find((view) => view.scope === scope)?.period ?? "monthly";
@@ -88,6 +88,21 @@ export function ReportsPage() {
     }
   }
 
+  async function remove(id: number) {
+    setError("");
+    setInfo("");
+    try {
+      await api(`/api/reports/${id}`, { method: "DELETE" });
+      await api("/api/notifications/read", { method: "POST" });
+      await refreshAlerts();
+      await loadList();
+      setRemoving(null);
+      setInfo("That PDF has been removed.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "That PDF could not be removed.");
+    }
+  }
+
   const symbol = preview?.currencySymbol || settings.currencySymbol;
   const month = preview?.monthName?.toUpperCase() ?? "";
 
@@ -96,7 +111,7 @@ export function ReportsPage() {
       <PageHeader
         kicker="Files"
         title="Reports"
-        lead="The same letterhead, fees table, bank details, and salary sheet used on the official papers. Dates are East Africa Time."
+        lead="The same letterhead, fees table, salary sheet, and paybill details used on the official papers. Dates are East Africa Time."
       >
         <div className="actions">
           {VIEWS.map((view) => (
@@ -209,53 +224,78 @@ export function ReportsPage() {
       ) : null}
       {preview ? (
         <Panel tone="dark">
-          <p className="panel-title">Fees structure</p>
-          <FeesStructure symbol={symbol} />
           <BankDetails letterhead={preview.letterhead} />
         </Panel>
       ) : null}
-      {!ready && !error ? null : reports.length === 0 ? (
-        <Empty>No saved PDFs yet. Save one when you want a copy of the tables above.</Empty>
-      ) : (
-        <div className="table-wrap">
-          <table>
-            <caption className="table-caption">Saved PDFs</caption>
-            <thead>
-              <tr>
-                <th>Period</th>
-                <th>Range</th>
-                <th>Created</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {reports.map((report) => (
-                <tr key={report.id}>
-                  <td data-label="Period">{report.period === "biweekly" ? "Mid-month" : "Monthly"}</td>
-                  <td data-label="Range">
-                    {formatShortDate(report.rangeStart)} to {formatShortDate(report.rangeEnd)}
-                  </td>
-                  <td data-label="Created">{formatEat(report.createdAt)}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="ghost"
-                      onClick={() =>
-                        void downloadReport(report.id, `markaz-${report.period}-${report.rangeStart}.pdf`).catch(
-                          (caught: unknown) => {
-                            setError(caught instanceof Error ? caught.message : "The report could not be downloaded.");
-                          },
-                        )
-                      }
-                    >
-                      Download PDF
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {!ready && !error ? null : (
+        <Panel tone="light" className="saved-files">
+          <p className="panel-title">Saved PDFs</p>
+          <p className="saved-files-lead">
+            Copies already prepared. These files sit apart from the official report above.
+          </p>
+          {reports.length === 0 ? (
+            <Empty>No saved PDFs yet. Save one when you want a copy of the tables above.</Empty>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <caption className="table-caption">Prepared reports</caption>
+                <thead>
+                  <tr>
+                    <th>Period</th>
+                    <th>Range</th>
+                    <th>Created</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reports.map((report) => (
+                    <tr key={report.id}>
+                      <td data-label="Period">{report.period === "biweekly" ? "Mid-month" : "Monthly"}</td>
+                      <td data-label="Range">
+                        {formatShortDate(report.rangeStart)} to {formatShortDate(report.rangeEnd)}
+                      </td>
+                      <td data-label="Created">{formatEat(report.createdAt)}</td>
+                      <td>
+                        {removing === report.id ? (
+                          <span className="inline-confirm">
+                            Remove this PDF?
+                            <button type="button" className="ghost" onClick={() => void remove(report.id)}>
+                              Yes, remove
+                            </button>
+                            <button type="button" className="text-button" onClick={() => setRemoving(null)}>
+                              Keep it
+                            </button>
+                          </span>
+                        ) : (
+                          <span className="row-actions">
+                            <button
+                              type="button"
+                              className="ghost"
+                              onClick={() =>
+                                void downloadReport(report.id, `markaz-${report.period}-${report.rangeStart}.pdf`).catch(
+                                  (caught: unknown) => {
+                                    setError(
+                                      caught instanceof Error ? caught.message : "The report could not be downloaded.",
+                                    );
+                                  },
+                                )
+                              }
+                            >
+                              Download PDF
+                            </button>
+                            <button type="button" className="text-button" onClick={() => setRemoving(report.id)}>
+                              Remove
+                            </button>
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
       )}
     </>
   );
