@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CURRENCY, displayName, MARKAZ_NAME } from "../../shared/format";
 import { api } from "../lib/api";
+import { applyTheme, readTheme, type Theme } from "../lib/theme";
 import type { Settings } from "../types";
-import { BookIcon, CrescentIcon, Ornament } from "./Motifs";
+import { BookIcon, CrescentIcon, Ornament, SunIcon } from "./Motifs";
 
 export type WorkspaceContext = {
   settings: Settings;
@@ -24,6 +25,11 @@ export function Shell() {
   const location = useLocation();
   const [settings, setSettings] = useState<Settings>({ markazName: MARKAZ_NAME, currencySymbol: CURRENCY });
   const [unread, setUnread] = useState(0);
+  const [theme, setTheme] = useState<Theme>(readTheme);
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
 
   const refreshSettings = useCallback(async () => {
     const body = await api<{ settings: Settings }>("/api/settings");
@@ -59,7 +65,6 @@ export function Shell() {
       </a>
       <header className="topbar">
         <NavLink to="/" className="brand" end>
-          <CrescentIcon className="brand-mark" />
           {brand}
         </NavLink>
         <Ornament />
@@ -70,8 +75,17 @@ export function Shell() {
             </NavLink>
           ))}
         </nav>
-        <div className="top-actions">
-          {unread > 0 ? (
+      <div className="top-actions">
+        <button
+          type="button"
+          className="theme-toggle"
+          aria-pressed={theme === "light"}
+          onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+        >
+          {theme === "light" ? <CrescentIcon /> : <SunIcon />}
+          {theme === "light" ? "Dark" : "Light"}
+        </button>
+        {unread > 0 ? (
             <NavLink to="/reports" className="alert-pill">
               &gt; Report ready{unread > 1 ? ` ${unread}` : ""}
             </NavLink>

@@ -12,6 +12,14 @@
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+    <script>
+      // Set the theme before first paint so the page never flashes the wrong shade.
+      (() => {
+        const stored = localStorage.getItem("markaz_theme");
+        const system = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.dataset.theme = stored === "light" || stored === "dark" ? stored : system;
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
