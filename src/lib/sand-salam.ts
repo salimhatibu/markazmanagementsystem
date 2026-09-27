@@ -490,7 +490,7 @@ export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.direction = "rtl";
-    ctx.font = `700 ${Math.min(w * 0.16, 96)}px "Scheherazade New", "Amiri", serif`;
+    ctx.font = `700 ${Math.min(w * 0.16, 96)}px "Amiri", "Noto Naskh Arabic", serif`;
     ctx.fillText(settings.startText, w / 2, h * 0.4);
     ctx.restore();
   }

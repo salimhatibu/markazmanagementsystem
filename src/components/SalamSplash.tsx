@@ -39,7 +39,6 @@ export function SalamSplash({ onDone }: { onDone: () => void }) {
     const fonts = Promise.all([
       document.fonts?.ready,
       document.fonts?.load('700 96px "Amiri"'),
-      document.fonts?.load('700 96px "Scheherazade New"'),
     ]).catch(() => undefined);
 
     Promise.resolve(fonts).then(() => {

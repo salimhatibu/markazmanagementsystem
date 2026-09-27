@@ -9,7 +9,17 @@ import { applyTheme, readTheme, type Theme } from "../lib/theme";
 import type { Settings } from "../types";
 import { Footer } from "./Footer";
 import { HadithDialog } from "./HadithDialog";
-import { BookIcon, CrescentIcon, Ornament, SunIcon } from "./Motifs";
+import {
+  BooksStackIcon,
+  CrescentIcon,
+  NavChartIcon,
+  NavFileIcon,
+  NavGearIcon,
+  NavHomeIcon,
+  NavLedgerIcon,
+  NavPeopleIcon,
+  SunIcon,
+} from "./Motifs";
 import { PageSlide } from "./PageSlide";
 import { SalamSplash } from "./SalamSplash";
 
@@ -22,12 +32,12 @@ export type WorkspaceContext = {
 };
 
 const links = [
-  { to: "/", label: "Dashboard", end: true },
-  { to: "/students", label: "Students", end: false },
-  { to: "/teachers", label: "Teachers", end: false },
-  { to: "/expenses", label: "Expenses", end: false },
-  { to: "/reports", label: "Reports", end: false },
-  { to: "/settings", label: "Settings", end: false },
+  { to: "/", label: "Home", end: true, icon: NavHomeIcon },
+  { to: "/students", label: "Students", end: false, icon: NavPeopleIcon },
+  { to: "/teachers", label: "Teachers", end: false, icon: NavLedgerIcon },
+  { to: "/expenses", label: "Expenses", end: false, icon: NavChartIcon },
+  { to: "/reports", label: "Reports", end: false, icon: NavFileIcon },
+  { to: "/settings", label: "Settings", end: false, icon: NavGearIcon },
 ];
 
 export function Shell() {
@@ -104,48 +114,66 @@ export function Shell() {
       <a className="skip" href="#content">
         Skip to content
       </a>
-      <header className="topbar">
-        <NavLink to="/" className="brand" end>
-          {brand}
-        </NavLink>
-        <Ornament />
-        <nav aria-label="Primary">
-          {links.map((link) => (
-            <NavLink key={link.to} to={link.to} end={link.end}>
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
-      <div className="top-actions">
-        <button
-          type="button"
-          className={`theme-toggle theme-toggle-${theme}`}
-          aria-pressed={theme === "light"}
-          aria-label={theme === "light" ? "Switch to dark page" : "Switch to light page"}
-          onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-        >
-          <span className="theme-toggle-knob" aria-hidden="true">
-            <SunIcon className="theme-icon-sun" />
-            <CrescentIcon className="theme-icon-moon" />
-          </span>
-          <span className="theme-toggle-label">{theme === "light" ? "Dark page" : "Light page"}</span>
-        </button>
-        {unread > 0 ? (
-            <NavLink to="/reports" className="alert-pill">
-              Report ready{unread > 1 ? ` · ${unread}` : ""}
-            </NavLink>
-          ) : null}
-        </div>
-      </header>
+      <div className="wave-glow" aria-hidden="true" />
+      <div className="wave-glow b" aria-hidden="true" />
+      <div className="bg-text" aria-hidden="true">
+        MARKAZ
+      </div>
+      <div className="header-wrap">
+        <header className="topbar">
+          <NavLink to="/" className="brand" end>
+            <span className="logo-mark" aria-hidden="true">
+              <BooksStackIcon />
+            </span>
+            <span className="logo-text">
+              <span className="a">{brand}</span>
+              <span className="b">Imam ash-Shafi&rsquo;i</span>
+            </span>
+          </NavLink>
+          <nav className="nav-pills" aria-label="Primary">
+            {links.map((link) => {
+              const Icon = link.icon;
+              return (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.end}
+                  className={({ isActive }) => (isActive ? "nav-pill active" : "nav-pill")}
+                >
+                  <Icon />
+                  {link.label}
+                </NavLink>
+              );
+            })}
+          </nav>
+          <div className="top-actions">
+            {unread > 0 ? (
+              <NavLink to="/reports" className="alert-pill">
+                Report ready{unread > 1 ? ` · ${unread}` : ""}
+              </NavLink>
+            ) : null}
+            <button
+              type="button"
+              className={`theme-toggle theme-toggle-${theme}`}
+              aria-pressed={theme === "light"}
+              aria-label={theme === "light" ? "Switch to dark page" : "Switch to light page"}
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            >
+              <span className="theme-toggle-knob" aria-hidden="true">
+                <SunIcon className="theme-icon-sun" />
+                <CrescentIcon className="theme-icon-moon" />
+              </span>
+              <span className="theme-toggle-label">{theme === "light" ? "Dark page" : "Light page"}</span>
+            </button>
+          </div>
+        </header>
+      </div>
       <main id="content" className="content">
         <PageSlide>
           <Outlet context={context} />
         </PageSlide>
       </main>
       <Footer />
-      <div className="watermark">
-        <BookIcon />
-      </div>
       {showSalam ? <SalamSplash onDone={() => setShowSalam(false)} /> : null}
       {showHadith && daily && !showSalam ? (
         <HadithDialog daily={daily} onClose={() => setShowHadith(false)} />
