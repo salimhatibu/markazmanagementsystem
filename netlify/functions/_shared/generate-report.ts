@@ -1,3 +1,4 @@
+import { getStore } from "@netlify/blobs";
 import { and, gte, lte } from "drizzle-orm";
 import { db } from "../../../db/index";
 import { feePayments, notifications, reports, salaryPayments } from "../../../db/schema";
@@ -14,21 +15,8 @@ import {
   sumCents,
 } from "./data";
 
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  const chunk = 0x8000;
-  for (let index = 0; index < bytes.length; index += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(index, index + chunk));
-  }
-  return btoa(binary);
-}
-
-export function base64ToBytes(value: string): Uint8Array {
-  const binary = atob(value);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return bytes;
-}
+/** Report PDFs are files, so they live in Blobs and the row only keeps the key. */
+const reportStore = () => getStore("markaz-reports");
 
 export async function generateOperationsReport(period: "biweekly" | "monthly", now = new Date()) {
   const range = rangeFor(period, now);
@@ -115,7 +103,7 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
 
   const pdfBytes = await buildOperationsPdf(report);
   const blobKey = `reports/${period}/${range.start}_${range.end}-${now.getTime()}.pdf`;
-  const pdf = bytesToBase64(pdfBytes);
+  await reportStore().set(blobKey, Uint8Array.from(pdfBytes).buffer);
 
   const title = `${period === "biweekly" ? "Biweekly" : "Monthly"} report ${range.start} to ${range.end}`;
   const saved = await db.transaction(async (tx) => {
@@ -126,7 +114,6 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
         rangeStart: range.start,
         rangeEnd: range.end,
         blobKey,
-        pdf,
       })
       .returning();
     await tx.insert(notifications).values({
@@ -157,7 +144,8 @@ async function sumInRange(
   return sumCents(rows);
 }
 
-export async function readReportPdf(pdf: string): Promise<Uint8Array | null> {
-  if (!pdf) return null;
-  return base64ToBytes(pdf);
+export async function readReportPdf(blobKey: string): Promise<Uint8Array | null> {
+  if (!blobKey) return null;
+  const stored = await reportStore().get(blobKey, { type: "arrayBuffer" });
+  return stored ? new Uint8Array(stored) : null;
 }

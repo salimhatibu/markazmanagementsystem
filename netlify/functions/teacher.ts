@@ -38,7 +38,7 @@ export default async (req: Request, context: Context) => {
           expectedReleaseDate: parseDate(body.expectedReleaseDate, "Expected release date"),
           paidInAdvance: parseBoolean(body.paidInAdvance, "Paid in advance"),
           section: oneOf(body.section, ["morning", "evening", "both"] as const, "Section"),
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date(),
         })
         .where(eq(teachers.id, id))
         .returning();

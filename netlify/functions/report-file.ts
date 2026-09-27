@@ -11,7 +11,7 @@ export default async (req: Request, context: Context) => {
   if (id == null) return fail("Report not found.", 404);
   const [row] = await db.select().from(reports).where(eq(reports.id, id)).limit(1);
   if (!row) return fail("Report not found.", 404);
-  const bytes = await readReportPdf(row.pdf);
+  const bytes = await readReportPdf(row.blobKey);
   if (!bytes) return fail("Report file not found.", 404);
   const filename = `markaz-${row.period}-${row.rangeStart}-to-${row.rangeEnd}.pdf`;
   return new Response(Uint8Array.from(bytes), {

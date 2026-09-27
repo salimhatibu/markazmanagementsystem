@@ -44,7 +44,7 @@ export default async (req: Request, context: Context) => {
           secondContactName: optionalText(body.secondContactName, "Second contact name", 255),
           secondContactPhone: optionalText(body.secondContactPhone, "Second contact phone", 64),
           secondContactEmail: optionalEmail(body.secondContactEmail, "Second contact email"),
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date(),
         })
         .where(eq(students.id, id))
         .returning();
