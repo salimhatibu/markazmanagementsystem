@@ -5,7 +5,6 @@ export const BANK_NAME = "GULF AFRICAN BANK";
 export const PAYBILL = "985050";
 export const ACCOUNT_NUMBER = "0700004102";
 export const LATE_ARRIVAL_DEDUCTION = 100;
-export const BOOKS_NOTE = "Books are sold at the madrasa and paid cash to the madrasah.";
 export const CHANGES_NOTE = "Any changes shall be notified.";
 export const BLESSING = "BAARAKA ALLAAHU FEEKUM.";
 export const PAYMENT_LEAD = "Fees and admission are paid to the bank through the following account:";

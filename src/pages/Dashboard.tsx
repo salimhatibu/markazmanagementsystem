@@ -3,6 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import { formatMoney } from "../../shared/format";
 import type { WorkspaceContext } from "../components/Shell";
 import { HadithBackdrop } from "../components/HadithBackdrop";
+import { HadithNotes } from "../components/HadithNotes";
 import { HijriDate } from "../components/HijriDate";
 import { BookIcon, PenIcon, QuranIcon } from "../components/Motifs";
 import { Notice } from "../components/ui";
@@ -103,10 +104,13 @@ export function DashboardPage() {
       </div>
       <section className="panel panel-light hadith" aria-labelledby="hadith-of-the-day">
         <HadithBackdrop />
-        <p className="kicker kicker-icon">
-          <BookIcon /> Hadith of the day
-          {daily ? ` · ${daily.dayNumber} of ${daily.total}` : ""}
-        </p>
+        <div className="hadith-head">
+          <p className="kicker kicker-icon">
+            <BookIcon /> Hadith of the day
+            {daily ? ` · ${daily.dayNumber} of ${daily.total}` : ""}
+          </p>
+          <HadithNotes />
+        </div>
         {daily ? (
           <>
             <h2 id="hadith-of-the-day">{daily.hadith.chapter.replace(/^Chapter:\s*/, "")}</h2>

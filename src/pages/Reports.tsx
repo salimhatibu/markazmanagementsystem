@@ -162,7 +162,6 @@ export function ReportsPage() {
           <p className="ledger-total">
             Total amount received <strong>{formatMoney(preview.totalReceived, symbol)}</strong>
           </p>
-          <BankDetails letterhead={preview.letterhead} />
           <h3 className="panel-title">Teachers&rsquo; salary{month ? ` (${month})` : ""}</h3>
           {preview.salaries.length === 0 ? (
             <Empty>No teachers recorded.</Empty>
@@ -176,16 +175,20 @@ export function ReportsPage() {
                     <th>Name of the applicant</th>
                     <th>Phone number</th>
                     <th>ID number</th>
+                    <th>M-Pesa ref no</th>
+                    <th>Date</th>
                     <th>Salary</th>
                   </tr>
                 </thead>
                 <tbody>
                   {preview.salaries.map((line, index) => (
-                    <tr key={`${line.name}-${index}`}>
+                    <tr key={`${line.name}-${line.paidOn}-${line.mpesaRef}-${index}`}>
                       <td data-label="No.">{index + 1}</td>
                       <td data-label="Name of the applicant">{applicantName(line.name, line.mpesaName)}</td>
                       <td data-label="Phone number">{payoutPhone(line.phone, line.mpesaNumber) || "—"}</td>
                       <td data-label="ID number">{line.nationalId || "—"}</td>
+                      <td data-label="M-Pesa ref no">{line.mpesaRef || "—"}</td>
+                      <td data-label="Date">{line.paidOn ? formatShortDate(line.paidOn) : "—"}</td>
                       <td data-label="Salary">{formatMoney(line.salary, symbol)}</td>
                     </tr>
                   ))}
@@ -208,6 +211,7 @@ export function ReportsPage() {
         <Panel tone="dark">
           <p className="panel-title">Fees structure</p>
           <FeesStructure symbol={symbol} />
+          <BankDetails letterhead={preview.letterhead} />
         </Panel>
       ) : null}
       {!ready && !error ? null : reports.length === 0 ? (

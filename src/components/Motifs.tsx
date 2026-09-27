@@ -190,3 +190,11 @@ export function MenuIcon({ className }: IconProps) {
     </StrokeIcon>
   );
 }
+
+export function PlusIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <path d="M12 5 V19 M5 12 H19" />
+    </StrokeIcon>
+  );
+}

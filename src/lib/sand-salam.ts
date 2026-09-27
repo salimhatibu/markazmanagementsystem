@@ -43,11 +43,14 @@ type ReformGrain = {
   phaseOffset: number;
 };
 
-type Phase = "hold" | "salam" | "falling" | "pile" | "hiddenFadeIn" | "reform" | "hiddenHold" | "leave";
+export type SalamPhase = "hold" | "salam" | "falling" | "pile" | "hiddenFadeIn" | "reform" | "hiddenHold" | "leave";
+
+export const SALAM_START_TEXT = "السَّلام عليكُم وَرحمَة الله وَبَرَكَاتُه";
+export const SALAM_HIDDEN_TEXT = "Kazi Kwako Fahima!";
 
 const settings = {
-  startText: "السَّلام عليكُم وَرحمَة الله وَبَرَكَاتُه",
-  hiddenText: "Kazi Kwako Fahima!",
+  startText: SALAM_START_TEXT,
+  hiddenText: SALAM_HIDDEN_TEXT,
   releaseTestsPerFrame: 1500,
   releaseChance: 0.022,
   gravity: 850,
@@ -90,7 +93,11 @@ export type SalamHandle = { stop: () => void };
 
 const canvasHandle = new WeakMap<HTMLCanvasElement, SalamHandle>();
 
-export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void): SalamHandle {
+export function startSalamSand(
+  canvas: HTMLCanvasElement,
+  onComplete: () => void,
+  onPhase?: (phase: SalamPhase) => void,
+): SalamHandle {
   canvasHandle.get(canvas)?.stop();
 
   const surface = canvas.getContext("2d");
@@ -104,8 +111,12 @@ export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void
   let frame = 0;
   let w = 0;
   let h = 0;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const cellSize = window.innerWidth < 720 ? 4 : 3;
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const shortSide = Math.min(window.innerWidth, window.innerHeight);
+  const cellSize = shortSide < 800 ? 2 : 3;
+  const pink = "rgb(214, 122, 154)";
+  const green = "rgb(47, 150, 88)";
+  const salamFamily = '"Amiri", "Noto Naskh Arabic", serif';
 
   let cols = 0;
   let rows = 0;
@@ -116,9 +127,17 @@ export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void
   let falling: Grain[] = [];
   let reforming: ReformGrain[] = [];
   let hiddenAlpha = 0;
-  let phase: Phase = "hold";
+  let phase: SalamPhase = "hold";
   let phaseTime = 0;
   let lastTime = performance.now();
+  let reportedPhase: SalamPhase | null = null;
+  let salamLayout: { fontSize: number; lines: string[]; x: number; y: number } | null = null;
+
+  function reportPhase() {
+    if (stopped || reportedPhase === phase) return;
+    reportedPhase = phase;
+    onPhase?.(phase);
+  }
 
   function index(col: number, row: number) {
     return row * cols + col;
@@ -136,6 +155,64 @@ export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void
     return col >= 0 && col < cols && row >= 0 && row < rows;
   }
 
+  function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+    const words = text.split(/\s+/).filter(Boolean);
+    const lines: string[] = [];
+    let current = "";
+    for (const word of words) {
+      const test = current ? `${current} ${word}` : word;
+      if (current && ctx.measureText(test).width > maxWidth) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = test;
+      }
+    }
+    if (current) lines.push(current);
+    return lines.length > 0 ? lines : [text];
+  }
+
+  function fitLines(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    maxWidth: number,
+    maxHeight: number,
+    family: string,
+    weight: string,
+    startSize: number,
+    minSize: number,
+  ): { fontSize: number; lines: string[] } {
+    let fontSize = startSize;
+    let lines = [text];
+    while (fontSize > minSize) {
+      ctx.font = `${weight} ${fontSize}px ${family}`;
+      lines = wrapLines(ctx, text, maxWidth);
+      const block = lines.length * fontSize * 1.32;
+      const widest = Math.max(...lines.map((line) => ctx.measureText(line).width), 0);
+      if (widest <= maxWidth && block <= maxHeight && lines.length <= 4) break;
+      fontSize -= 1;
+    }
+    ctx.font = `${weight} ${fontSize}px ${family}`;
+    return { fontSize, lines: wrapLines(ctx, text, maxWidth) };
+  }
+
+  function fillCenteredLines(
+    target: CanvasRenderingContext2D,
+    lines: string[],
+    fontSize: number,
+    cx: number,
+    cy: number,
+    family?: string,
+    weight = "700",
+  ) {
+    if (family) target.font = `${weight} ${fontSize}px ${family}`;
+    const lineH = fontSize * 1.32;
+    const top = cy - ((lines.length - 1) * lineH) / 2;
+    lines.forEach((line, index) => {
+      target.fillText(line, cx, top + index * lineH);
+    });
+  }
+
   function buildSalamText() {
     const mask = document.createElement("canvas");
     const maskCtx = mask.getContext("2d");
@@ -149,16 +226,12 @@ export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void
     maskCtx.textBaseline = "middle";
     maskCtx.direction = "rtl";
 
-    const family = '"Amiri", "Scheherazade New", "Noto Naskh Arabic", serif';
-    let fontSize = Math.min(w * 0.22, h * 0.24, 168);
-    maskCtx.font = `700 ${fontSize}px ${family}`;
-    const maxWidth = w * 0.9;
-    while (fontSize > 40 && maskCtx.measureText(settings.startText).width > maxWidth) {
-      fontSize -= 2;
-      maskCtx.font = `700 ${fontSize}px ${family}`;
-    }
-
-    maskCtx.fillText(settings.startText, w / 2, h * 0.38);
+    const maxWidth = Math.min(w * 0.86, w - 32);
+    const maxHeight = Math.min(h * 0.34, 220);
+    const startSize = Math.min(w < 720 ? 34 : 72, h * 0.08, 72);
+    const { fontSize, lines } = fitLines(maskCtx, settings.startText, maxWidth, maxHeight, salamFamily, "700", startSize, 18);
+    salamLayout = { fontSize, lines, x: w / 2, y: h * 0.36 };
+    fillCenteredLines(maskCtx, lines, fontSize, salamLayout.x, salamLayout.y, salamFamily);
 
     const image = maskCtx.getImageData(0, 0, w, h).data;
     salamCells = [];
@@ -189,14 +262,31 @@ export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void
     shuffle(looseCells);
   }
 
+  function viewportSize() {
+    const box = canvas.getBoundingClientRect();
+    const view = window.visualViewport;
+    const width = box.width || Math.min(window.innerWidth, view?.width ?? window.innerWidth);
+    const height = box.height || Math.min(window.innerHeight, view?.height ?? window.innerHeight);
+    return {
+      width: Math.max(1, Math.round(width)),
+      height: Math.max(1, Math.round(height)),
+    };
+  }
+
   function resize() {
-    w = window.innerWidth;
-    h = window.innerHeight;
+    const view = viewportSize();
+    w = view.width;
+    h = view.height;
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    if ("textRendering" in ctx) {
+      (ctx as CanvasRenderingContext2D & { textRendering: string }).textRendering = "geometricPrecision";
+    }
 
     cols = Math.ceil(w / cellSize);
     rows = Math.ceil(h / cellSize);
@@ -208,6 +298,7 @@ export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void
     phase = "hold";
     phaseTime = 0;
     buildSalamText();
+    reportPhase();
   }
 
   function pileSolid(col: number, row: number) {
@@ -436,6 +527,7 @@ export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void
     stopped = true;
     cancelAnimationFrame(frame);
     window.removeEventListener("resize", resize);
+    window.visualViewport?.removeEventListener("resize", resize);
   }
 
   function complete() {
@@ -467,55 +559,56 @@ export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void
     }
   }
 
-  function drawHiddenText() {
-    if (hiddenAlpha <= 0) return;
-    ctx.save();
-    ctx.globalAlpha = hiddenAlpha;
-    ctx.fillStyle = "rgb(255, 232, 168)";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = `500 ${Math.max(15, Math.min(20, w * 0.038))}px "IBM Plex Mono", ui-monospace, sans-serif`;
-    ctx.fillText(settings.hiddenText, w / 2, h * 0.58);
-    ctx.restore();
-  }
-
-  function fillSand() {
-    ctx.fillStyle = "rgb(236, 204, 116)";
+  function sandColor(seed: number) {
+    return seed % 9 === 0 ? green : pink;
   }
 
   function drawFallbackText() {
-    if (salamCells.length > 0) return;
+    if (salamLayout || salamCells.length > 0) return;
     ctx.save();
-    ctx.fillStyle = "rgb(236, 204, 116)";
+    ctx.fillStyle = pink;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.direction = "rtl";
-    ctx.font = `700 ${Math.min(w * 0.16, 96)}px "Amiri", "Noto Naskh Arabic", serif`;
-    ctx.fillText(settings.startText, w / 2, h * 0.4);
+    const maxWidth = Math.min(w * 0.86, w - 32);
+    const startSize = Math.min(w < 720 ? 32 : 56, h * 0.08);
+    const { fontSize, lines } = fitLines(ctx, settings.startText, maxWidth, h * 0.3, salamFamily, "700", startSize, 18);
+    fillCenteredLines(ctx, lines, fontSize, w / 2, h * 0.38, salamFamily);
     ctx.restore();
   }
 
   function draw() {
     ctx.clearRect(0, 0, w, h);
     drawFallbackText();
-    fillSand();
+    const hideFixedSand = phase === "hold" || phase === "hiddenHold" || phase === "leave";
+    if (!hideFixedSand) {
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const i = index(col, row);
+          if (fixedSalam[i] === 1) {
+            ctx.fillStyle = sandColor(i);
+            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+    }
+    for (const p of falling) {
+      ctx.fillStyle = sandColor(Math.floor(p.x + p.y));
+      ctx.fillRect(p.x, p.y, cellSize, cellSize);
+    }
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        if (fixedSalam[index(col, row)] === 1) {
+        const i = index(col, row);
+        if (pile[i] === 1) {
+          ctx.fillStyle = sandColor(i + 3);
           ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
         }
       }
     }
-    for (const p of falling) ctx.fillRect(p.x, p.y, cellSize, cellSize);
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        if (pile[index(col, row)] === 1) {
-          ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-        }
-      }
+    for (const p of reforming) {
+      ctx.fillStyle = sandColor(Math.floor(p.x + p.y * 3));
+      ctx.fillRect(p.x, p.y, cellSize, cellSize);
     }
-    for (const p of reforming) ctx.fillRect(p.x, p.y, cellSize, cellSize);
-    drawHiddenText();
   }
 
   function tick(now: number) {
@@ -528,12 +621,14 @@ export function startSalamSand(canvas: HTMLCanvasElement, onComplete: () => void
     if (phase !== "reform" && phase !== "hiddenHold") {
       for (let i = 0; i < settings.settleStepsPerFrame; i++) settlePile();
     }
+    reportPhase();
     draw();
     frame = requestAnimationFrame(tick);
   }
 
   resize();
   window.addEventListener("resize", resize);
+  window.visualViewport?.addEventListener("resize", resize);
   frame = requestAnimationFrame(tick);
 
   const handle = {

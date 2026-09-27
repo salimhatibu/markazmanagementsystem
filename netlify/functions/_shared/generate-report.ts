@@ -82,24 +82,41 @@ function salaryLinesFor(
     section: "morning" | "evening" | "both";
     expectedSalary: string;
   }[],
-  salaryRows: { teacherId: number; amount: string; paidOn: string }[],
+  salaryRows: { teacherId: number; amount: string; paidOn: string; note: string | null }[],
   range: DateRange,
 ): SalaryLine[] {
-  return teachers.map((teacher) => {
-    const paid = salaryRows.filter(
-      (row) => row.teacherId === teacher.id && row.paidOn >= range.start && row.paidOn <= range.end,
-    );
-    const paidCents = sumCents(paid);
-    return {
+  const lines: SalaryLine[] = [];
+  for (const teacher of teachers) {
+    const paid = salaryRows
+      .filter((row) => row.teacherId === teacher.id && row.paidOn >= range.start && row.paidOn <= range.end)
+      .sort((a, b) => a.paidOn.localeCompare(b.paidOn));
+    const base = {
       name: teacher.name,
       phone: teacher.phone?.trim() || "",
       nationalId: teacher.nationalId?.trim() || "",
       mpesaName: teacher.mpesaName?.trim() || "",
       mpesaNumber: teacher.mpesaNumber?.trim() || "",
       section: teacher.section,
-      salaryCents: paidCents > 0 ? paidCents : toCents(teacher.expectedSalary),
     };
-  });
+    if (paid.length === 0) {
+      lines.push({
+        ...base,
+        salaryCents: toCents(teacher.expectedSalary),
+        mpesaRef: "",
+        paidOn: "",
+      });
+      continue;
+    }
+    for (const row of paid) {
+      lines.push({
+        ...base,
+        salaryCents: toCents(row.amount),
+        mpesaRef: row.note?.trim() || "",
+        paidOn: row.paidOn,
+      });
+    }
+  }
+  return lines;
 }
 
 export async function feeReceiptPreview(scope: ReceiptScope, now = new Date()) {
@@ -143,6 +160,8 @@ export async function feeReceiptPreview(scope: ReceiptScope, now = new Date()) {
       mpesaNumber: line.mpesaNumber,
       section: line.section,
       salary: fromCents(line.salaryCents),
+      mpesaRef: line.mpesaRef || "",
+      paidOn: line.paidOn || "",
     })),
     totalReceived: fromCents(totalCents),
     totalSalaries: fromCents(salaryCents),

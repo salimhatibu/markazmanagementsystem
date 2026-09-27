@@ -614,7 +614,9 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-family: var(--serif); }
 }
 
 .content {
-  padding: clamp(28px, 4vw, 48px) clamp(16px, 3vw, 36px) 72px;
+  padding: clamp(20px, 4vw, 48px) clamp(12px, 3vw, 36px) 72px;
+  padding-left: max(clamp(12px, 3vw, 36px), env(safe-area-inset-left));
+  padding-right: max(clamp(12px, 3vw, 36px), env(safe-area-inset-right));
   max-width: 1360px;
   margin: 0 auto;
 }
@@ -853,9 +855,16 @@ tbody tr:hover { background: var(--card-soft); }
   letter-spacing: -0.02em;
 }
 
-.bank-block { margin: 8px 0 22px; max-width: 36rem; }
+.bank-block { margin: 18px 0 0; max-width: 36rem; }
 
 .bank-block p { margin: 0 0 4px; color: var(--text-2); }
+
+.bank-heading {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
 
 .bank-name {
   font-family: var(--serif);
@@ -1128,6 +1137,109 @@ legend { padding: 0 8px; color: var(--mute); }
     radial-gradient(circle at 88% 78%, rgba(231, 163, 184, 0.12), transparent 46%);
 }
 
+.hadith-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+
+.hadith-notes { display: contents; }
+
+.hadith-pen {
+  grid-column: 2;
+  grid-row: 1;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--green);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 4px 12px rgba(80, 30, 50, 0.06);
+}
+
+.hadith-pen svg { width: 16px; height: 16px; }
+
+.hadith-pen.is-open {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+
+.hadith-notepad {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin-top: 2px;
+  padding: 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 36px rgba(80, 30, 50, 0.08);
+}
+
+:root[data-theme="dark"] .hadith-notepad {
+  background: rgba(28, 28, 34, 0.92);
+}
+
+.hadith-note-days {
+  list-style: none;
+  margin: 10px 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.hadith-note-days button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card-soft);
+  text-align: left;
+}
+
+.hadith-note-days button.is-active,
+.hadith-note-days button:hover {
+  border-color: var(--accent);
+}
+
+.hadith-note-days small {
+  color: var(--mute);
+  font-size: 12px;
+  font-family: var(--nums);
+}
+
+.hadith-note-new {
+  justify-content: flex-start !important;
+  color: var(--green);
+}
+
+.hadith-note-new svg { width: 15px; height: 15px; }
+
+.hadith-note-body {
+  width: 100%;
+  margin: 8px 0 12px;
+  min-height: 120px;
+  resize: vertical;
+}
+
+.hadith-note-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .hadith h2 { font-size: clamp(1.8rem, 3vw, 2.6rem); margin: 14px 0 10px; }
 .hadith .narrator { font-size: 15px; margin: 20px 0 8px; }
 .hadith .hadith-body { font-size: 16px; line-height: 1.8; margin-bottom: 20px; }
@@ -1157,11 +1269,12 @@ legend { padding: 0 8px; color: var(--mute); }
   position: fixed;
   inset: 0;
   z-index: 40;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100dvh;
+  height: 100svh;
   margin: 0;
   overflow: hidden;
-  background: #111;
+  background: #fff8fb;
   opacity: 1;
   transition: opacity 0.7s ease;
 }
@@ -1172,19 +1285,51 @@ legend { padding: 0 8px; color: var(--mute); }
   display: block;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at top, #20242b, #0f1115 72%);
+  background:
+    radial-gradient(circle at 82% 88%, rgba(31, 138, 76, 0.12), transparent 34%),
+    radial-gradient(circle at 18% 0%, #ffe4ee 0%, #fff8fb 46%, #f3eef1 100%);
+}
+
+.salam-live {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  margin: 0;
+  max-width: min(86vw, 44rem);
+  padding: 0 16px;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.salam-live.on { opacity: 1; }
+
+.salam-arabic {
+  top: 28%;
+  color: #c76a8c;
+  font-family: var(--arabic);
+  font-size: clamp(1.5rem, 5.8vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.salam-english {
+  top: 58%;
+  color: #1f8a4c;
+  font-family: var(--serif);
+  font-size: clamp(1.2rem, 3.6vw, 1.9rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .salam-static {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  margin: 0;
-  color: rgb(236, 204, 116);
-  font-family: var(--arabic);
-  font-size: clamp(2.8rem, 12vw, 6rem);
-  font-weight: 700;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .salam-skip {
@@ -1195,9 +1340,9 @@ legend { padding: 0 8px; color: var(--mute); }
   height: 44px;
   display: grid;
   place-items: center;
-  background: transparent;
-  color: rgb(236, 204, 116);
-  border: 1px solid rgb(236, 204, 116);
+  background: var(--card);
+  color: var(--green);
+  border: 1px solid var(--pink);
   padding: 0;
   border-radius: 50%;
   z-index: 1;
@@ -1385,5 +1530,15 @@ legend { padding: 0 8px; color: var(--mute); }
   .footer-grid { justify-content: flex-start; gap: 16px 28px; border-radius: 22px; padding: 18px; }
   .actions { width: 100%; }
   .actions .ghost, .actions .solid { flex: 1 1 auto; text-align: center; }
-  .bg-text { font-size: 96px; }
+  .bg-text { font-size: min(28vw, 96px); }
+  .hadith-motif { width: min(78%, 260px); top: 28%; }
+  .hadith-note-days small { display: none; }
+}
+
+@media (max-width: 400px) {
+  .content { padding-top: 16px; }
+  .stat { min-height: 148px; padding: 16px; }
+  .figure, .figure-sm { font-size: clamp(1.55rem, 8vw, 2rem); }
+  .hadith { padding: 14px; }
+  .hijri-line { font-size: clamp(1.7rem, 8.5vw, 2.4rem); }
 }

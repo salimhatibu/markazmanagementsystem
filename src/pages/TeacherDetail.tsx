@@ -170,7 +170,7 @@ export function TeacherDetailPage() {
               onChange={(event) => setPaidOn(event.target.value)}
             />
           </Field>
-          <Field id="salary-note" label="Note" hint="Optional, such as M-Pesa or cash.">
+          <Field id="salary-note" label="M-Pesa ref no" hint="From the payment message, or leave blank for cash.">
             <input id="salary-note" value={note} onChange={(event) => setNote(event.target.value)} />
           </Field>
           <button className="ghost" type="submit" disabled={busy}>
@@ -187,7 +187,7 @@ export function TeacherDetailPage() {
                 <tr>
                   <th>Date</th>
                   <th>Amount</th>
-                  <th>Note</th>
+                    <th>M-Pesa ref no</th>
                   <th></th>
                 </tr>
               </thead>
@@ -196,7 +196,7 @@ export function TeacherDetailPage() {
                   <tr key={payment.id}>
                     <td data-label="Date">{payment.paidOn}</td>
                     <td data-label="Amount">{formatMoney(payment.amount, symbol)}</td>
-                    <td data-label="Note">{payment.note || "—"}</td>
+                    <td data-label="M-Pesa ref no">{payment.note || "—"}</td>
                     <td>
                       {removingPayment === payment.id ? (
                         <span className="inline-confirm">

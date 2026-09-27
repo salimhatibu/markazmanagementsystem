@@ -123,6 +123,8 @@ export type FeeReceiptPreview = {
     mpesaNumber: string;
     section: TeacherSection;
     salary: number;
+    mpesaRef: string;
+    paidOn: string;
   }[];
   totalReceived: number;
   totalSalaries: number;

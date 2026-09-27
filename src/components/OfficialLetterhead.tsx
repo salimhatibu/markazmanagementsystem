@@ -22,12 +22,12 @@ export function OfficialLetterhead({
 export function BankDetails({ letterhead }: { letterhead: FeeReceiptPreview["letterhead"] }) {
   return (
     <div className="bank-block">
+      <p className="bank-heading">Trustees and paybill</p>
       <p>Fees and admission are paid to the bank through the following account:</p>
       <p className="bank-name">{letterhead.accountName}</p>
       <p>{letterhead.bankName}</p>
       <p>Paybill {letterhead.paybill}</p>
       <p>Account {letterhead.accountNumber}</p>
-      <p>Books are sold at the madrasa and paid cash to the madrasah.</p>
     </div>
   );
 }

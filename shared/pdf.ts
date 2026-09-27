@@ -2,7 +2,6 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 import { formatMoney, formatPercent, formatShortDate, label, monthName } from "./format";
 import {
   BLESSING,
-  BOOKS_NOTE,
   BOYS_SECTION_NOTE,
   CHANGES_NOTE,
   DRESS_CODE,
@@ -33,6 +32,8 @@ export type SalaryLine = {
   mpesaNumber?: string;
   section: "morning" | "evening" | "both";
   salaryCents: number;
+  mpesaRef?: string;
+  paidOn?: string;
 };
 
 export type ReportStudent = {
@@ -154,14 +155,6 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
     { size: 11, gap: 10 },
   );
   draw(`Total amount received    ${money(received, report.currencySymbol)}`, { size: 13, font: bold, gap: 12 });
-  if (head) {
-    draw(PAYMENT_LEAD, { size: 10, gap: 4 });
-    draw(head.accountName, { size: 10, font: bold, gap: 2 });
-    draw(head.bankName, { size: 10, gap: 2 });
-    draw(`Paybill ${head.paybill}`, { size: 10, gap: 2 });
-    draw(`Account ${head.accountNumber}`, { size: 10, gap: 8 });
-    draw(BOOKS_NOTE, { size: 10, gap: 10 });
-  }
   rule();
 
   draw(`TEACHERS' SALARY (${month.toUpperCase()})`, { size: 13, font: bold, gap: 8 });
@@ -262,6 +255,16 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
   draw(CHANGES_NOTE, { size: 9, gap: 10 });
   rule();
 
+  if (head) {
+    draw("TRUSTEES AND PAYBILL", { size: 13, font: bold, gap: 6 });
+    draw(PAYMENT_LEAD, { size: 10, gap: 4 });
+    draw(head.accountName, { size: 10, font: bold, gap: 2 });
+    draw(head.bankName, { size: 10, gap: 2 });
+    draw(`Paybill ${head.paybill}`, { size: 10, gap: 2 });
+    draw(`Account ${head.accountNumber}`, { size: 10, gap: 10 });
+    rule();
+  }
+
   draw("Open running balances. Outstanding ignores overpayment.", {
     size: 8,
     font: mono,
@@ -312,18 +315,20 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
   }
 
   function drawSalaryTable(lines: SalaryLine[]) {
-    const cols = [MARGIN, MARGIN + 22, MARGIN + 200, MARGIN + 320, MARGIN + 430];
+    const cols = [MARGIN, MARGIN + 20, MARGIN + 118, MARGIN + 198, MARGIN + 268, MARGIN + 362, MARGIN + 430];
     const rowH = 16;
-    function cell(text: string, col: number, font: PDFFont, size: number) {
-      const clipped = text.length > 24 ? `${text.slice(0, 23)}…` : text;
+    function cell(text: string, col: number, font: PDFFont, size: number, max = 16) {
+      const clipped = text.length > max ? `${text.slice(0, max - 1)}…` : text;
       page.drawText(clipped, { x: cols[col], y: y - 11, size, font, color: black });
     }
     ensure(rowH + 6);
-    cell("No.", 0, bold, 8);
-    cell("Name of the applicant", 1, bold, 8);
-    cell("Phone number", 2, bold, 8);
-    cell("ID number", 3, bold, 8);
-    cell("Salary", 4, bold, 8);
+    cell("No.", 0, bold, 8, 6);
+    cell("Name", 1, bold, 8, 14);
+    cell("Phone", 2, bold, 8, 12);
+    cell("ID number", 3, bold, 8, 12);
+    cell("M-Pesa ref no", 4, bold, 8, 16);
+    cell("Date", 5, bold, 8, 10);
+    cell("Salary", 6, bold, 8, 12);
     y -= rowH;
     page.drawLine({
       start: { x: MARGIN, y },
@@ -338,11 +343,13 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
     }
     lines.forEach((line, index) => {
       ensure(rowH);
-      cell(String(index + 1), 0, regular, 9);
-      cell(applicantName(line.name, line.mpesaName), 1, regular, 9);
-      cell(payoutPhone(line.phone, line.mpesaNumber) || "—", 2, regular, 9);
-      cell(line.nationalId || "—", 3, regular, 9);
-      cell(money(line.salaryCents, report.currencySymbol), 4, regular, 9);
+      cell(String(index + 1), 0, regular, 8, 6);
+      cell(applicantName(line.name, line.mpesaName), 1, regular, 8, 14);
+      cell(payoutPhone(line.phone, line.mpesaNumber) || "—", 2, regular, 8, 12);
+      cell(line.nationalId || "—", 3, regular, 8, 12);
+      cell(line.mpesaRef || "—", 4, regular, 8, 14);
+      cell(line.paidOn ? formatShortDate(line.paidOn) : "—", 5, regular, 8, 10);
+      cell(money(line.salaryCents, report.currencySymbol), 6, regular, 8, 12);
       y -= rowH;
     });
     y -= 8;

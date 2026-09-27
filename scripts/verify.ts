@@ -145,6 +145,8 @@ const pdf = await buildOperationsPdf({
       mpesaNumber: "0712000000",
       section: "both",
       salaryCents: 2000000,
+      mpesaRef: "TD12XYZ",
+      paidOn: "2026-09-15",
     },
   ],
   students: [
