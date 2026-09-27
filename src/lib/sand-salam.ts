@@ -47,7 +47,7 @@ type Phase = "hold" | "salam" | "falling" | "pile" | "hiddenFadeIn" | "reform" |
 
 const settings = {
   startText: "السلام عليكم",
-  hiddenText: "Peace be upon you",
+  hiddenText: "Welcome Fahima!",
   releaseTestsPerFrame: 1500,
   releaseChance: 0.022,
   gravity: 850,
