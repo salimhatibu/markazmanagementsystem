@@ -7,7 +7,8 @@ export type MailConfig = {
 };
 
 function setting(name: string): string | undefined {
-  return Netlify.env.get(name) ?? process.env[name];
+  const fromNetlify = typeof Netlify !== "undefined" ? Netlify.env.get(name) : undefined;
+  return fromNetlify ?? process.env[name];
 }
 
 const FROM = /^(?:[\w .,'-]{1,80} <[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+>|[^\s@]+@[^\s@]+\.[^\s@]+)$/;
