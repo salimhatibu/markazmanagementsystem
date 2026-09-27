@@ -1,7 +1,8 @@
 import { getStore } from "@netlify/blobs";
-import { and, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "../../../db/index";
-import { feePayments, notifications, reports, salaryPayments } from "../../../db/schema";
+import { feePayments, notifications, reports, salaryPayments, type ReportRow } from "../../../db/schema";
+import { isUniqueViolation } from "./http";
 import { ageFromDob, asIso, CURRENCY, displayName } from "../../../shared/format";
 import { operationsTotals, studentFigures, teacherFigures, toCents } from "../../../shared/ledger";
 import { buildOperationsPdf, type OperationsReport } from "../../../shared/pdf";
@@ -14,12 +15,42 @@ import {
   loadSettings,
   sumCents,
 } from "./data";
+import { isReportBlobKey } from "./validate";
 
 /** Report PDFs are files, so they live in Blobs and the row only keeps the key. */
 const reportStore = () => getStore("markaz-reports");
 
+function reportTitle(period: "biweekly" | "monthly", start: string, end: string) {
+  return `${period === "biweekly" ? "Biweekly" : "Monthly"} report ${start} to ${end}`;
+}
+
+function presentReport(row: ReportRow, created: boolean) {
+  return {
+    id: row.id,
+    period: row.period,
+    rangeStart: row.rangeStart,
+    rangeEnd: row.rangeEnd,
+    createdAt: asIso(row.createdAt),
+    title: reportTitle(row.period, row.rangeStart, row.rangeEnd),
+    created,
+  };
+}
+
+async function existingReport(period: "biweekly" | "monthly", range: DateRange) {
+  const [row] = await db
+    .select()
+    .from(reports)
+    .where(
+      and(eq(reports.period, period), eq(reports.rangeStart, range.start), eq(reports.rangeEnd, range.end)),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
 export async function generateOperationsReport(period: "biweekly" | "monthly", now = new Date()) {
   const range = rangeFor(period, now);
+  const already = await existingReport(period, range);
+  if (already) return presentReport(already, false);
   const [studentRows, teacherRows, feeRows, salaryRows, settingsRow] = await Promise.all([
     listStudents(),
     listTeachers(),
@@ -105,32 +136,32 @@ export async function generateOperationsReport(period: "biweekly" | "monthly", n
   const blobKey = `reports/${period}/${range.start}_${range.end}-${now.getTime()}.pdf`;
   await reportStore().set(blobKey, Uint8Array.from(pdfBytes).buffer);
 
-  const title = `${period === "biweekly" ? "Biweekly" : "Monthly"} report ${range.start} to ${range.end}`;
-  const saved = await db.transaction(async (tx) => {
-    const [row] = await tx
-      .insert(reports)
-      .values({
-        period,
-        rangeStart: range.start,
-        rangeEnd: range.end,
-        blobKey,
-      })
-      .returning();
-    await tx.insert(notifications).values({
-      title,
-      reportId: row.id,
+  const title = reportTitle(period, range.start, range.end);
+  try {
+    const saved = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(reports)
+        .values({
+          period,
+          rangeStart: range.start,
+          rangeEnd: range.end,
+          blobKey,
+        })
+        .returning();
+      await tx.insert(notifications).values({
+        title,
+        reportId: row.id,
+      });
+      return row;
     });
-    return row;
-  });
-
-  return {
-    id: saved.id,
-    period: saved.period,
-    rangeStart: saved.rangeStart,
-    rangeEnd: saved.rangeEnd,
-    createdAt: asIso(saved.createdAt),
-    title,
-  };
+    return presentReport(saved, true);
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      const again = await existingReport(period, range);
+      if (again) return presentReport(again, false);
+    }
+    throw error;
+  }
 }
 
 async function sumInRange(
@@ -145,7 +176,7 @@ async function sumInRange(
 }
 
 export async function readReportPdf(blobKey: string): Promise<Uint8Array | null> {
-  if (!blobKey) return null;
+  if (!isReportBlobKey(blobKey)) return null;
   const stored = await reportStore().get(blobKey, { type: "arrayBuffer" });
   return stored ? new Uint8Array(stored) : null;
 }

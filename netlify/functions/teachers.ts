@@ -3,26 +3,7 @@ import { teachers, type Teacher } from "../../db/schema";
 import { db } from "../../db/index";
 import { fail, handleError, json, readBody } from "./_shared/http";
 import { listSalaryPayments, paymentsForTeacher, toTeacher } from "./_shared/data";
-import {
-  oneOf,
-  parseBirthDate,
-  parseBoolean,
-  parseDate,
-  parseMoney,
-  requiredText,
-} from "./_shared/validate";
-
-function teacherInput(body: Record<string, unknown>) {
-  return {
-    name: requiredText(body.name, "Name", 255),
-    dateOfBirth: parseBirthDate(body.dateOfBirth, "Date of birth"),
-    gender: oneOf(body.gender, ["male", "female"] as const, "Gender"),
-    expectedSalary: parseMoney(body.expectedSalary, "Expected salary", true),
-    expectedReleaseDate: parseDate(body.expectedReleaseDate, "Expected release date"),
-    paidInAdvance: parseBoolean(body.paidInAdvance, "Paid in advance"),
-    section: oneOf(body.section, ["morning", "evening", "both"] as const, "Section"),
-  };
-}
+import { teacherFields } from "./_shared/validate";
 
 async function withPayments(row: Teacher) {
   return toTeacher(row, await paymentsForTeacher(row.id));
@@ -49,7 +30,7 @@ export default async (req: Request) => {
     if (req.method === "POST") {
       const body = await readBody(req);
       if (!body) return fail("Request body must be an object.", 400);
-      const [created] = await db.insert(teachers).values(teacherInput(body)).returning();
+      const [created] = await db.insert(teachers).values(teacherFields(body)).returning();
       return json({ teacher: await withPayments(created) }, 201);
     }
 

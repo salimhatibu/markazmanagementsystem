@@ -12,10 +12,12 @@ export function ReportsPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState<"biweekly" | "monthly" | null>(null);
+  const [ready, setReady] = useState(false);
 
   async function load() {
     const body = await api<{ reports: ReportItem[] }>("/api/reports");
     setReports(body.reports);
+    setReady(true);
   }
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export function ReportsPage() {
         await refreshAlerts();
         await load();
       } catch (caught) {
-        if (!cancel) setError(caught instanceof Error ? caught.message : "Could not load reports.");
+        if (!cancel) setError(caught instanceof Error ? caught.message : "Reports could not be opened.");
       }
     })();
     return () => {
@@ -39,13 +41,22 @@ export function ReportsPage() {
     setError("");
     setInfo("");
     try {
-      await api("/api/reports", { method: "POST", body: JSON.stringify({ period }) });
+      const body = await api<{ report: { created: boolean } }>("/api/reports", {
+        method: "POST",
+        body: JSON.stringify({ period }),
+      });
       await api("/api/notifications/read", { method: "POST" });
       await refreshAlerts();
       await load();
-      setInfo(`${period === "biweekly" ? "Biweekly" : "Monthly"} report is ready to download.`);
+      setInfo(
+        body.report.created === false
+          ? "That report is already ready to download."
+          : period === "biweekly"
+            ? "The mid-month report is ready to download."
+            : "The monthly report is ready to download.",
+      );
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not generate the report.");
+      setError(caught instanceof Error ? caught.message : "The report could not be prepared.");
     } finally {
       setBusy(null);
     }
@@ -53,41 +64,59 @@ export function ReportsPage() {
 
   return (
     <>
-      <PageHeader kicker="Files" title="Reports">
+      <PageHeader
+        kicker="Files"
+        title="Reports"
+        lead="Each file is a full operations pack for the period that just ended. Dates and times are East Africa Time."
+      >
         <div className="actions">
           <button type="button" className="ghost" disabled={busy !== null} onClick={() => void generate("biweekly")}>
-            {busy === "biweekly" ? "Generating" : "Generate biweekly"}
+            {busy === "biweekly" ? "Preparing…" : "Prepare mid-month report"}
           </button>
           <button type="button" className="ghost" disabled={busy !== null} onClick={() => void generate("monthly")}>
-            {busy === "monthly" ? "Generating" : "Generate monthly"}
+            {busy === "monthly" ? "Preparing…" : "Prepare monthly report"}
           </button>
         </div>
       </PageHeader>
-      <p>Each file is a full operations pack for the period that just ended. Dates and times are East Africa Time.</p>
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
-      {reports.length === 0 ? <Empty>No reports yet.</Empty> : (
+      {!ready && !error ? (
+        <p className="loading-line">Opening reports…</p>
+      ) : reports.length === 0 ? (
+        <Empty>No reports yet. Prepare one when you want a PDF of the last period.</Empty>
+      ) : (
         <div className="table-wrap">
           <table>
-            <caption className="micro">&gt; Generated reports</caption>
+            <caption className="table-caption">Prepared reports</caption>
             <thead>
-              <tr><th>Period</th><th>Range</th><th>Created</th><th>File</th></tr>
+              <tr>
+                <th>Period</th>
+                <th>Range</th>
+                <th>Created</th>
+                <th></th>
+              </tr>
             </thead>
             <tbody>
               {reports.map((report) => (
                 <tr key={report.id}>
-                  <td>{report.period}</td>
-                  <td>{report.rangeStart} to {report.rangeEnd}</td>
+                  <td>{report.period === "biweekly" ? "Mid-month" : "Monthly"}</td>
+                  <td>
+                    {report.rangeStart} to {report.rangeEnd}
+                  </td>
                   <td>{formatEat(report.createdAt)}</td>
                   <td>
                     <button
                       type="button"
                       className="ghost"
-                      onClick={() => void downloadReport(report.id, `markaz-${report.period}-${report.rangeStart}.pdf`).catch((caught: unknown) => {
-                        setError(caught instanceof Error ? caught.message : "Could not download the report.");
-                      })}
+                      onClick={() =>
+                        void downloadReport(report.id, `markaz-${report.period}-${report.rangeStart}.pdf`).catch(
+                          (caught: unknown) => {
+                            setError(caught instanceof Error ? caught.message : "The report could not be downloaded.");
+                          },
+                        )
+                      }
                     >
-                      Download
+                      Download PDF
                     </button>
                   </td>
                 </tr>

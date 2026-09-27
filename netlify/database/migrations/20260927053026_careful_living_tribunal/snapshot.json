@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "0843dd06-e613-4200-97b0-1dc74626259d",
+  "id": "03f2cefa-02ea-4ed6-b786-f1f08564f23e",
   "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
+    "8c62df5b-909a-451c-9301-a85528df6799"
   ],
   "ddl": [
     {
@@ -595,6 +595,19 @@
     {
       "type": "timestamp with time zone",
       "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_balance_alert_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "students"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
       "default": "now()",
@@ -910,6 +923,19 @@
       "schema": "public",
       "table": "teachers",
       "entityType": "pks"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "period",
+        "range_start",
+        "range_end"
+      ],
+      "nullsNotDistinct": false,
+      "name": "reports_period_range_uid",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "reports"
     },
     {
       "nameExplicit": false,

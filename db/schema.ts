@@ -9,6 +9,7 @@ import {
   serial,
   text,
   timestamp,
+  unique,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -35,6 +36,7 @@ export const students = pgTable("students", {
   secondContactName: varchar("second_contact_name", { length: 255 }),
   secondContactPhone: varchar("second_contact_phone", { length: 64 }),
   secondContactEmail: varchar("second_contact_email", { length: 255 }),
+  lastBalanceAlertAt: timestamp("last_balance_alert_at", { withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -82,14 +84,18 @@ export const salaryPayments = pgTable(
   (table) => [index("salary_payments_teacher_id_idx").on(table.teacherId)],
 );
 
-export const reports = pgTable("reports", {
-  id: serial().primaryKey(),
-  period: reportPeriod().notNull(),
-  rangeStart: date("range_start").notNull(),
-  rangeEnd: date("range_end").notNull(),
-  blobKey: varchar("blob_key", { length: 600 }).notNull(),
-  createdAt: createdAt(),
-});
+export const reports = pgTable(
+  "reports",
+  {
+    id: serial().primaryKey(),
+    period: reportPeriod().notNull(),
+    rangeStart: date("range_start").notNull(),
+    rangeEnd: date("range_end").notNull(),
+    blobKey: varchar("blob_key", { length: 600 }).notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [unique("reports_period_range_uid").on(table.period, table.rangeStart, table.rangeEnd)],
+);
 
 export const notifications = pgTable("notifications", {
   id: serial().primaryKey(),

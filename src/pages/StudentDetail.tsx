@@ -24,6 +24,7 @@ export function StudentDetailPage() {
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [removingPayment, setRemovingPayment] = useState<number | null>(null);
   const [mailConfigured, setMailConfigured] = useState<boolean | null>(null);
 
   async function load() {
@@ -33,7 +34,9 @@ export function StudentDetailPage() {
   }
 
   useEffect(() => {
-    load().catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Could not load the student."));
+    load().catch((caught: unknown) =>
+      setError(caught instanceof Error ? caught.message : "This student record could not be opened."),
+    );
     api<{ configured: boolean }>("/api/mail")
       .then((body) => setMailConfigured(body.configured))
       .catch(() => setMailConfigured(false));
@@ -50,9 +53,9 @@ export function StudentDetailPage() {
       });
       setStudent(body.student);
       setDraft(studentToInput(body.student));
-      setInfo("Student record saved.");
+      setInfo("Saved. The details are up to date.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save the student.");
+      setError(caught instanceof Error ? caught.message : "The student could not be saved.");
     } finally {
       setBusy(false);
     }
@@ -73,7 +76,7 @@ export function StudentDetailPage() {
       setNote("");
       setInfo("Payment recorded.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not record the payment.");
+      setError(caught instanceof Error ? caught.message : "The payment could not be recorded.");
     } finally {
       setBusy(false);
     }
@@ -86,8 +89,10 @@ export function StudentDetailPage() {
       const body = await api<{ student: Student }>(`/api/fee-payments/${paymentId}`, { method: "DELETE" });
       setStudent(body.student);
       setDraft(studentToInput(body.student));
+      setRemovingPayment(null);
+      setInfo("That payment was removed.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not remove the payment.");
+      setError(caught instanceof Error ? caught.message : "The payment could not be removed.");
     } finally {
       setBusy(false);
     }
@@ -99,7 +104,7 @@ export function StudentDetailPage() {
       await api(`/api/students/${id}`, { method: "DELETE" });
       navigate("/students");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not delete the student.");
+      setError(caught instanceof Error ? caught.message : "The student could not be deleted.");
       setBusy(false);
     }
   }
@@ -110,9 +115,9 @@ export function StudentDetailPage() {
     setInfo("");
     try {
       await api(`/api/students/${id}/balance-alert`, { method: "POST" });
-      setInfo("Balance alert sent to the guardian email.");
+      setInfo("A reminder was sent to the guardian email.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not send mail.");
+      setError(caught instanceof Error ? caught.message : "The reminder could not be sent.");
     } finally {
       setBusy(false);
     }
@@ -120,52 +125,100 @@ export function StudentDetailPage() {
 
   const symbol = settings.currencySymbol;
   if (!student || !draft) {
-    return error ? <Notice>{error}</Notice> : <p className="micro">&gt; Loading</p>;
+    return error ? <Notice>{error}</Notice> : <p className="loading-line">Opening this record…</p>;
   }
 
   return (
     <>
-      <PageHeader kicker={student.admissionNumber} title={student.name}>
-        <Link to="/students">All students</Link>
+      <PageHeader kicker={student.admissionNumber} title={student.name} person>
+        <Link className="ghost" to="/students">
+          Back to students
+        </Link>
       </PageHeader>
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
       <div className="meta-row">
-        <div><span className="micro">&gt; Age</span><strong>{student.age}</strong></div>
-        <div><span className="micro">&gt; Section</span><strong>{label(student.section)}</strong></div>
-        <div><span className="micro">&gt; Balance</span><strong>{formatMoney(student.balance, symbol)}</strong></div>
-        <div><span className="micro">&gt; Percent paid</span><strong>{formatPercent(student.percentPaid)}</strong></div>
+        <div>
+          <span className="kicker">Age</span>
+          <strong>{student.age}</strong>
+        </div>
+        <div>
+          <span className="kicker">Class time</span>
+          <strong className="meta-word">{label(student.section)}</strong>
+        </div>
+        <div>
+          <span className="kicker">Balance</span>
+          <strong>{formatMoney(student.balance, symbol)}</strong>
+        </div>
+        <div>
+          <span className="kicker">Paid so far</span>
+          <strong>{formatPercent(student.percentPaid)}</strong>
+        </div>
       </div>
       <Panel tone="light">
-        <p className="micro">&gt; Edit record</p>
+        <p className="panel-title">Edit this record</p>
         <StudentForm value={draft} onChange={setDraft} onSubmit={() => void save()} submitLabel="Save changes" busy={busy} />
       </Panel>
       <Panel tone="dark">
-        <p className="micro">&gt; Fee payment</p>
+        <p className="panel-title">Record a fee payment</p>
         <form className="form-grid" onSubmit={(event) => void addPayment(event)}>
-          <Field id="pay-amount" label="Amount">
-            <input id="pay-amount" inputMode="decimal" required value={amount} onChange={(event) => setAmount(event.target.value)} />
+          <Field id="pay-amount" label="Amount" hint="Kenyan shillings">
+            <input
+              id="pay-amount"
+              inputMode="decimal"
+              required
+              placeholder="0.00"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+            />
           </Field>
-          <Field id="pay-date" label="Date">
+          <Field id="pay-date" label="Date paid">
             <input id="pay-date" type="date" required value={paidOn} onChange={(event) => setPaidOn(event.target.value)} />
           </Field>
-          <Field id="pay-note" label="Note">
+          <Field id="pay-note" label="Note" hint="Optional, such as M-Pesa or cash.">
             <input id="pay-note" value={note} onChange={(event) => setNote(event.target.value)} />
           </Field>
-          <button className="ghost" type="submit" disabled={busy}>Record payment</button>
+          <button className="ghost" type="submit" disabled={busy}>
+            Add payment
+          </button>
         </form>
-        {student.payments.length === 0 ? <p>No payments yet. The balance stays open.</p> : (
+        {student.payments.length === 0 ? (
+          <p>No payments yet. The balance stays open until something is recorded.</p>
+        ) : (
           <div className="table-wrap">
             <table>
-              <caption className="micro">&gt; Payment history</caption>
-              <thead><tr><th>Date</th><th>Amount</th><th>Note</th><th>Remove</th></tr></thead>
+              <caption className="table-caption">Payment history</caption>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Note</th>
+                  <th></th>
+                </tr>
+              </thead>
               <tbody>
                 {student.payments.map((payment) => (
                   <tr key={payment.id}>
                     <td>{payment.paidOn}</td>
                     <td>{formatMoney(payment.amount, symbol)}</td>
                     <td>{payment.note || "—"}</td>
-                    <td><button type="button" className="ghost" onClick={() => void removePayment(payment.id)}>Remove</button></td>
+                    <td>
+                      {removingPayment === payment.id ? (
+                        <span className="inline-confirm">
+                          Remove this payment?
+                          <button type="button" className="ghost" onClick={() => void removePayment(payment.id)}>
+                            Yes, remove
+                          </button>
+                          <button type="button" className="text-button" onClick={() => setRemovingPayment(null)}>
+                            Keep it
+                          </button>
+                        </span>
+                      ) : (
+                        <button type="button" className="text-button" onClick={() => setRemovingPayment(payment.id)}>
+                          Remove
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -174,29 +227,40 @@ export function StudentDetailPage() {
         )}
       </Panel>
       <Panel tone="light">
-        <p className="micro">&gt; Balance alert</p>
+        <p className="panel-title">Send a fee reminder</p>
         {mailConfigured === null ? (
-          <p className="micro">&gt; Checking mail</p>
+          <p>Checking whether email is ready…</p>
         ) : mailConfigured ? (
-          <button type="button" className="solid" disabled={busy} onClick={() => void sendAlert()}>
-            Email guardian
-          </button>
+          <>
+            <p>This sends the current balance to {student.guardianEmail}.</p>
+            <button type="button" className="solid" disabled={busy} onClick={() => void sendAlert()}>
+              Email the guardian
+            </button>
+          </>
         ) : (
           <p>
-            Mail is not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and MARKAZ_FROM on the Netlify site
-            before a balance alert can be sent.
+            Reminders are not ready yet. Once the office mailbox is connected in Settings, you can send a balance from
+            this page.
           </p>
         )}
       </Panel>
       <div className="actions">
         {confirming ? (
-          <div role="group" aria-label="Confirm deletion">
-            <p>Delete this student and the fee history?</p>
-            <button type="button" className="solid" onClick={() => void removeStudent()}>Delete record</button>
-            <button type="button" className="ghost" onClick={() => setConfirming(false)}>Keep record</button>
+          <div className="confirm-box" role="group" aria-label="Confirm deletion">
+            <p>
+              This removes {student.name} and every fee payment on this record. That cannot be undone.
+            </p>
+            <button type="button" className="solid" onClick={() => void removeStudent()}>
+              Yes, delete this record
+            </button>
+            <button type="button" className="ghost" onClick={() => setConfirming(false)}>
+              Keep this record
+            </button>
           </div>
         ) : (
-          <button type="button" className="ghost" onClick={() => setConfirming(true)}>Delete student</button>
+          <button type="button" className="text-button" onClick={() => setConfirming(true)}>
+            Delete this student
+          </button>
         )}
       </div>
     </>

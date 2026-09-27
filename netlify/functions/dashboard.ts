@@ -1,5 +1,5 @@
 import type { Config } from "@netlify/functions";
-import { handleError, json } from "./_shared/http";
+import { fail, handleError, json } from "./_shared/http";
 import {
   listFeePayments,
   listSalaryPayments,
@@ -10,9 +10,7 @@ import {
 import { operationsTotals, toCents } from "../../shared/ledger";
 
 export default async (req: Request) => {
-  if (req.method !== "GET") {
-    return json({ error: "Method not allowed." }, 405);
-  }
+  if (req.method !== "GET") return fail("Method not allowed.", 405);
   try {
     const [studentRows, teacherRows, feeRows, salaryRows] = await Promise.all([
       listStudents(),

@@ -15,14 +15,18 @@ export function TeachersPage() {
   const [draft, setDraft] = useState<TeacherInput>(emptyTeacher());
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [ready, setReady] = useState(false);
 
   async function load() {
     const body = await api<{ teachers: Teacher[] }>("/api/teachers");
     setTeachers(body.teachers);
+    setReady(true);
   }
 
   useEffect(() => {
-    load().catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Could not load teachers."));
+    load().catch((caught: unknown) =>
+      setError(caught instanceof Error ? caught.message : "The teacher list could not be opened."),
+    );
   }, []);
 
   const filtered = useMemo(() => {
@@ -40,7 +44,7 @@ export function TeachersPage() {
       setOpen(false);
       await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save the teacher.");
+      setError(caught instanceof Error ? caught.message : "The teacher could not be saved.");
     } finally {
       setBusy(false);
     }
@@ -50,39 +54,67 @@ export function TeachersPage() {
 
   return (
     <>
-      <PageHeader kicker="Records" title="Teachers">
+      <PageHeader
+        kicker="Records"
+        title="Teachers"
+        lead="Salaries, class times, and expected last days stay on an open ledger."
+      >
         <button type="button" className="ghost" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-          {open ? "Close form" : "Add teacher"}
+          {open ? "Close form" : "Add a teacher"}
         </button>
       </PageHeader>
       {error ? <Notice>{error}</Notice> : null}
       {open ? (
         <Panel tone="light">
-          <p className="micro">&gt; New teacher</p>
-          <TeacherForm value={draft} onChange={setDraft} onSubmit={() => void create()} submitLabel="Save teacher" busy={busy} />
+          <p className="panel-title">New teacher</p>
+          <TeacherForm
+            value={draft}
+            onChange={setDraft}
+            onSubmit={() => void create()}
+            submitLabel="Save teacher"
+            busy={busy}
+          />
         </Panel>
       ) : null}
       <div className="toolbar">
-        <Field id="teacher-search" label="Search">
-          <input id="teacher-search" className="search" value={query} onChange={(event) => setQuery(event.target.value)} />
+        <Field id="teacher-search" label="Find a teacher">
+          <input
+            id="teacher-search"
+            className="search"
+            type="search"
+            autoComplete="off"
+            placeholder="Name or class time"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
         </Field>
-        <p className="micro">&gt; {filtered.length} shown</p>
+        <p className="count-label">
+          {filtered.length} {filtered.length === 1 ? "teacher" : "teachers"}
+        </p>
       </div>
-      {filtered.length === 0 ? <Empty>No teachers match this view.</Empty> : (
+      {!ready && !error ? (
+        <p className="loading-line">Opening the teacher list…</p>
+      ) : filtered.length === 0 ? (
+        <Empty>
+          {teachers.length === 0
+            ? "No teachers yet. Add someone when you are ready and the salary history will stay here."
+            : "Nothing matches that search. Try a name or morning / evening."}
+        </Empty>
+      ) : (
         <div className="table-wrap">
           <table>
-            <caption className="micro">&gt; Teacher ledger</caption>
+            <caption className="table-caption">Teacher salaries</caption>
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Section</th>
+                <th>Class time</th>
                 <th>Age</th>
                 <th>Expected</th>
                 <th>Paid</th>
                 <th>Balance</th>
-                <th>Release</th>
+                <th>Last day</th>
                 <th>Advance</th>
-                <th>Open</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -96,7 +128,11 @@ export function TeachersPage() {
                   <td>{formatMoney(teacher.balance, symbol)}</td>
                   <td>{teacher.expectedReleaseDate}</td>
                   <td>{teacher.paidInAdvance ? "Yes" : "No"}</td>
-                  <td><Link to={`/teachers/${teacher.id}`}>Record</Link></td>
+                  <td>
+                    <Link className="row-link" to={`/teachers/${teacher.id}`}>
+                      Open record
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -28,20 +28,24 @@ export function HadithDialog({ daily, onClose }: { daily: DailyHadith; onClose: 
   return (
     <div className="modal-veil">
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="hadith-title">
-        <p className="micro micro-icon">
-          <BookIcon /> &gt; Hadith of the day {daily.dayNumber} of {daily.total}
+        <p className="kicker kicker-icon">
+          <BookIcon /> A short reading for today · {daily.dayNumber} of {daily.total}
         </p>
         <h2 id="hadith-title">{hadith.chapter.replace(/^Chapter:\s*/, "")}</h2>
         <p className="arabic-line">{hadith.chapterArabic}</p>
         <p className="narrator">{hadith.narrator}</p>
         <p className="hadith-body">{hadith.english}</p>
-        <p className="micro">&gt; {hadith.reference} &middot; {hadith.inBook}</p>
-        <p className="micro countdown" aria-live="polite">
-          {remaining > 0 ? `> Closes in ${remaining}s` : "> Closing"}
+        <p className="hadith-ref">
+          {hadith.reference} · {hadith.inBook}
+        </p>
+        <p className="countdown" aria-live="polite">
+          {remaining > 0
+            ? `This stays on screen for ${remaining} seconds so you can read it.`
+            : "You can close this now."}
         </p>
         {remaining === 0 ? (
           <button type="button" className="solid" onClick={onClose}>
-            Close
+            Continue
           </button>
         ) : null}
       </div>

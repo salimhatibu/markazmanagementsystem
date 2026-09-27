@@ -26,15 +26,24 @@ export function TeacherForm({
 
   return (
     <form className="record-form" onSubmit={submit}>
+      <p className="form-section">About the teacher</p>
       <div className="form-grid">
-        <Field id="teacher-name" label="Name">
-          <input id="teacher-name" required value={value.name} onChange={(event) => set("name", event.target.value)} />
+        <Field id="teacher-name" label="Full name">
+          <input
+            id="teacher-name"
+            required
+            autoComplete="name"
+            placeholder="Khadija Omar"
+            value={value.name}
+            onChange={(event) => set("name", event.target.value)}
+          />
         </Field>
         <Field id="teacher-dob" label="Date of birth">
           <input
             id="teacher-dob"
             type="date"
             required
+            autoComplete="bday"
             value={value.dateOfBirth}
             onChange={(event) => set("dateOfBirth", event.target.value)}
           />
@@ -49,7 +58,7 @@ export function TeacherForm({
             <option value="male">Male</option>
           </select>
         </Field>
-        <Field id="teacher-section" label="Section">
+        <Field id="teacher-section" label="Class time">
           <select
             id="teacher-section"
             value={value.section}
@@ -57,23 +66,26 @@ export function TeacherForm({
           >
             <option value="morning">Morning</option>
             <option value="evening">Evening</option>
-            <option value="both">Both</option>
+            <option value="both">Morning and evening</option>
           </select>
         </Field>
-        <Field id="expected-salary" label="Expected salary">
+        <Field id="expected-salary" label="Expected salary" hint="Amount in Kenyan shillings.">
           <input
             id="expected-salary"
             inputMode="decimal"
             required
+            placeholder="0.00"
+            aria-describedby="expected-salary-hint"
             value={value.expectedSalary}
             onChange={(event) => set("expectedSalary", event.target.value)}
           />
         </Field>
-        <Field id="release-date" label="Expected release date">
+        <Field id="release-date" label="Expected last day" hint="When this term is meant to end.">
           <input
             id="release-date"
             type="date"
             required
+            aria-describedby="release-date-hint"
             value={value.expectedReleaseDate}
             onChange={(event) => set("expectedReleaseDate", event.target.value)}
           />
@@ -86,10 +98,10 @@ export function TeacherForm({
           checked={value.paidInAdvance}
           onChange={(event) => set("paidInAdvance", event.target.checked)}
         />
-        <span className="micro">&gt; Paid in advance</span>
+        <span>Already paid in advance</span>
       </label>
       <button type="submit" className="solid" disabled={busy}>
-        {busy ? "Saving" : submitLabel}
+        {busy ? "Saving…" : submitLabel}
       </button>
     </form>
   );

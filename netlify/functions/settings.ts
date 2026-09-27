@@ -5,7 +5,7 @@ import { settings } from "../../db/schema";
 import { loadSettings } from "./_shared/data";
 import { fail, handleError, json, readBody } from "./_shared/http";
 import { CURRENCY, MARKAZ_NAME } from "../../shared/format";
-import { optionalText } from "./_shared/validate";
+import { optionalCurrency, optionalText } from "./_shared/validate";
 
 function present(row: { markazName: string | null; currencySymbol: string | null } | null) {
   return {
@@ -24,7 +24,7 @@ export default async (req: Request) => {
       const body = await readBody(req);
       if (!body) return fail("Request body must be an object.", 400);
       const markazName = optionalText(body.markazName, "Markaz name", 255);
-      const currencySymbol = optionalText(body.currencySymbol, "Currency symbol", 16);
+      const currencySymbol = optionalCurrency(body.currencySymbol, "Currency symbol");
       const current = await loadSettings();
       if (!current) {
         const [created] = await db
