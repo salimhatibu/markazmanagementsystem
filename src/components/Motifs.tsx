@@ -80,6 +80,20 @@ export function StarIcon({ className }: IconProps) {
   );
 }
 
+export function CloseIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" aria-hidden="true">
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        d="M8 8 24 24M24 8 8 24"
+      />
+    </svg>
+  );
+}
+
 export function Ornament() {
   return (
     <div className="ornament" aria-hidden="true">

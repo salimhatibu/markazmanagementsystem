@@ -186,9 +186,9 @@ export function TeacherDetailPage() {
               <tbody>
                 {teacher.payments.map((payment) => (
                   <tr key={payment.id}>
-                    <td>{payment.paidOn}</td>
-                    <td>{formatMoney(payment.amount, symbol)}</td>
-                    <td>{payment.note || "—"}</td>
+                    <td data-label="Date">{payment.paidOn}</td>
+                    <td data-label="Amount">{formatMoney(payment.amount, symbol)}</td>
+                    <td data-label="Note">{payment.note || "—"}</td>
                     <td>
                       {removingPayment === payment.id ? (
                         <span className="inline-confirm">

@@ -125,14 +125,14 @@ export function StudentsPage() {
             <tbody>
               {filtered.map((student) => (
                 <tr key={student.id}>
-                  <td>{student.admissionNumber}</td>
-                  <td>{student.name}</td>
-                  <td>{label(student.section)}</td>
-                  <td>{student.age}</td>
-                  <td>{formatMoney(student.expectedFees, symbol)}</td>
-                  <td>{formatMoney(student.paid, symbol)}</td>
-                  <td>{formatMoney(student.balance, symbol)}</td>
-                  <td>{formatPercent(student.percentPaid)}</td>
+                  <td data-label="Admission">{student.admissionNumber}</td>
+                  <td data-label="Name">{student.name}</td>
+                  <td data-label="Class time">{label(student.section)}</td>
+                  <td data-label="Age">{student.age}</td>
+                  <td data-label="Expected">{formatMoney(student.expectedFees, symbol)}</td>
+                  <td data-label="Paid">{formatMoney(student.paid, symbol)}</td>
+                  <td data-label="Balance">{formatMoney(student.balance, symbol)}</td>
+                  <td data-label="Paid so far">{formatPercent(student.percentPaid)}</td>
                   <td>
                     <Link className="row-link" to={`/students/${student.id}`}>
                       Open record
