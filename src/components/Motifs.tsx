@@ -182,3 +182,11 @@ export function NavGearIcon({ className }: IconProps) {
     </StrokeIcon>
   );
 }
+
+export function MenuIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <path d="M4 7 H20 M4 12 H20 M4 17 H20" />
+    </StrokeIcon>
+  );
+}

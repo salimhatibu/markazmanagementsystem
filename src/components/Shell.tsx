@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CURRENCY, displayName, MARKAZ_NAME } from "../../shared/format";
 import { ACCOUNT_NAME, ACCOUNT_NUMBER, BANK_NAME, OFFICIAL_ADDRESS, PAYBILL } from "../../shared/letterhead";
@@ -6,12 +6,15 @@ import { api } from "../lib/api";
 import { claimFirstVisit, loadDailyHadith, type DailyHadith } from "../lib/hadith";
 import { shouldPlaySalam } from "../lib/sand-salam";
 import { applyTheme, readTheme, type Theme } from "../lib/theme";
+import { useNavFit } from "../lib/use-nav-fit";
 import type { Settings } from "../types";
 import { Footer } from "./Footer";
 import { HadithDialog } from "./HadithDialog";
 import {
   BooksStackIcon,
+  CloseIcon,
   CrescentIcon,
+  MenuIcon,
   NavChartIcon,
   NavFileIcon,
   NavGearIcon,
@@ -57,6 +60,10 @@ export function Shell() {
   const [daily, setDaily] = useState<DailyHadith | null>(null);
   const [showHadith, setShowHadith] = useState(false);
   const [showSalam, setShowSalam] = useState(shouldPlaySalam);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const barRef = useRef<HTMLElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const { compact, ready } = useNavFit(barRef, measureRef);
 
   useEffect(() => {
     applyTheme(theme);
@@ -106,6 +113,26 @@ export function Shell() {
     setShowHadith(claimFirstVisit(daily.date));
   }, [showSalam, daily]);
 
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname, compact]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointer = (event: PointerEvent) => {
+      if (!barRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
   const context: WorkspaceContext = { settings, refreshSettings, unread, refreshAlerts, daily };
   const brand = displayName(settings.markazName);
 
@@ -120,7 +147,21 @@ export function Shell() {
         MARKAZ
       </div>
       <div className="header-wrap">
-        <header className="topbar">
+        <div className="nav-measure" ref={measureRef} aria-hidden="true">
+          {links.map((link) => {
+            const Icon = link.icon;
+            return (
+              <span key={link.to} className="nav-pill">
+                <Icon />
+                {link.label}
+              </span>
+            );
+          })}
+        </div>
+        <header
+          ref={barRef}
+          className={`topbar${compact ? " is-compact" : ""}${menuOpen ? " is-open" : ""}`}
+        >
           <NavLink to="/" className="brand" end>
             <span className="logo-mark" aria-hidden="true">
               <BooksStackIcon />
@@ -130,7 +171,11 @@ export function Shell() {
               <span className="b">Imam ash-Shafi&rsquo;i</span>
             </span>
           </NavLink>
-          <nav className="nav-pills" aria-label="Primary">
+          <nav
+            className={`nav-pills${ready ? "" : " is-pending"}`}
+            aria-label="Primary"
+            hidden={compact}
+          >
             {links.map((link) => {
               const Icon = link.icon;
               return (
@@ -152,6 +197,18 @@ export function Shell() {
                 Report ready{unread > 1 ? ` · ${unread}` : ""}
               </NavLink>
             ) : null}
+            {compact ? (
+              <button
+                type="button"
+                className="nav-menu-toggle"
+                aria-expanded={menuOpen}
+                aria-controls="primary-menu"
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                onClick={() => setMenuOpen((open) => !open)}
+              >
+                {menuOpen ? <CloseIcon /> : <MenuIcon />}
+              </button>
+            ) : null}
             <button
               type="button"
               className={`theme-toggle theme-toggle-${theme}`}
@@ -166,6 +223,30 @@ export function Shell() {
               <span className="theme-toggle-label">{theme === "light" ? "Dark page" : "Light page"}</span>
             </button>
           </div>
+          {compact ? (
+            <nav
+              id="primary-menu"
+              className={`nav-drawer${menuOpen ? " is-open" : ""}`}
+              aria-label="Primary"
+              hidden={!menuOpen}
+            >
+              {links.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    end={link.end}
+                    className={({ isActive }) => (isActive ? "nav-pill active" : "nav-pill")}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Icon />
+                    {link.label}
+                  </NavLink>
+                );
+              })}
+            </nav>
+          ) : null}
         </header>
       </div>
       <main id="content" className="content">
