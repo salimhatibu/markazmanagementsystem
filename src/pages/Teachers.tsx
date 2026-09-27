@@ -120,14 +120,14 @@ export function TeachersPage() {
             <tbody>
               {filtered.map((teacher) => (
                 <tr key={teacher.id}>
-                  <td>{teacher.name}</td>
-                  <td>{label(teacher.section)}</td>
-                  <td>{teacher.age}</td>
-                  <td>{formatMoney(teacher.expectedSalary, symbol)}</td>
-                  <td>{formatMoney(teacher.paid, symbol)}</td>
-                  <td>{formatMoney(teacher.balance, symbol)}</td>
-                  <td>{teacher.expectedReleaseDate}</td>
-                  <td>{teacher.paidInAdvance ? "Yes" : "No"}</td>
+                  <td data-label="Name">{teacher.name}</td>
+                  <td data-label="Class time">{label(teacher.section)}</td>
+                  <td data-label="Age">{teacher.age}</td>
+                  <td data-label="Expected">{formatMoney(teacher.expectedSalary, symbol)}</td>
+                  <td data-label="Paid">{formatMoney(teacher.paid, symbol)}</td>
+                  <td data-label="Balance">{formatMoney(teacher.balance, symbol)}</td>
+                  <td data-label="Last day">{teacher.expectedReleaseDate}</td>
+                  <td data-label="Advance">{teacher.paidInAdvance ? "Yes" : "No"}</td>
                   <td>
                     <Link className="row-link" to={`/teachers/${teacher.id}`}>
                       Open record

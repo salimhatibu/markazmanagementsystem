@@ -99,11 +99,11 @@ export function ReportsPage() {
             <tbody>
               {reports.map((report) => (
                 <tr key={report.id}>
-                  <td>{report.period === "biweekly" ? "Mid-month" : "Monthly"}</td>
-                  <td>
+                  <td data-label="Period">{report.period === "biweekly" ? "Mid-month" : "Monthly"}</td>
+                  <td data-label="Range">
                     {report.rangeStart} to {report.rangeEnd}
                   </td>
-                  <td>{formatEat(report.createdAt)}</td>
+                  <td data-label="Created">{formatEat(report.createdAt)}</td>
                   <td>
                     <button
                       type="button"

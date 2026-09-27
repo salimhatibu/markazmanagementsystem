@@ -3,11 +3,13 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CURRENCY, displayName, MARKAZ_NAME } from "../../shared/format";
 import { api } from "../lib/api";
 import { claimFirstVisit, loadDailyHadith, type DailyHadith } from "../lib/hadith";
+import { shouldPlaySalam } from "../lib/sand-salam";
 import { applyTheme, readTheme, type Theme } from "../lib/theme";
 import type { Settings } from "../types";
 import { Footer } from "./Footer";
 import { HadithDialog } from "./HadithDialog";
 import { BookIcon, CrescentIcon, Ornament, SunIcon } from "./Motifs";
+import { SalamSplash } from "./SalamSplash";
 
 export type WorkspaceContext = {
   settings: Settings;
@@ -32,6 +34,7 @@ export function Shell() {
   const [theme, setTheme] = useState<Theme>(readTheme);
   const [daily, setDaily] = useState<DailyHadith | null>(null);
   const [showHadith, setShowHadith] = useState(false);
+  const [showSalam, setShowSalam] = useState(shouldPlaySalam);
 
   useEffect(() => {
     applyTheme(theme);
@@ -43,7 +46,6 @@ export function Shell() {
       .then((today) => {
         if (cancel) return;
         setDaily(today);
-        setShowHadith(claimFirstVisit(today.date));
       })
       .catch(() => {
         if (!cancel) setDaily(null);
@@ -77,6 +79,11 @@ export function Shell() {
     };
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (showSalam || !daily) return;
+    setShowHadith(claimFirstVisit(daily.date));
+  }, [showSalam, daily]);
+
   const context: WorkspaceContext = { settings, refreshSettings, unread, refreshAlerts, daily };
   const brand = displayName(settings.markazName);
 
@@ -106,7 +113,7 @@ export function Shell() {
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
         >
           {theme === "light" ? <CrescentIcon /> : <SunIcon />}
-          {theme === "light" ? "Dark page" : "Light page"}
+          <span className="theme-toggle-label">{theme === "light" ? "Dark page" : "Light page"}</span>
         </button>
         {unread > 0 ? (
             <NavLink to="/reports" className="alert-pill">
@@ -122,7 +129,8 @@ export function Shell() {
       <div className="watermark">
         <BookIcon />
       </div>
-      {showHadith && daily ? (
+      {showSalam ? <SalamSplash onDone={() => setShowSalam(false)} /> : null}
+      {showHadith && daily && !showSalam ? (
         <HadithDialog daily={daily} onClose={() => setShowHadith(false)} />
       ) : null}
     </div>
