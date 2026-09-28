@@ -2,7 +2,7 @@ import { eatDate } from "../../shared/format";
 import type { Hadith } from "../data/bukhari-nikah";
 
 /** The rotation starts at the first hadith of the chapter on this date and advances one per day. */
-const FIRST_DAY = "2026-09-27";
+const FIRST_DAY = "2026-09-29";
 const SEEN_KEY = "markaz_hadith_seen";
 
 export type DailyHadith = {
