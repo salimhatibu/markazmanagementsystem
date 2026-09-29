@@ -39,9 +39,6 @@ export function PublicBlogLayout() {
         <Outlet />
         <footer>
           <span>Sponsored by maktabahruhayn.com · Design by Abu Ruhayn</span>
-          <span>
-            Owner Meemy · <BlogBrandMark /> · Mombasa, Kenya
-          </span>
         </footer>
       </main>
     </div>

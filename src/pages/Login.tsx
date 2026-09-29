@@ -149,11 +149,7 @@ export function LoginPage() {
       <section className="login-copy">
         <p className="eyebrow">Markaz keepers</p>
         <h1>{MARKAZ_NAME}</h1>
-        <p className="lede">
-          Create an account and sign in here. That does not open the ledger or the writing desk. Only an address given
-          the <code>admin</code> role in Netlify Identity can reach those pages. The papers at{" "}
-          <Link to="/read">/read</Link> stay public.
-        </p>
+        <p className="lede">Create an account and sign in here.</p>
       </section>
       <section className="login-panel">
         {waiting ? (
