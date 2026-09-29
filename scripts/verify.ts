@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { formatShortDate, hijriDate, monthName } from "../shared/format";
+import { formatEatLongDate, formatShortDate, hijriDate, monthName } from "../shared/format";
 import { applicantName, presentLetterhead, payoutPhone } from "../shared/letterhead";
 import { biweeklyRange, monthlyRange, monthToDateRange } from "../shared/periods";
 import {
@@ -9,6 +9,12 @@ import {
   toCents,
 } from "../shared/ledger";
 import { buildOperationsPdf } from "../shared/pdf";
+import { excerptFromHtml, sanitizePostHtml } from "../shared/post-html";
+import { slugFromTitle } from "../shared/slug";
+import { sanitizeComment } from "../shared/comment";
+import { hasAdminRole } from "../shared/roles";
+import { CHECK_IN_GAPS_MS, commitNextCheckIn, peekCheckInDelay } from "../src/lib/check-in";
+import { shapeFromSize } from "../src/lib/blog-images";
 
 function student(expected: number, paid: number) {
   return studentFigures(toCents(expected), toCents(paid));
@@ -94,16 +100,27 @@ assert.equal(applicantName("Khadija Omar", "Fahima"), "Khadija Omar (Fahima)");
 assert.equal(payoutPhone("0711", "0712"), "0712");
 assert.equal(presentLetterhead(null).paybill, "985050");
 assert.equal(formatShortDate("2026-09-27"), "27/9/26");
+assert.equal(slugFromTitle("A couple's room is sacred"), "a-couples-room-is-sacred");
 assert.equal(formatShortDate("2026-09-06"), "6/9/26");
 assert.equal(monthName("2026-09-01"), "September");
 
 {
   const hijri = hijriDate(new Date("2026-09-27T15:00:00+03:00"));
   assert.equal(hijri.day, 16);
-  assert.equal(hijri.month, "Rabiʻ II");
+  assert.equal(hijri.month, "Rabiʻ al-Akhar");
   assert.equal(hijri.year, 1448);
   assert.equal(hijri.english.includes("April"), false);
   assert.equal(hijri.arabic.includes("ربيع الآخر"), true);
+}
+
+{
+  const today = new Date("2026-09-29T12:00:00+03:00");
+  const hijri = hijriDate(today);
+  assert.equal(hijri.day, 18);
+  assert.equal(hijri.month, "Rabiʻ al-Akhar");
+  assert.equal(hijri.year, 1448);
+  assert.equal(hijri.gregorian, "29 September 2026");
+  assert.equal(formatEatLongDate(today), "29 September 2026");
 }
 
 const pdf = await buildOperationsPdf({
@@ -191,4 +208,62 @@ const pdf = await buildOperationsPdf({
 assert.equal(Buffer.from(pdf.subarray(0, 5)).toString(), "%PDF-");
 assert.ok(pdf.byteLength > 500);
 
-console.log("ledger, periods, and pdf checks passed");
+assert.equal(slugFromTitle("A Quiet Morning"), "a-quiet-morning");
+assert.equal(slugFromTitle("  "), "post");
+
+{
+  const clean = sanitizePostHtml(
+    `<p onclick="alert(1)">Peace</p><script>alert(1)</script><img src="/api/blog-media/blog/cover.jpg"><iframe src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"></iframe>`,
+  );
+  assert.equal(clean.includes("onclick"), false);
+  assert.equal(clean.includes("<script"), false);
+  assert.ok(clean.includes("/api/blog-media/blog/cover.jpg"));
+  assert.ok(clean.includes("youtube-nocookie.com/embed/dQw4w9WgXcQ"));
+  assert.equal(excerptFromHtml("<p>A short note about the markaz.</p>"), "A short note about the markaz.");
+  const shaped = sanitizePostHtml(
+    `<img src="/api/blog-media/blog/cover.jpg" class="blog-figure is-rect onclick-bad">`,
+  );
+  assert.ok(shaped.includes('class="is-rect"'));
+  assert.equal(shaped.includes("onclick"), false);
+}
+
+assert.equal(shapeFromSize(800, 800), "is-square");
+assert.equal(shapeFromSize(1200, 640), "is-rect");
+assert.equal(shapeFromSize(0, 0), "is-rect");
+assert.equal(sanitizeComment("<b>Peace</b>  upon  you"), "Peace upon you");
+assert.equal(sanitizeComment("   "), "");
+
+{
+  const store: Record<string, string> = {};
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    value: {
+      getItem: (key: string) => store[key] ?? null,
+      setItem: (key: string, value: string) => {
+        store[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete store[key];
+      },
+      clear: () => {
+        for (const key of Object.keys(store)) delete store[key];
+      },
+      key: () => null,
+      length: 0,
+    },
+  });
+  const now = 1_700_000_000_000;
+  assert.equal(peekCheckInDelay(now), CHECK_IN_GAPS_MS[0]);
+  assert.equal(commitNextCheckIn(now), CHECK_IN_GAPS_MS[1]);
+  assert.equal(peekCheckInDelay(now), CHECK_IN_GAPS_MS[1]);
+  assert.equal(commitNextCheckIn(now), CHECK_IN_GAPS_MS[0]);
+}
+
+{
+  assert.equal(hasAdminRole(["admin"], {}), true);
+  assert.equal(hasAdminRole([], { roles: ["admin"] }), true);
+  assert.equal(hasAdminRole(["member"], { roles: ["reader"] }), false);
+  assert.equal(hasAdminRole("admin", { roles: "admin" }), false);
+}
+
+console.log("ledger, periods, pdf, and blog checks passed");

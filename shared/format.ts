@@ -28,6 +28,16 @@ export function eatDate(date = new Date()): string {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+/** Calendar day in East Africa Time, such as 29 September 2026. */
+export function formatEatLongDate(date = new Date()): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIME_ZONE,
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
 export function formatEat(value: string | Date): string {
   const date = value instanceof Date ? value : new Date(value);
   const { year, month, day, hour, minute } = eatParts(date);
@@ -99,15 +109,16 @@ export type HijriDate = {
   year: number;
   english: string;
   arabic: string;
+  gregorian: string;
 };
 
 const HIJRI_MONTHS_EN = [
   "Muharram",
   "Safar",
-  "Rabiʻ I",
-  "Rabiʻ II",
-  "Jumada I",
-  "Jumada II",
+  "Rabiʻ al-Awwal",
+  "Rabiʻ al-Akhar",
+  "Jumada al-Ula",
+  "Jumada al-Akhirah",
   "Rajab",
   "Shaʻban",
   "Ramadan",
@@ -177,5 +188,6 @@ export function hijriDate(date = new Date()): HijriDate {
     year,
     english: `${day} ${monthNameEn} ${year} AH`,
     arabic: `${hijriDigits(day)} ${monthNameAr} ${hijriDigits(year)} هـ`,
+    gregorian: formatEatLongDate(date),
   };
 }

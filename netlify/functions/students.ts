@@ -1,6 +1,7 @@
 import type { Config } from "@netlify/functions";
 import { students, type Student } from "../../db/schema";
 import { db } from "../../db/index";
+import { requireAdmin } from "./_shared/auth";
 import { fail, handleError, json, readBody } from "./_shared/http";
 import {
   listFeePayments,
@@ -15,6 +16,8 @@ async function withPayments(row: Student) {
 }
 
 export default async (req: Request) => {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   try {
     if (req.method === "GET") {
       const [rows, payments] = await Promise.all([

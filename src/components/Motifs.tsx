@@ -201,6 +201,16 @@ export function NavFileIcon({ className }: IconProps) {
   );
 }
 
+export function NavBlogIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <path d="M5 5 H19 V20 H5 Z" />
+      <path d="M9 5 V20" />
+      <path d="M12 9 H16 M12 13 H16" />
+    </StrokeIcon>
+  );
+}
+
 export function NavGearIcon({ className }: IconProps) {
   return (
     <StrokeIcon className={className}>

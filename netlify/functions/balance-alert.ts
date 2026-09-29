@@ -5,6 +5,7 @@ import { db } from "../../db/index";
 import { students } from "../../db/schema";
 import { displayName, formatMoney, formatPercent } from "../../shared/format";
 import { loadSettings, paymentsForStudent, studentOrNull, toStudent } from "./_shared/data";
+import { requireAdmin } from "./_shared/auth";
 import { fail, handleError, json, parseId } from "./_shared/http";
 import { MAIL_NOT_CONFIGURED, readMailConfig } from "./_shared/mail";
 import { headerSafe } from "./_shared/validate";
@@ -18,6 +19,8 @@ function stamp(value: Date | string | null | undefined): number {
 
 export default async (req: Request, context: Context) => {
   if (req.method !== "POST") return fail("Method not allowed.", 405);
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const mail = readMailConfig();
   if (!mail) return fail("Balance emails are not set up yet.", 503);
 

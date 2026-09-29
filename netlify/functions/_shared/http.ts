@@ -22,16 +22,16 @@ export function fail(message: string, status: number): Response {
   return json({ error: message }, status);
 }
 
-export async function readBody(req: Request): Promise<Record<string, unknown> | null> {
+export async function readBody(req: Request, maxBytes = MAX_BODY_BYTES): Promise<Record<string, unknown> | null> {
   const type = req.headers.get("content-type") ?? "";
   if (!type.toLowerCase().includes("application/json")) return null;
   const length = Number(req.headers.get("content-length") ?? "0");
-  if (Number.isFinite(length) && length > MAX_BODY_BYTES) {
+  if (Number.isFinite(length) && length > maxBytes) {
     throw new ValidationError("Request is too large.");
   }
   try {
     const raw = await req.text();
-    if (raw.length > MAX_BODY_BYTES) throw new ValidationError("Request is too large.");
+    if (raw.length > maxBytes) throw new ValidationError("Request is too large.");
     const body: unknown = raw ? JSON.parse(raw) : null;
     if (!body || typeof body !== "object" || Array.isArray(body)) return null;
     return body as Record<string, unknown>;

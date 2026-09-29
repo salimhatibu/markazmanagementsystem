@@ -7,18 +7,18 @@ import { HadithNotes } from "../components/HadithNotes";
 import { HijriDate } from "../components/HijriDate";
 import { BookIcon, PenIcon, QuranIcon } from "../components/Motifs";
 import { Notice } from "../components/ui";
-import { api } from "../lib/api";
+import { loadDashboard, peekDashboard } from "../lib/dashboard";
 import { useCountUp } from "../lib/use-count-up";
 import type { DashboardTotals } from "../types";
 
 export function DashboardPage() {
   const { settings, daily } = useOutletContext<WorkspaceContext>();
-  const [totals, setTotals] = useState<DashboardTotals | null>(null);
+  const [totals, setTotals] = useState<DashboardTotals | null>(peekDashboard);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let cancel = false;
-    api<DashboardTotals>("/api/dashboard")
+    loadDashboard()
       .then((body) => {
         if (!cancel) setTotals(body);
       })
@@ -49,9 +49,15 @@ export function DashboardPage() {
           <QuranIcon /> Today at a glance
         </p>
         <HijriDate />
-        <p className="page-lead">
-          A quiet view of what is in the office, what is still owed, and how many are enrolled.
-        </p>
+        <blockquote className="page-lead hero-quote">
+          <p className="hero-quote-attr">Ibn al-Qayyim رحمه الله</p>
+          <p>
+            Allāh does not forget the good you do, nor does He forget the good you did to others and the
+            pain you relieved them from. Nor will He forget the eye which was about to cry but you made
+            it laugh.
+          </p>
+          <cite>Timeless Seeds of Advice</cite>
+        </blockquote>
       </section>
       {error ? <Notice>{error}</Notice> : null}
       <div className="board" aria-busy={!totals && !error} aria-live="polite">

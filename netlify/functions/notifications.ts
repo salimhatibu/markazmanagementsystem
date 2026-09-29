@@ -3,9 +3,12 @@ import { desc, isNull } from "drizzle-orm";
 import { db } from "../../db/index";
 import { notifications } from "../../db/schema";
 import { asIso } from "../../shared/format";
+import { requireAdmin } from "./_shared/auth";
 import { fail, handleError, json } from "./_shared/http";
 
 export default async (req: Request) => {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const url = new URL(req.url);
 
   try {

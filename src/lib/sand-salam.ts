@@ -46,7 +46,7 @@ type ReformGrain = {
 export type SalamPhase = "hold" | "salam" | "falling" | "pile" | "hiddenFadeIn" | "reform" | "hiddenHold" | "leave";
 
 export const SALAM_START_TEXT = "السَّلام عليكُم وَرحمَة الله وَبَرَكَاتُه";
-export const SALAM_HIDDEN_TEXT = "Kazi Kwako Fahima!";
+export const SALAM_HIDDEN_TEXT = "May Allah make this a means of khair for you";
 
 const settings = {
   startText: SALAM_START_TEXT,

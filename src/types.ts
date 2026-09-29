@@ -81,6 +81,66 @@ export type Expense = {
   createdAt: string;
 };
 
+export type BlogPost = {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string;
+  coverKey: string | null;
+  coverUrl: string | null;
+  bodyHtml: string;
+  published: boolean;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BlogPostInput = {
+  title: string;
+  bodyHtml: string;
+  excerpt?: string;
+  coverKey?: string | null;
+  published?: boolean;
+};
+
+export type BlogComment = {
+  id: number;
+  body: string;
+  createdAt: string;
+};
+
+export type BlogPostStat = {
+  id: number;
+  slug: string;
+  title: string;
+  published: boolean;
+  views: number;
+  uniqueReaders: number;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  avgDwellMs: number;
+  bounceRate: number;
+  totalDwellMs: number;
+  color: string;
+};
+
+export type BlogAnalytics = {
+  totals: {
+    views: number;
+    uniqueReaders: number;
+    impressions: number;
+    clicks: number;
+    ctr: number;
+    avgDwellMs: number;
+    totalDwellMs: number;
+    postsPublished: number;
+    drafts: number;
+  };
+  posts: BlogPostStat[];
+  recent: { kind: string; title: string; dwellMs: number | null; at: string }[];
+};
+
 export type ReportItem = {
   id: number;
   period: "biweekly" | "monthly";

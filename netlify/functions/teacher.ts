@@ -3,10 +3,13 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/index";
 import { teachers } from "../../db/schema";
 import { paymentsForTeacher, teacherOrNull, toTeacher } from "./_shared/data";
+import { requireAdmin } from "./_shared/auth";
 import { fail, handleError, json, parseId, readBody } from "./_shared/http";
 import { teacherFields } from "./_shared/validate";
 
 export default async (req: Request, context: Context) => {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const id = parseId(context.params.id);
   if (id == null) return fail("Teacher not found.", 404);
 

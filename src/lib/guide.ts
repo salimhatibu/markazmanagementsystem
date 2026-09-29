@@ -31,7 +31,7 @@ export const GUIDE_STEPS: GuideStep[] = [
     path: "/",
     title: "Finding your way",
     target: "[data-guide=nav]",
-    body: "The top bar takes you through Home, Students, Teachers, Expenses, Reports, and Settings. On a small phone the links fold into the menu button. The round switch changes the light and dark page.",
+    body: "The top bar takes you through Home, Students, Teachers, Expenses, Reports, Blog, and Settings. Blog opens its own paper desk. On a small phone the links fold into the menu button. The round switch changes the light and dark page.",
   },
   {
     path: "/students",

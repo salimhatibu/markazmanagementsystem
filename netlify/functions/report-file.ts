@@ -3,11 +3,14 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/index";
 import { reports } from "../../db/schema";
 import { readReportPdf } from "./_shared/generate-report";
+import { requireAdmin } from "./_shared/auth";
 import { fail, parseId, SECURITY_HEADERS } from "./_shared/http";
 import { isReportBlobKey } from "./_shared/validate";
 
 export default async (req: Request, context: Context) => {
   if (req.method !== "GET") return fail("Method not allowed.", 405);
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const id = parseId(context.params.id);
   if (id == null) return fail("Report not found.", 404);
   const [row] = await db.select().from(reports).where(eq(reports.id, id)).limit(1);

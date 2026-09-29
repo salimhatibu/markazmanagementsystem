@@ -3,10 +3,13 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "../../db/index";
 import { expenses } from "../../db/schema";
 import { toExpense } from "./_shared/data";
+import { requireAdmin } from "./_shared/auth";
 import { fail, handleError, json, parseId, readBody } from "./_shared/http";
 import { expenseFields } from "./_shared/validate";
 
 export default async (req: Request, context: Context) => {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   try {
     if (req.method === "GET") {
       const rows = await db.select().from(expenses).orderBy(desc(expenses.spentOn), desc(expenses.id));

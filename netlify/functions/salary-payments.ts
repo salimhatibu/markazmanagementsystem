@@ -3,10 +3,13 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/index";
 import { salaryPayments } from "../../db/schema";
 import { paymentsForTeacher, teacherOrNull, toPayment, toTeacher } from "./_shared/data";
+import { requireAdmin } from "./_shared/auth";
 import { fail, handleError, json, parseId, readBody } from "./_shared/http";
 import { optionalText, parseDate, parseMoney } from "./_shared/validate";
 
 export default async (req: Request, context: Context) => {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const url = new URL(req.url);
 
   try {

@@ -5,6 +5,7 @@ import { reports } from "../../db/schema";
 import { asIso } from "../../shared/format";
 import type { ReceiptScope } from "../../shared/periods";
 import { deleteReportPdf, feeReceiptPreview, generateOperationsReport } from "./_shared/generate-report";
+import { requireAdmin } from "./_shared/auth";
 import { fail, handleError, json, parseId, readBody } from "./_shared/http";
 
 function asScope(value: unknown): ReceiptScope | null {
@@ -13,6 +14,8 @@ function asScope(value: unknown): ReceiptScope | null {
 }
 
 export default async (req: Request, context: Context) => {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   try {
     if (req.method === "DELETE") {
       const id = parseId(context.params.id);

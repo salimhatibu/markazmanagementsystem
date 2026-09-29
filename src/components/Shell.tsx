@@ -3,6 +3,8 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CURRENCY, displayName, MARKAZ_NAME } from "../../shared/format";
 import { ACCOUNT_NAME, ACCOUNT_NUMBER, BANK_NAME, OFFICIAL_ADDRESS, PAYBILL } from "../../shared/letterhead";
 import { api } from "../lib/api";
+import { useAuth } from "../lib/auth";
+import { loadDashboard } from "../lib/dashboard";
 import { GUIDE_START, hasFinishedGuide } from "../lib/guide";
 import { claimFirstVisit, loadDailyHadith, type DailyHadith } from "../lib/hadith";
 import { shouldPlaySalam } from "../lib/sand-salam";
@@ -18,6 +20,7 @@ import {
   CrescentIcon,
   HelpIcon,
   MenuIcon,
+  NavBlogIcon,
   NavChartIcon,
   NavFileIcon,
   NavGearIcon,
@@ -43,11 +46,13 @@ const links = [
   { to: "/teachers", label: "Teachers", end: false, icon: NavLedgerIcon },
   { to: "/expenses", label: "Expenses", end: false, icon: NavChartIcon },
   { to: "/reports", label: "Reports", end: false, icon: NavFileIcon },
+  { to: "/blog", label: "Blog", end: false, icon: NavBlogIcon },
   { to: "/settings", label: "Settings", end: false, icon: NavGearIcon },
 ];
 
 export function Shell() {
   const location = useLocation();
+  const auth = useAuth();
   const fallbackSettings = (): Settings => ({
     markazName: MARKAZ_NAME,
     currencySymbol: CURRENCY,
@@ -101,17 +106,21 @@ export function Shell() {
 
   useEffect(() => {
     let cancel = false;
-    refreshSettings()
-      .catch(() => {
-        if (!cancel) setSettings(fallbackSettings());
+    loadDashboard()
+      .catch(() => undefined)
+      .then(() => {
+        if (cancel) return;
+        refreshSettings().catch(() => {
+          if (!cancel) setSettings(fallbackSettings());
+        });
+        refreshAlerts().catch(() => {
+          if (!cancel) setUnread(0);
+        });
       });
-    refreshAlerts().catch(() => {
-      if (!cancel) setUnread(0);
-    });
     return () => {
       cancel = true;
     };
-  }, [location.pathname]);
+  }, [refreshSettings, refreshAlerts]);
 
   useEffect(() => {
     if (showSalam || !daily) return;
@@ -246,6 +255,11 @@ export function Shell() {
             >
               <HelpIcon />
             </button>
+            {auth.identityOn ? (
+              <button type="button" className="text-button sign-out" onClick={() => void auth.signOut()}>
+                Sign out
+              </button>
+            ) : null}
             <button
               type="button"
               className={`theme-toggle theme-toggle-${theme}`}

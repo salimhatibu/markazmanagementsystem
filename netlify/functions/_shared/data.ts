@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "../../../db/index";
 import {
   expenses,
@@ -61,6 +61,63 @@ export async function listSalaryPayments(): Promise<SalaryPayment[]> {
 
 export function sumCents(rows: { amount: string }[]): number {
   return rows.reduce((total, row) => total + toCents(row.amount), 0);
+}
+
+function firstRow(result: unknown): Record<string, unknown> {
+  if (Array.isArray(result)) return (result[0] ?? {}) as Record<string, unknown>;
+  if (result && typeof result === "object" && "rows" in result) {
+    const rows = (result as { rows?: unknown[] }).rows;
+    if (Array.isArray(rows)) return (rows[0] ?? {}) as Record<string, unknown>;
+  }
+  return {};
+}
+
+function moneyFrom(value: unknown): number {
+  if (value == null || value === "") return 0;
+  return fromCents(toCents(typeof value === "number" ? value : String(value)));
+}
+
+function intFrom(value: unknown): number {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+/** One database round trip — Netlify Database talks to Neon over HTTP. */
+export async function loadDashboardTotals() {
+  const result = await db.execute(sql`
+    SELECT
+      (SELECT COUNT(*) FROM students WHERE section = 'morning')::int AS morning_students,
+      (SELECT COUNT(*) FROM students WHERE section = 'evening')::int AS evening_students,
+      (SELECT COUNT(*) FROM teachers)::int AS teachers,
+      COALESCE((SELECT SUM(amount) FROM fee_payments), 0) AS fees_collected,
+      COALESCE((SELECT SUM(amount) FROM salary_payments), 0) AS salaries_paid,
+      COALESCE((SELECT SUM(amount) FROM expenses), 0) AS expenses,
+      COALESCE((
+        SELECT SUM(GREATEST(0::numeric, s.expected_fees - COALESCE(p.paid, 0)))
+        FROM students s
+        LEFT JOIN (
+          SELECT student_id, SUM(amount) AS paid
+          FROM fee_payments
+          GROUP BY student_id
+        ) p ON p.student_id = s.id
+      ), 0) AS outstanding
+  `);
+  const row = firstRow(result);
+  const feesCollected = moneyFrom(row.fees_collected ?? row.feesCollected);
+  const salariesPaid = moneyFrom(row.salaries_paid ?? row.salariesPaid);
+  const expensesTotal = moneyFrom(row.expenses);
+  const outstanding = moneyFrom(row.outstanding);
+  return {
+    morningStudents: intFrom(row.morning_students ?? row.morningStudents),
+    eveningStudents: intFrom(row.evening_students ?? row.eveningStudents),
+    teachers: intFrom(row.teachers),
+    feesCollected,
+    salariesPaid,
+    expenses: expensesTotal,
+    outstanding,
+    inHand: fromCents(toCents(feesCollected) - toCents(salariesPaid) - toCents(expensesTotal)),
+    spent: fromCents(toCents(salariesPaid) + toCents(expensesTotal)),
+  };
 }
 
 export function toPayment(row: FeePayment | SalaryPayment) {

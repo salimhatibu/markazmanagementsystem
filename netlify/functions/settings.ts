@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/index";
 import { settings } from "../../db/schema";
 import { loadSettings } from "./_shared/data";
+import { requireAdmin } from "./_shared/auth";
 import { fail, handleError, json, readBody } from "./_shared/http";
 import { CURRENCY, MARKAZ_NAME } from "../../shared/format";
 import { presentLetterhead } from "../../shared/letterhead";
@@ -22,6 +23,8 @@ function present(row: Awaited<ReturnType<typeof loadSettings>>) {
 }
 
 export default async (req: Request) => {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   try {
     if (req.method === "GET") {
       return json({ settings: present(await loadSettings()) });

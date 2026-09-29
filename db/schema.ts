@@ -135,6 +135,87 @@ export const expenses = pgTable(
   (table) => [index("expenses_spent_on_idx").on(table.spentOn)],
 );
 
+export const posts = pgTable(
+  "posts",
+  {
+    id: serial().primaryKey(),
+    slug: varchar({ length: 180 }).notNull().unique(),
+    title: varchar({ length: 255 }).notNull(),
+    excerpt: varchar({ length: 500 }),
+    coverKey: varchar("cover_key", { length: 400 }),
+    bodyHtml: text("body_html").notNull(),
+    published: boolean().notNull().default(false),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [index("posts_published_idx").on(table.published, table.publishedAt)],
+);
+
+export const blogEvents = pgTable(
+  "blog_events",
+  {
+    id: serial().primaryKey(),
+    postId: integer("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    kind: varchar({ length: 16 }).notNull(),
+    sessionId: varchar("session_id", { length: 64 }).notNull(),
+    dwellMs: integer("dwell_ms"),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index("blog_events_post_kind_idx").on(table.postId, table.kind),
+    index("blog_events_session_idx").on(table.sessionId, table.postId, table.kind),
+  ],
+);
+
+export const blogComments = pgTable(
+  "blog_comments",
+  {
+    id: serial().primaryKey(),
+    postId: integer("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    sessionId: varchar("session_id", { length: 64 }).notNull(),
+    body: text().notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [index("blog_comments_post_idx").on(table.postId)],
+);
+
+export const blogLikes = pgTable(
+  "blog_likes",
+  {
+    id: serial().primaryKey(),
+    postId: integer("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    sessionId: varchar("session_id", { length: 64 }).notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    unique("blog_likes_post_session_uid").on(table.postId, table.sessionId),
+    index("blog_likes_post_idx").on(table.postId),
+  ],
+);
+
+export const blogSaves = pgTable(
+  "blog_saves",
+  {
+    id: serial().primaryKey(),
+    postId: integer("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    sessionId: varchar("session_id", { length: 64 }).notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    unique("blog_saves_post_session_uid").on(table.postId, table.sessionId),
+    index("blog_saves_post_idx").on(table.postId),
+  ],
+);
+
 export type Student = typeof students.$inferSelect;
 export type Teacher = typeof teachers.$inferSelect;
 export type FeePayment = typeof feePayments.$inferSelect;
@@ -143,3 +224,8 @@ export type ReportRow = typeof reports.$inferSelect;
 export type NotificationRow = typeof notifications.$inferSelect;
 export type SettingsRow = typeof settings.$inferSelect;
 export type Expense = typeof expenses.$inferSelect;
+export type Post = typeof posts.$inferSelect;
+export type BlogEvent = typeof blogEvents.$inferSelect;
+export type BlogComment = typeof blogComments.$inferSelect;
+export type BlogLike = typeof blogLikes.$inferSelect;
+export type BlogSave = typeof blogSaves.$inferSelect;
