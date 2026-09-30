@@ -41,13 +41,13 @@ export type WorkspaceContext = {
 };
 
 const links = [
-  { to: "/", label: "Home", end: true, icon: NavHomeIcon },
-  { to: "/students", label: "Students", end: false, icon: NavPeopleIcon },
-  { to: "/teachers", label: "Teachers", end: false, icon: NavLedgerIcon },
-  { to: "/expenses", label: "Expenses", end: false, icon: NavChartIcon },
-  { to: "/reports", label: "Reports", end: false, icon: NavFileIcon },
-  { to: "/blog", label: "Blog", end: false, icon: NavBlogIcon },
-  { to: "/settings", label: "Settings", end: false, icon: NavGearIcon },
+  { to: "/", label: "Home", end: true, icon: NavHomeIcon, iconOnly: false },
+  { to: "/students", label: "Students", end: false, icon: NavPeopleIcon, iconOnly: false },
+  { to: "/teachers", label: "Teachers", end: false, icon: NavLedgerIcon, iconOnly: false },
+  { to: "/expenses", label: "Expenses", end: false, icon: NavChartIcon, iconOnly: false },
+  { to: "/reports", label: "Reports", end: false, icon: NavFileIcon, iconOnly: false },
+  { to: "/blog", label: "Blog", end: false, icon: NavBlogIcon, iconOnly: false },
+  { to: "/settings", label: "Settings", end: false, icon: NavGearIcon, iconOnly: true },
 ];
 
 export function Shell() {
@@ -161,37 +161,6 @@ export function Shell() {
     };
   }, [menuOpen]);
 
-  useEffect(() => {
-    const bar = barRef.current;
-    const signOut = bar?.querySelector(".sign-out") ?? document.querySelector(".sign-out");
-    const barRect = bar?.getBoundingClientRect();
-    const signRect = signOut?.getBoundingClientRect();
-    // #region agent log
-    fetch("http://127.0.0.1:7870/ingest/9ce8b289-9305-4d7c-815f-e4455c60ffe9", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "193f57" },
-      body: JSON.stringify({
-        sessionId: "193f57",
-        runId: "pre-fix",
-        hypothesisId: "A",
-        location: "Shell.tsx:sign-out",
-        message: "Sign out placement relative to the menu bar",
-        data: {
-          identityOn: auth.identityOn,
-          compact,
-          insideTopbar: Boolean(bar && signOut && bar.contains(signOut)),
-          parentClass: signOut?.parentElement?.className ?? null,
-          barWidth: barRect ? Math.round(barRect.width) : null,
-          signOutLeft: signRect ? Math.round(signRect.left) : null,
-          barRight: barRect ? Math.round(barRect.right) : null,
-          signOutOutsideBar: Boolean(signRect && barRect && signRect.left >= barRect.right - 1),
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-  }, [auth.identityOn, compact, menuOpen]);
-
   const context: WorkspaceContext = { settings, refreshSettings, unread, refreshAlerts, daily };
   const brand = displayName(settings.markazName);
 
@@ -215,9 +184,9 @@ export function Shell() {
           {links.map((link) => {
             const Icon = link.icon;
             return (
-              <span key={link.to} className="nav-pill">
+              <span key={link.to} className={link.iconOnly ? "nav-pill is-icon" : "nav-pill"}>
                 <Icon />
-                {link.label}
+                {link.iconOnly ? null : link.label}
               </span>
             );
           })}
@@ -248,10 +217,13 @@ export function Shell() {
                   key={link.to}
                   to={link.to}
                   end={link.end}
-                  className={({ isActive }) => (isActive ? "nav-pill active" : "nav-pill")}
+                  aria-label={link.iconOnly ? link.label : undefined}
+                  className={({ isActive }) =>
+                    `nav-pill${link.iconOnly ? " is-icon" : ""}${isActive ? " active" : ""}`
+                  }
                 >
                   <Icon />
-                  {link.label}
+                  {link.iconOnly ? null : link.label}
                 </NavLink>
               );
             })}

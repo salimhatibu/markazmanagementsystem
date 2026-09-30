@@ -3,6 +3,7 @@ import {
   date,
   index,
   integer,
+  uniqueIndex,
   numeric,
   pgEnum,
   pgTable,
@@ -186,6 +187,7 @@ export const blogEvents = pgTable(
   (table) => [
     index("blog_events_post_kind_idx").on(table.postId, table.kind),
     index("blog_events_session_idx").on(table.sessionId, table.postId, table.kind),
+    uniqueIndex("blog_events_device_kind_unique").on(table.postId, table.sessionId, table.kind),
   ],
 );
 

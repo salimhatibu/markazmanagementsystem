@@ -69,7 +69,9 @@ export function BlogAnalyticsPage() {
                 <span key={tick}>{(scale * tick) / 4}</span>
               ))}
             </div>
-            <p className="chart-caption">Click-through is shelf clicks over shelf impressions. Time is the longest stay per reader.</p>
+            <p className="chart-caption">
+              A view is one device, however often it returns. Click-through is devices that opened a piece from the shelf, over devices that saw it there. Stay is the average time the page was actually on screen.
+            </p>
             <div className="totals">
               <div>
                 <span className="eyebrow">Views</span>

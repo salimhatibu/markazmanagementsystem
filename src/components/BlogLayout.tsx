@@ -10,11 +10,10 @@ const desk = [
   { to: "/blog/posts", label: "The posts", end: false, step: 2 },
   { to: "/blog/write", label: "Write", end: false, step: 3 },
   { to: "/blog/analytics", label: "Analytics", end: false, step: 4 },
-  { to: "/blog/series", label: "Series", end: false, step: 5 },
 ];
 
-function currentStep(path: string): number {
-  if (path.startsWith("/blog/series")) return 5;
+function currentStep(path: string): number | null {
+  if (path.startsWith("/blog/series")) return null;
   if (path.startsWith("/blog/analytics")) return 4;
   if (path.startsWith("/blog/write")) return 3;
   if (path.startsWith("/blog/posts")) return 2;
@@ -44,15 +43,15 @@ export function BlogLayout() {
           <Link to="/blog">
             <BlogBrandMark />
           </Link>
-          <span>
-            Words / {formatEatLongDate(new Date())}
+          <span>Words / {formatEatLongDate(new Date())}</span>
+          <span className="masthead-actions">
+            <Link to="/blog/series" className={pathname.startsWith("/blog/series") ? "is-active" : undefined}>
+              Series
+            </Link>
             {auth.identityOn ? (
-              <>
-                {" · "}
-                <button type="button" className="reset" onClick={() => void auth.signOut()}>
-                  Sign out
-                </button>
-              </>
+              <button type="button" className="reset" onClick={() => void auth.signOut()}>
+                Sign out
+              </button>
             ) : null}
           </span>
         </header>
@@ -63,6 +62,7 @@ export function BlogLayout() {
               to={item.to}
               end={item.end}
               className={() => {
+                if (step == null) return undefined;
                 const on =
                   item.step === step ||
                   (item.to === "/blog/write" && pathname.startsWith("/blog/write"));

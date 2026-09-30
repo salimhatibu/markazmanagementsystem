@@ -56,10 +56,19 @@ export default async (req: Request) => {
       await db.execute(sql`
       SELECT
         post_id,
-        COUNT(*) FILTER (WHERE kind = 'view')::int AS views,
+        COUNT(DISTINCT session_id) FILTER (WHERE kind = 'view')::int AS views,
         COUNT(DISTINCT session_id) FILTER (WHERE kind = 'view')::int AS unique_readers,
-        COUNT(*) FILTER (WHERE kind = 'impression')::int AS impressions,
-        COUNT(*) FILTER (WHERE kind = 'click')::int AS clicks
+        COUNT(DISTINCT session_id) FILTER (WHERE kind = 'impression')::int AS impressions,
+        COUNT(DISTINCT session_id) FILTER (
+          WHERE kind = 'click'
+            AND EXISTS (
+              SELECT 1
+              FROM blog_events seen
+              WHERE seen.post_id = blog_events.post_id
+                AND seen.session_id = blog_events.session_id
+                AND seen.kind = 'impression'
+            )
+        )::int AS clicks
       FROM blog_events
       GROUP BY post_id
     `),
@@ -97,7 +106,8 @@ export default async (req: Request) => {
       const clicks = asInt(row?.clicks);
       const sessionDwells = dwellByPost.get(post.id) ?? [];
       const totalDwellMs = sessionDwells.reduce((sum, ms) => sum + ms, 0);
-      const avgDwellMs = sessionDwells.length ? Math.round(totalDwellMs / sessionDwells.length) : 0;
+      const dwellSessions = sessionDwells.length;
+      const avgDwellMs = dwellSessions ? Math.round(totalDwellMs / dwellSessions) : 0;
       const bounces = sessionDwells.filter((ms) => ms < 15_000).length;
       const bounceRate = sessionDwells.length ? bounces / sessionDwells.length : 0;
       const ctr = impressions > 0 ? clicks / impressions : 0;
@@ -114,6 +124,7 @@ export default async (req: Request) => {
         avgDwellMs,
         bounceRate,
         totalDwellMs,
+        dwellSessions,
         color: BAR_COLORS[index % BAR_COLORS.length],
       };
     });
@@ -125,10 +136,11 @@ export default async (req: Request) => {
         acc.impressions += post.impressions;
         acc.clicks += post.clicks;
         acc.totalDwellMs += post.totalDwellMs;
+        acc.dwellSessions += post.dwellSessions;
         if (post.published) acc.postsPublished += 1;
         return acc;
       },
-      { views: 0, uniqueReaders: 0, impressions: 0, clicks: 0, totalDwellMs: 0, postsPublished: 0 },
+      { views: 0, uniqueReaders: 0, impressions: 0, clicks: 0, totalDwellMs: 0, dwellSessions: 0, postsPublished: 0 },
     );
 
     const recentRows = await db
@@ -147,7 +159,7 @@ export default async (req: Request) => {
       totals: {
         ...totals,
         ctr: totals.impressions > 0 ? totals.clicks / totals.impressions : 0,
-        avgDwellMs: totals.views > 0 ? Math.round(totals.totalDwellMs / Math.max(1, totals.uniqueReaders)) : 0,
+        avgDwellMs: totals.dwellSessions > 0 ? Math.round(totals.totalDwellMs / totals.dwellSessions) : 0,
         drafts: published.filter((post) => !post.published).length,
       },
       posts: postStats,

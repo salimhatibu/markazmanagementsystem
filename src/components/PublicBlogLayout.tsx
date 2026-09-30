@@ -101,24 +101,23 @@ export function PublicBlogLayout() {
             <NavLink to={publicSavedPath()} className={({ isActive }) => (isActive ? "is-active" : undefined)}>
               Saved
             </NavLink>
-            {series.map((item) => (
-              <NavLink
-                key={item.id}
-                to={publicSeriesPath(item.slug)}
-                className={({ isActive }) => (isActive ? "is-active" : undefined)}
-              >
-                {item.title}
-              </NavLink>
-            ))}
-            <button
-              type="button"
-              onClick={() => {
-                setNavOpen(false);
-                setLetterOpen(true);
-              }}
-            >
-              The letter
-            </button>
+            {series.length ? (
+              <details className={`paper-series-menu${onSeries ? " is-active" : ""}`}>
+                <summary>Series</summary>
+                <div className="paper-series-list">
+                  {series.map((item) => (
+                    <NavLink
+                      key={item.id}
+                      to={publicSeriesPath(item.slug)}
+                      className={({ isActive }) => (isActive ? "is-active" : undefined)}
+                      onClick={() => setNavOpen(false)}
+                    >
+                      {item.title}
+                    </NavLink>
+                  ))}
+                </div>
+              </details>
+            ) : null}
             {onPiece ? (
               <a href="#the-piece" className="is-active" onClick={() => setNavOpen(false)}>
                 The piece

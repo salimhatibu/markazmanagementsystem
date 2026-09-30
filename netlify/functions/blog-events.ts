@@ -1,5 +1,5 @@
 import type { Config } from "@netlify/functions";
-import { and, eq, gte, isNull, lt, or } from "drizzle-orm";
+import { and, eq, isNull, lt, or } from "drizzle-orm";
 import { db } from "../../db/index";
 import { blogEvents, posts } from "../../db/schema";
 import { fail, handleError, json, parseId, readBody, ValidationError } from "./_shared/http";
@@ -26,8 +26,9 @@ export default async (req: Request) => {
     const [post] = await db.select({ id: posts.id }).from(posts).where(eq(posts.id, postId)).limit(1);
     if (!post) return fail("Post not found.", 404);
 
-    if (kind === "impression" || kind === "view") {
-      const since = new Date(Date.now() - 12 * 60 * 60 * 1000);
+    // One impression, click, or view per device for the life of that browser.
+    // A later visit from the same device must not raise the count again.
+    if (kind === "impression" || kind === "view" || kind === "click") {
       const [existing] = await db
         .select({ id: blogEvents.id })
         .from(blogEvents)
@@ -36,7 +37,6 @@ export default async (req: Request) => {
             eq(blogEvents.postId, postId),
             eq(blogEvents.sessionId, sessionId),
             eq(blogEvents.kind, kind),
-            gte(blogEvents.createdAt, since),
           ),
         )
         .limit(1);
@@ -73,12 +73,17 @@ export default async (req: Request) => {
       }
     }
 
-    await db.insert(blogEvents).values({
-      postId,
-      kind,
-      sessionId,
-      dwellMs,
-    });
+    await db
+      .insert(blogEvents)
+      .values({
+        postId,
+        kind,
+        sessionId,
+        dwellMs,
+      })
+      .onConflictDoNothing({
+        target: [blogEvents.postId, blogEvents.sessionId, blogEvents.kind],
+      });
     return json({ ok: true }, 201);
   } catch (error) {
     return handleError(error);
