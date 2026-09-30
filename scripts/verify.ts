@@ -3,6 +3,7 @@ import { formatEatLongDate, formatShortDate, hijriDate, monthName } from "../sha
 import { applicantName, presentLetterhead, payoutPhone } from "../shared/letterhead";
 import { biweeklyRange, monthlyRange, monthToDateRange } from "../shared/periods";
 import {
+  cashBooks,
   operationsTotals,
   studentFigures,
   teacherFigures,
@@ -55,6 +56,15 @@ function student(expected: number, paid: number) {
   assert.equal(totals.outstandingCents, toCents(60));
   assert.equal(totals.expensesCents, 0);
   assert.equal(teacherFigures(toCents(70), toCents(30)).balanceCents, toCents(40));
+}
+
+{
+  const september = cashBooks(toCents(45500), 0, 0);
+  assert.equal(september.feesCollectedCents, toCents(45500));
+  assert.equal(september.inHandCents, toCents(45500));
+  assert.equal(september.spentCents, 0);
+  const withOutgoings = cashBooks(toCents(45500), toCents(10000), toCents(500));
+  assert.equal(withOutgoings.inHandCents, toCents(35000));
 }
 
 {
@@ -227,6 +237,39 @@ assert.equal(slugFromTitle("  "), "post");
   assert.equal(shaped.includes("onclick"), false);
 }
 
+{
+  // Attribute values are re-emitted inside double quotes, so anything the
+  // author can smuggle through a quote must come back escaped.
+  const escapes = [
+    `<a href='/x"onfocus="alert(1)"autofocus="'>hi</a>`,
+    `<a href='/y"><img src=x onerror=alert(1)>'>hi</a>`,
+    `<a href='/z"style="position:fixed;inset:0;z-index:9999"'>hi</a>`,
+    `<img src='/a.png"onerror="alert(1)'>`,
+    `<iframe src='https://x.test"onload="alert(1)'></iframe>`,
+  ];
+  for (const payload of escapes) {
+    const clean = sanitizePostHtml(payload);
+    assert.equal(/\son\w+\s*=/.test(clean), false, `handler survived: ${clean}`);
+    assert.equal(clean.includes(`"style=`), false, `style survived: ${clean}`);
+  }
+
+  // Openers with no closing tag still have to go.
+  assert.equal(sanitizePostHtml("<script>alert(1)").includes("<script"), false);
+  assert.equal(sanitizePostHtml("<style>body{}").includes("<style"), false);
+
+  // Off-site and protocol-relative destinations are not link targets.
+  assert.equal(sanitizePostHtml(`<a href="javascript:alert(1)">x</a>`).includes("href"), false);
+  assert.equal(sanitizePostHtml(`<a href="//evil.test">x</a>`).includes("href"), false);
+
+  // Legitimate content is left usable, and the embed is not doubled up.
+  const embed = sanitizePostHtml(`<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ"></iframe>`);
+  assert.equal(embed.match(/<\/iframe>/g)?.length, 1);
+  assert.equal(sanitizePostHtml(`<iframe src="https://evil.test/x"></iframe>`), "");
+  const external = sanitizePostHtml(`<a href="https://example.com">ok</a>`);
+  assert.ok(external.includes(`rel="noopener noreferrer nofollow"`));
+  assert.ok(sanitizePostHtml(`<a href="/read/x">ok</a>`).includes(`href="/read/x"`));
+}
+
 assert.equal(shapeFromSize(800, 800), "is-square");
 assert.equal(shapeFromSize(1200, 640), "is-rect");
 assert.equal(shapeFromSize(0, 0), "is-rect");
@@ -266,4 +309,4 @@ assert.equal(sanitizeComment("   "), "");
   assert.equal(hasAdminRole("admin", { roles: "admin" }), false);
 }
 
-console.log("ledger, periods, pdf, and blog checks passed");
+console.log("ledger, periods, pdf, sanitiser, and blog checks passed");

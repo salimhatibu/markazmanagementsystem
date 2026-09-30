@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Markaz
+Comment=Open the local Markaz site on this computer
+Exec=/home/kali/Projects/markazmanagementsystem/launch-markaz.sh
+Path=/home/kali/Projects/markazmanagementsystem
+Icon=/home/kali/Projects/markazmanagementsystem/public/favicon.png
+Terminal=true
+Categories=Office;
+StartupNotify=true

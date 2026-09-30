@@ -10,9 +10,11 @@ const desk = [
   { to: "/blog/posts", label: "The posts", end: false, step: 2 },
   { to: "/blog/write", label: "Write", end: false, step: 3 },
   { to: "/blog/analytics", label: "Analytics", end: false, step: 4 },
+  { to: "/blog/series", label: "Series", end: false, step: 5 },
 ];
 
 function currentStep(path: string): number {
+  if (path.startsWith("/blog/series")) return 5;
   if (path.startsWith("/blog/analytics")) return 4;
   if (path.startsWith("/blog/write")) return 3;
   if (path.startsWith("/blog/posts")) return 2;

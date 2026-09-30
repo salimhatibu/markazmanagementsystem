@@ -12,7 +12,10 @@
     "preview": "vite preview",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "netlify database migrations apply",
-    "verify": "tsx scripts/verify.ts"
+    "verify": "tsx scripts/verify.ts",
+    "og:image": "node scripts/build-og-image.mjs",
+    "desktop": "node desktop/run.mjs",
+    "desktop:dist": "node desktop/run.mjs --dist"
   },
   "dependencies": {
     "@netlify/blobs": "^10.7.13",
@@ -41,8 +44,8 @@
   "devDependencies": {
     "@types/node": "^26.6.3",
     "@types/nodemailer": "^8.0.2",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.1.1",
     "drizzle-kit": "^1.0.0-beta.22",
     "tsx": "^4.23.15",

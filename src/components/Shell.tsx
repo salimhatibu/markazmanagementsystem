@@ -161,6 +161,37 @@ export function Shell() {
     };
   }, [menuOpen]);
 
+  useEffect(() => {
+    const bar = barRef.current;
+    const signOut = bar?.querySelector(".sign-out") ?? document.querySelector(".sign-out");
+    const barRect = bar?.getBoundingClientRect();
+    const signRect = signOut?.getBoundingClientRect();
+    // #region agent log
+    fetch("http://127.0.0.1:7870/ingest/9ce8b289-9305-4d7c-815f-e4455c60ffe9", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "193f57" },
+      body: JSON.stringify({
+        sessionId: "193f57",
+        runId: "pre-fix",
+        hypothesisId: "A",
+        location: "Shell.tsx:sign-out",
+        message: "Sign out placement relative to the menu bar",
+        data: {
+          identityOn: auth.identityOn,
+          compact,
+          insideTopbar: Boolean(bar && signOut && bar.contains(signOut)),
+          parentClass: signOut?.parentElement?.className ?? null,
+          barWidth: barRect ? Math.round(barRect.width) : null,
+          signOutLeft: signRect ? Math.round(signRect.left) : null,
+          barRight: barRect ? Math.round(barRect.right) : null,
+          signOutOutsideBar: Boolean(signRect && barRect && signRect.left >= barRect.right - 1),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+  }, [auth.identityOn, compact, menuOpen]);
+
   const context: WorkspaceContext = { settings, refreshSettings, unread, refreshAlerts, daily };
   const brand = displayName(settings.markazName);
 
@@ -179,6 +210,7 @@ export function Shell() {
         </svg>
       </div>
       <div className="header-wrap">
+        <div className="header-row">
         <div className="nav-measure" ref={measureRef} aria-hidden="true">
           {links.map((link) => {
             const Icon = link.icon;
@@ -255,11 +287,6 @@ export function Shell() {
             >
               <HelpIcon />
             </button>
-            {auth.identityOn ? (
-              <button type="button" className="text-button sign-out" onClick={() => void auth.signOut()}>
-                Sign out
-              </button>
-            ) : null}
             <button
               type="button"
               className={`theme-toggle theme-toggle-${theme}`}
@@ -299,6 +326,12 @@ export function Shell() {
             </nav>
           ) : null}
         </header>
+        {auth.identityOn ? (
+          <button type="button" className="text-button sign-out" onClick={() => void auth.signOut()}>
+            Sign out
+          </button>
+        ) : null}
+        </div>
       </div>
       <main id="content" className="content">
         <PageSlide>

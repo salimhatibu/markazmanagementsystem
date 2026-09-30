@@ -70,6 +70,8 @@ export type DashboardTotals = {
   salariesPaid: number;
   expenses: number;
   outstanding: number;
+  booksStart?: string;
+  booksEnd?: string;
 };
 
 export type Expense = {
@@ -89,10 +91,21 @@ export type BlogPost = {
   coverKey: string | null;
   coverUrl: string | null;
   bodyHtml: string;
+  seriesId: number | null;
+  seriesSlug: string | null;
+  seriesTitle: string | null;
   published: boolean;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type BlogSeries = {
+  id: number;
+  slug: string;
+  title: string;
+  blurb: string;
+  publishedCount?: number;
 };
 
 export type BlogPostInput = {
@@ -100,6 +113,7 @@ export type BlogPostInput = {
   bodyHtml: string;
   excerpt?: string;
   coverKey?: string | null;
+  seriesId?: number | null;
   published?: boolean;
 };
 

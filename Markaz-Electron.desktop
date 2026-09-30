@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Markaz (window)
+Comment=Open Markaz in an Electron window on this computer
+Exec=bash -c 'cd /home/kali/Projects/markazmanagementsystem && npm run desktop'
+Path=/home/kali/Projects/markazmanagementsystem
+Icon=/home/kali/Projects/markazmanagementsystem/public/favicon.png
+Terminal=true
+Categories=Office;
+StartupNotify=true

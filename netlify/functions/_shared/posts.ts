@@ -1,4 +1,5 @@
 import { asIso } from "../../../shared/format";
+import { sanitizePostHtml } from "../../../shared/post-html";
 import type { Post } from "../../../db/schema";
 
 export function mediaUrl(key: string | null | undefined): string | null {
@@ -6,7 +7,17 @@ export function mediaUrl(key: string | null | undefined): string | null {
   return `/api/blog-media/${key}`;
 }
 
-export function presentPost(row: Post) {
+export type SeriesLabel = { slug: string; title: string } | null;
+
+function seriesFields(row: { seriesId?: number | null }, series?: SeriesLabel) {
+  return {
+    seriesId: row.seriesId ?? null,
+    seriesSlug: series?.slug ?? null,
+    seriesTitle: series?.title ?? null,
+  };
+}
+
+export function presentPost(row: Post, series?: SeriesLabel) {
   return {
     id: row.id,
     slug: row.slug,
@@ -14,7 +25,10 @@ export function presentPost(row: Post) {
     excerpt: row.excerpt ?? "",
     coverKey: row.coverKey ?? null,
     coverUrl: mediaUrl(row.coverKey),
-    bodyHtml: row.bodyHtml,
+    // Sanitised again on the way out: rows written before the escaping fix are
+    // still in the table, and the reader renders this with innerHTML.
+    bodyHtml: sanitizePostHtml(row.bodyHtml),
+    ...seriesFields(row, series),
     published: row.published,
     publishedAt: row.publishedAt ? asIso(row.publishedAt) : null,
     createdAt: asIso(row.createdAt),
@@ -22,18 +36,23 @@ export function presentPost(row: Post) {
   };
 }
 
-export function presentPostCard(row: Post) {
-  const full = presentPost(row);
+type PostCard = Omit<Post, "bodyHtml"> & { seriesSlug?: string | null; seriesTitle?: string | null };
+
+/** List card: skips the body entirely so index pages do not ship every post. */
+export function presentPostCard(row: PostCard) {
   return {
-    id: full.id,
-    slug: full.slug,
-    title: full.title,
-    excerpt: full.excerpt,
-    coverKey: full.coverKey,
-    coverUrl: full.coverUrl,
-    published: full.published,
-    publishedAt: full.publishedAt,
-    createdAt: full.createdAt,
-    updatedAt: full.updatedAt,
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    excerpt: row.excerpt ?? "",
+    coverKey: row.coverKey ?? null,
+    coverUrl: mediaUrl(row.coverKey),
+    seriesId: row.seriesId ?? null,
+    seriesSlug: row.seriesSlug ?? null,
+    seriesTitle: row.seriesTitle ?? null,
+    published: row.published,
+    publishedAt: row.publishedAt ? asIso(row.publishedAt) : null,
+    createdAt: asIso(row.createdAt),
+    updatedAt: asIso(row.updatedAt),
   };
 }

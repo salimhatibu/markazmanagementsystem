@@ -1,5 +1,5 @@
 import type { Config } from "@netlify/functions";
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, gte, isNull, lt, or } from "drizzle-orm";
 import { db } from "../../db/index";
 import { blogEvents, posts } from "../../db/schema";
 import { fail, handleError, json, parseId, readBody, ValidationError } from "./_shared/http";
@@ -43,6 +43,36 @@ export default async (req: Request) => {
       if (existing) return json({ ok: true, skipped: true });
     }
 
+    // Readers heartbeat while a post is open, but the report only ever reads
+    // MAX(dwell_ms) per session. Keep one row per reader and raise it instead
+    // of appending a row every beat.
+    if (kind === "dwell") {
+      const [existing] = await db
+        .select({ id: blogEvents.id })
+        .from(blogEvents)
+        .where(
+          and(
+            eq(blogEvents.postId, postId),
+            eq(blogEvents.sessionId, sessionId),
+            eq(blogEvents.kind, "dwell"),
+          ),
+        )
+        .limit(1);
+      if (existing) {
+        await db
+          .update(blogEvents)
+          .set({ dwellMs })
+          // Only ever raise the figure; `lt` alone would skip a NULL row.
+          .where(
+            and(
+              eq(blogEvents.id, existing.id),
+              or(isNull(blogEvents.dwellMs), lt(blogEvents.dwellMs, dwellMs ?? 0)),
+            ),
+          );
+        return json({ ok: true });
+      }
+    }
+
     await db.insert(blogEvents).values({
       postId,
       kind,
@@ -58,4 +88,7 @@ export default async (req: Request) => {
 export const config: Config = {
   path: "/api/blog-events",
   method: "POST",
+  // sessionId comes from the reader's own localStorage, so any per-session cap
+  // is bypassed by rotating it. Cap at the edge, by IP, instead.
+  rateLimit: { windowSize: 60, windowLimit: 120, aggregateBy: "ip" },
 };

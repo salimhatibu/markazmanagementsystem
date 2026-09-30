@@ -1,4 +1,4 @@
-import { asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { db } from "../../../db/index";
 import {
   expenses,
@@ -16,6 +16,7 @@ import {
 } from "../../../db/schema";
 import { ageFromDob } from "../../../shared/format";
 import { fromCents, studentFigures, teacherFigures, toCents } from "../../../shared/ledger";
+import { monthToDateRange } from "../../../shared/periods";
 
 export async function loadSettings(): Promise<SettingsRow | null> {
   const rows = await db.select().from(settings).limit(1);
@@ -82,30 +83,46 @@ function intFrom(value: unknown): number {
   return Number.isFinite(amount) ? amount : 0;
 }
 
-/** One database round trip — Netlify Database talks to Neon over HTTP. */
-export async function loadDashboardTotals() {
-  const result = await db.execute(sql`
-    SELECT
-      (SELECT COUNT(*) FROM students WHERE section = 'morning')::int AS morning_students,
-      (SELECT COUNT(*) FROM students WHERE section = 'evening')::int AS evening_students,
-      (SELECT COUNT(*) FROM teachers)::int AS teachers,
-      COALESCE((SELECT SUM(amount) FROM fee_payments), 0) AS fees_collected,
-      COALESCE((SELECT SUM(amount) FROM salary_payments), 0) AS salaries_paid,
-      COALESCE((SELECT SUM(amount) FROM expenses), 0) AS expenses,
-      COALESCE((
-        SELECT SUM(GREATEST(0::numeric, s.expected_fees - COALESCE(p.paid, 0)))
-        FROM students s
-        LEFT JOIN (
-          SELECT student_id, SUM(amount) AS paid
-          FROM fee_payments
-          GROUP BY student_id
-        ) p ON p.student_id = s.id
-      ), 0) AS outstanding
-  `);
+/**
+ * Cash cards follow the current books — the first of this month through today,
+ * the same window as the "This month" report. Still owed is the balance left
+ * after every payment, not only this month's.
+ */
+export async function loadDashboardTotals(now = new Date()) {
+  const range = monthToDateRange(now);
+  const [feeRows, salaryRows, expenseRows, result] = await Promise.all([
+    db
+      .select({ amount: feePayments.amount })
+      .from(feePayments)
+      .where(and(gte(feePayments.paidOn, range.start), lte(feePayments.paidOn, range.end))),
+    db
+      .select({ amount: salaryPayments.amount })
+      .from(salaryPayments)
+      .where(and(gte(salaryPayments.paidOn, range.start), lte(salaryPayments.paidOn, range.end))),
+    db
+      .select({ amount: expenses.amount })
+      .from(expenses)
+      .where(and(gte(expenses.spentOn, range.start), lte(expenses.spentOn, range.end))),
+    db.execute(sql`
+      SELECT
+        (SELECT COUNT(*) FROM students WHERE section = 'morning')::int AS morning_students,
+        (SELECT COUNT(*) FROM students WHERE section = 'evening')::int AS evening_students,
+        (SELECT COUNT(*) FROM teachers)::int AS teachers,
+        COALESCE((
+          SELECT SUM(GREATEST(0::numeric, s.expected_fees - COALESCE(p.paid, 0)))
+          FROM students s
+          LEFT JOIN (
+            SELECT student_id, SUM(amount) AS paid
+            FROM fee_payments
+            GROUP BY student_id
+          ) p ON p.student_id = s.id
+        ), 0) AS outstanding
+    `),
+  ]);
   const row = firstRow(result);
-  const feesCollected = moneyFrom(row.fees_collected ?? row.feesCollected);
-  const salariesPaid = moneyFrom(row.salaries_paid ?? row.salariesPaid);
-  const expensesTotal = moneyFrom(row.expenses);
+  const feesCollected = fromCents(sumCents(feeRows));
+  const salariesPaid = fromCents(sumCents(salaryRows));
+  const expensesTotal = fromCents(sumCents(expenseRows));
   const outstanding = moneyFrom(row.outstanding);
   return {
     morningStudents: intFrom(row.morning_students ?? row.morningStudents),
@@ -117,6 +134,8 @@ export async function loadDashboardTotals() {
     outstanding,
     inHand: fromCents(toCents(feesCollected) - toCents(salariesPaid) - toCents(expensesTotal)),
     spent: fromCents(toCents(salariesPaid) + toCents(expensesTotal)),
+    booksStart: range.start,
+    booksEnd: range.end,
   };
 }
 

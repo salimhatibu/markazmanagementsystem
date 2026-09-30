@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { formatMoney } from "../../shared/format";
+import { formatMoney, formatShortDate } from "../../shared/format";
 import type { WorkspaceContext } from "../components/Shell";
 import { HadithBackdrop } from "../components/HadithBackdrop";
 import { HadithNotes } from "../components/HadithNotes";
@@ -32,6 +32,10 @@ export function DashboardPage() {
 
   const symbol = settings.currencySymbol;
   const money = (amount: number) => formatMoney(amount, symbol);
+  const books =
+    totals?.booksStart && totals.booksEnd
+      ? `${formatShortDate(totals.booksStart)} to ${formatShortDate(totals.booksEnd)}`
+      : "this month";
   const ready = totals !== null;
   const inHand = useCountUp(totals?.inHand ?? 0, 1100, 2);
   const salariesPaid = useCountUp(totals?.salariesPaid ?? 0, 950, 2);
@@ -66,22 +70,22 @@ export function DashboardPage() {
             <PenIcon /> In the office
           </p>
           <p className="figure">{ready ? money(inHand) : "—"}</p>
-          <p className="stat-note">Fees collected minus salaries and expenses</p>
+          <p className="stat-note">Fees received {books}, minus salaries and expenses</p>
         </article>
         <article className="stat">
           <p className="kicker">Fees collected</p>
           <p className="figure">{ready ? money(feesCollected) : "—"}</p>
-          <p className="stat-note">Taken in for the current books</p>
+          <p className="stat-note">Money that entered the account, {books}</p>
         </article>
         <article className="stat">
           <p className="kicker">Still owed</p>
           <p className="figure">{ready ? money(outstanding) : "—"}</p>
-          <p className="stat-note">Outstanding fees, never below zero</p>
+          <p className="stat-note">Left to collect after every payment, never below zero</p>
         </article>
         <article className="stat">
           <p className="kicker">Expenses</p>
           <p className="figure">{ready ? money(expenses) : "—"}</p>
-          <p className="stat-note">Taken from the funds in the office</p>
+          <p className="stat-note">Taken from the office, {books}</p>
         </article>
         <article className="stat">
           <p className="kicker">Students</p>
@@ -105,7 +109,7 @@ export function DashboardPage() {
         <article className="stat">
           <p className="kicker">Salaries paid</p>
           <p className="figure">{ready ? money(salariesPaid) : "—"}</p>
-          <p className="stat-note">Paid from the funds in the office</p>
+          <p className="stat-note">Paid from the office, {books}</p>
         </article>
       </div>
       <section className="panel panel-light hadith" data-guide="hadith" aria-labelledby="hadith-of-the-day">

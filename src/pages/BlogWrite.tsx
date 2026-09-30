@@ -4,7 +4,7 @@ import { BlogEditor } from "../components/BlogEditor";
 import { api } from "../lib/api";
 import { uploadBlogMedia } from "../lib/blog-media";
 import { imageFilesFromClipboard } from "../lib/blog-images";
-import type { BlogPost } from "../types";
+import type { BlogPost, BlogSeries } from "../types";
 
 export function BlogWritePage() {
   const { id } = useParams();
@@ -15,6 +15,8 @@ export function BlogWritePage() {
   const [coverKey, setCoverKey] = useState<string | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
+  const [seriesId, setSeriesId] = useState("");
+  const [seriesList, setSeriesList] = useState<BlogSeries[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(!editing);
@@ -28,6 +30,7 @@ export function BlogWritePage() {
         setCoverUrl(body.post.coverUrl);
         setCoverKey(body.post.coverKey);
         setPublished(body.post.published);
+        setSeriesId(body.post.seriesId ? String(body.post.seriesId) : "");
         setReady(true);
       })
       .catch((caught: unknown) => {
@@ -36,12 +39,24 @@ export function BlogWritePage() {
       });
   }, [id]);
 
+  useEffect(() => {
+    api<{ series: BlogSeries[] }>("/api/series")
+      .then((body) => setSeriesList(body.series))
+      .catch(() => setSeriesList([]));
+  }, []);
+
   async function save(makePublic: boolean) {
     setBusy(true);
     setError("");
     try {
       const nextPublished = makePublic || published;
-      const payload = JSON.stringify({ title, bodyHtml, coverKey, published: nextPublished });
+      const payload = JSON.stringify({
+        title,
+        bodyHtml,
+        coverKey,
+        published: nextPublished,
+        seriesId: seriesId ? Number(seriesId) : null,
+      });
       const body = editing
         ? await api<{ post: BlogPost }>(`/api/posts/${id}`, { method: "PUT", body: payload })
         : await api<{ post: BlogPost }>("/api/posts", { method: "POST", body: payload });
@@ -85,6 +100,17 @@ export function BlogWritePage() {
             void save(false);
           }}
         >
+          <label className="blog-field">
+            <span className="eyebrow">Series</span>
+            <select value={seriesId} onChange={(event) => setSeriesId(event.target.value)}>
+              <option value="">None</option>
+              {seriesList.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.title}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="blog-field">
             <span className="eyebrow">Title</span>
             <input value={title} onChange={(event) => setTitle(event.target.value)} required maxLength={255} />

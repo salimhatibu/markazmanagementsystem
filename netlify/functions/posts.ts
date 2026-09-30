@@ -1,7 +1,9 @@
 import type { Config, Context } from "@netlify/functions";
+import { purgeCache } from "@netlify/functions";
 import { desc, eq } from "drizzle-orm";
 import { db } from "../../db/index";
-import { posts } from "../../db/schema";
+import { posts, series } from "../../db/schema";
+import { notifyNewPaper, siteOrigin } from "./_shared/newsletter";
 import { excerptFromHtml, sanitizePostHtml } from "../../shared/post-html";
 import { slugFromTitle } from "../../shared/slug";
 import { requireAdmin } from "./_shared/auth";
@@ -9,6 +11,19 @@ import { fail, handleError, isUniqueViolation, json, parseId, readBody, Validati
 import { presentPost, presentPostCard } from "./_shared/posts";
 
 const POST_BODY_MAX = 400_000;
+const POST_LIST_MAX = 200;
+
+/**
+ * The sitemap and RSS feed are held in Netlify's durable cache under the
+ * `posts` tag. Without this they would serve a stale list for up to a week.
+ */
+async function purgeFeeds() {
+  try {
+    await purgeCache({ tags: ["posts"] });
+  } catch {
+    // Purging is best-effort: never fail a publish because the CDN was busy.
+  }
+}
 
 async function uniqueSlug(base: string, exceptId?: number) {
   let slug = base;
@@ -35,8 +50,47 @@ function fields(body: Record<string, unknown>, existingTitle?: string) {
         ? body.coverKey
         : undefined;
   const published = body.published === true;
-  return { title, bodyHtml, excerpt, coverKey, published };
+  const seriesId = seriesIdOf(body);
+  return { title, bodyHtml, excerpt, coverKey, published, seriesId };
 }
+
+function seriesIdOf(body: Record<string, unknown>): number | null {
+  if (body.seriesId == null || body.seriesId === "" || body.seriesId === 0) return null;
+  const id = Number(body.seriesId);
+  if (!Number.isInteger(id) || id < 1) throw new ValidationError("Choose a series that exists.");
+  return id;
+}
+
+async function assertSeries(id: number | null) {
+  if (id == null) return;
+  const [row] = await db.select({ id: series.id }).from(series).where(eq(series.id, id)).limit(1);
+  if (!row) throw new ValidationError("That series is not on the desk.");
+}
+
+async function seriesLabel(id: number | null) {
+  if (id == null) return null;
+  const [row] = await db
+    .select({ slug: series.slug, title: series.title })
+    .from(series)
+    .where(eq(series.id, id))
+    .limit(1);
+  return row ?? null;
+}
+
+const cardColumns = {
+  id: posts.id,
+  slug: posts.slug,
+  title: posts.title,
+  excerpt: posts.excerpt,
+  coverKey: posts.coverKey,
+  seriesId: posts.seriesId,
+  seriesSlug: series.slug,
+  seriesTitle: series.title,
+  published: posts.published,
+  publishedAt: posts.publishedAt,
+  createdAt: posts.createdAt,
+  updatedAt: posts.updatedAt,
+};
 
 export default async (req: Request, context: Context) => {
   try {
@@ -53,7 +107,7 @@ export default async (req: Request, context: Context) => {
     if (req.method === "GET" && id != null) {
       const [row] = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
       if (!row) return fail("Post not found.", 404);
-      return json({ post: presentPost(row) });
+      return json({ post: presentPost(row, await seriesLabel(row.seriesId)) });
     }
 
     if (req.method === "GET") {
@@ -61,15 +115,18 @@ export default async (req: Request, context: Context) => {
       if (slug) {
         const [row] = await db.select().from(posts).where(eq(posts.slug, slug)).limit(1);
         if (!row || !row.published) return fail("Post not found.", 404);
-        return json({ post: presentPost(row) });
+        return json({ post: presentPost(row, await seriesLabel(row.seriesId)) });
       }
+      // Card columns only. `bodyHtml` can be 400 KB a row, and the index
+      // pages never render it — selecting it pulled every post body out of
+      // Postgres on each listing.
+      const base = db.select(cardColumns).from(posts).leftJoin(series, eq(posts.seriesId, series.id));
       const rows = includeDrafts
-        ? await db.select().from(posts).orderBy(desc(posts.updatedAt))
-        : await db
-            .select()
-            .from(posts)
+        ? await base.orderBy(desc(posts.updatedAt)).limit(POST_LIST_MAX)
+        : await base
             .where(eq(posts.published, true))
-            .orderBy(desc(posts.publishedAt), desc(posts.createdAt));
+            .orderBy(desc(posts.publishedAt), desc(posts.createdAt))
+            .limit(POST_LIST_MAX);
       return json({ posts: rows.map(presentPostCard) });
     }
 
@@ -77,6 +134,7 @@ export default async (req: Request, context: Context) => {
       const body = await readBody(req, POST_BODY_MAX);
       if (!body) return fail("Request body must be an object.", 400);
       const input = fields(body);
+      await assertSeries(input.seriesId);
       const slug = await uniqueSlug(slugFromTitle(input.title));
       const now = new Date();
       const [created] = await db
@@ -87,11 +145,21 @@ export default async (req: Request, context: Context) => {
           excerpt: input.excerpt,
           coverKey: input.coverKey ?? null,
           bodyHtml: input.bodyHtml,
+          seriesId: input.seriesId,
           published: input.published,
           publishedAt: input.published ? now : null,
         })
         .returning();
-      return json({ post: presentPost(created) }, 201);
+      if (created.published) {
+        await purgeFeeds();
+        await notifyNewPaper({
+          title: created.title,
+          excerpt: created.excerpt ?? "",
+          slug: created.slug,
+          origin: siteOrigin(req),
+        });
+      }
+      return json({ post: presentPost(created, await seriesLabel(created.seriesId)) }, 201);
     }
 
     if (req.method === "PUT" && id != null) {
@@ -100,6 +168,7 @@ export default async (req: Request, context: Context) => {
       const body = await readBody(req, POST_BODY_MAX);
       if (!body) return fail("Request body must be an object.", 400);
       const input = fields(body, existing.title);
+      await assertSeries(input.seriesId);
       const slug =
         input.title !== existing.title ? await uniqueSlug(slugFromTitle(input.title), id) : existing.slug;
       const becomingPublic = input.published && !existing.published;
@@ -111,19 +180,30 @@ export default async (req: Request, context: Context) => {
           excerpt: input.excerpt,
           coverKey: input.coverKey === undefined ? existing.coverKey : input.coverKey,
           bodyHtml: input.bodyHtml,
+          seriesId: input.seriesId,
           published: input.published,
           publishedAt: input.published ? existing.publishedAt ?? new Date() : null,
           updatedAt: new Date(),
         })
         .where(eq(posts.id, id))
         .returning();
-      return json({ post: presentPost(updated), posted: becomingPublic });
+      if (input.published || existing.published) await purgeFeeds();
+      if (becomingPublic) {
+        await notifyNewPaper({
+          title: updated.title,
+          excerpt: updated.excerpt ?? "",
+          slug: updated.slug,
+          origin: siteOrigin(req),
+        });
+      }
+      return json({ post: presentPost(updated, await seriesLabel(updated.seriesId)), posted: becomingPublic });
     }
 
     if (req.method === "DELETE" && id != null) {
       const [existing] = await db.select({ id: posts.id }).from(posts).where(eq(posts.id, id)).limit(1);
       if (!existing) return fail("Post not found.", 404);
       await db.delete(posts).where(eq(posts.id, id));
+      await purgeFeeds();
       return json({ ok: true });
     }
 
@@ -137,4 +217,5 @@ export default async (req: Request, context: Context) => {
 export const config: Config = {
   path: ["/api/posts", "/api/posts/:id"],
   method: ["GET", "POST", "PUT", "DELETE"],
+  rateLimit: { windowSize: 60, windowLimit: 120, aggregateBy: "ip" },
 };

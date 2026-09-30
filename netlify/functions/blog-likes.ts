@@ -64,4 +64,5 @@ export default async (req: Request, context: Context) => {
 export const config: Config = {
   path: "/api/blog-likes/:postId",
   method: ["GET", "POST"],
+  rateLimit: { windowSize: 60, windowLimit: 60, aggregateBy: "ip" },
 };

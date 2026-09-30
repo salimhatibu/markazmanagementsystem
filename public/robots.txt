@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /read
+Disallow: /blog
+Disallow: /students
+Disallow: /teachers
+Disallow: /expenses
+Disallow: /reports
+Disallow: /settings
+Disallow: /login
+Disallow: /api/
+
+# Link preview scrapers. These honour robots.txt and do not run JavaScript, so
+# a blanket restriction silently kills every WhatsApp and Facebook preview.
+User-agent: WhatsApp
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+Sitemap: /sitemap.xml

@@ -14,6 +14,8 @@ const TYPES: Record<string, string> = {
 };
 
 const MAX_BYTES = 8_000_000;
+/** base64 inflates by 4/3, plus room for padding and the rest of the envelope. */
+const MAX_JSON_BYTES = Math.ceil(MAX_BYTES * 1.37);
 const KEY = /^blog\/[a-z0-9-]+\.(jpe?g|png|gif|webp|mp4|webm)$/i;
 
 function blogStore() {
@@ -33,27 +35,38 @@ function extFor(type: string, name: string): string | null {
 }
 
 function decodeBase64(data: string): Uint8Array {
+  // Buffer is already a Uint8Array view; copying it again doubled peak memory.
   try {
-    return Uint8Array.from(Buffer.from(data, "base64"));
+    return Buffer.from(data, "base64");
   } catch {
     throw new ValidationError("The file could not be read.");
   }
 }
 
+const tooBig = () => new ValidationError("That file is too large. Keep it under 8 MB.");
+
+/** Hands the blob store its ArrayBuffer without re-copying the megabytes. */
+function toArrayBuffer(view: Uint8Array): ArrayBuffer {
+  const { buffer, byteOffset, byteLength } = view;
+  if (byteOffset === 0 && byteLength === buffer.byteLength) return buffer as ArrayBuffer;
+  return buffer.slice(byteOffset, byteOffset + byteLength) as ArrayBuffer;
+}
+
 async function readUpload(req: Request): Promise<{ name: string; type: string; bytes: Uint8Array }> {
   const type = req.headers.get("content-type") ?? "";
   if (type.toLowerCase().includes("application/json")) {
-    const body = await readBody(req, 12_000_000);
+    const body = await readBody(req, MAX_JSON_BYTES);
     if (!body) throw new ValidationError("Attach a picture or video.");
-    const name = String(body.filename ?? "file");
-    const mime = String(body.type ?? "");
-    const bytes = decodeBase64(String(body.data ?? ""));
-    return { name, type: mime, bytes };
+    const data = String(body.data ?? "");
+    // Reject on the encoded length so an oversized upload never gets decoded.
+    if (data.length > MAX_JSON_BYTES) throw tooBig();
+    return { name: String(body.filename ?? "file"), type: String(body.type ?? ""), bytes: decodeBase64(data) };
   }
 
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) throw new ValidationError("Attach a picture or video.");
+  if (file.size > MAX_BYTES) throw tooBig();
   return { name: file.name, type: file.type, bytes: new Uint8Array(await file.arrayBuffer()) };
 }
 
@@ -62,7 +75,8 @@ export default async (req: Request, context: Context) => {
     if (req.method === "GET") {
       const key = context.params.key ? `blog/${context.params.key}` : "";
       if (!KEY.test(key)) return fail("File not found.", 404);
-      const stored = await blogStore().getWithMetadata(key, { type: "arrayBuffer" });
+      // Streamed, so an 8 MB video is never held whole in function memory.
+      const stored = await blogStore().getWithMetadata(key, { type: "stream" });
       if (!stored?.data) return fail("File not found.", 404);
       const ext = key.split(".").pop()?.toLowerCase() ?? "bin";
       const contentType =
@@ -80,15 +94,11 @@ export default async (req: Request, context: Context) => {
       const denied = await requireAdmin();
       if (denied) return denied;
       const upload = await readUpload(req);
-      if (upload.bytes.byteLength > MAX_BYTES) {
-        throw new ValidationError("That file is too large. Keep it under 8 MB.");
-      }
+      if (upload.bytes.byteLength > MAX_BYTES) throw tooBig();
       const ext = extFor(upload.type, upload.name);
       if (!ext) throw new ValidationError("Use a picture (jpg, png, gif, webp) or a video (mp4, webm).");
       const key = `blog/${crypto.randomUUID()}.${ext}`;
-      await blogStore().set(key, Uint8Array.from(upload.bytes).buffer, {
-        metadata: { contentType: TYPES[ext] },
-      });
+      await blogStore().set(key, toArrayBuffer(upload.bytes), { metadata: { contentType: TYPES[ext] } });
       return new Response(JSON.stringify({ key, url: `/api/blog-media/${key}` }), {
         status: 201,
         headers: { ...SECURITY_HEADERS, "Content-Type": "application/json" },

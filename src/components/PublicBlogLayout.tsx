@@ -1,11 +1,35 @@
-import { useEffect } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { formatEatLongDate } from "../../shared/format";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useLocation, useParams } from "react-router-dom";
+import { formatEatLongDate, hijriDate } from "../../shared/format";
+import { NewsletterPrompt, newsletterPromptDue } from "./NewsletterPrompt";
 import { BlogBrandMark } from "../lib/blog-brand";
+import { publicSavedPath, publicSeriesPath } from "../lib/blog-share";
+import { paperIssueNumber } from "../lib/paper-almanac";
+import { api } from "../lib/api";
+import type { BlogPost, BlogSeries } from "../types";
 import "../blog-pen.css";
+
+const PaperIssueContext = createContext<number | null>(null);
+
+export function usePaperIssue() {
+  return useContext(PaperIssueContext);
+}
 
 export function PublicBlogLayout() {
   const { pathname } = useLocation();
+  const { slug: paramSlug } = useParams();
+  const slug = paramSlug ?? (pathname.startsWith("/read/") && pathname !== "/read" ? pathname.slice("/read/".length) : undefined);
+  const today = new Date();
+  const hijri = hijriDate(today);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [series, setSeries] = useState<BlogSeries[]>([]);
+  const [navOpen, setNavOpen] = useState(false);
+  const [letterOpen, setLetterOpen] = useState(false);
+  const closeLetter = useCallback(() => setLetterOpen(false), []);
+  const onSaved = pathname === publicSavedPath();
+  const onSeries = pathname.startsWith("/read/series/");
+  const onPiece = pathname.startsWith("/read/") && !onSaved && !onSeries;
+  const issue = paperIssueNumber(posts, onPiece ? slug : undefined);
 
   useEffect(() => {
     document.documentElement.dataset.surface = "blog";
@@ -17,30 +41,115 @@ export function PublicBlogLayout() {
     };
   }, []);
 
+  useEffect(() => {
+    api<{ posts: BlogPost[] }>("/api/posts")
+      .then((body) => setPosts(body.posts))
+      .catch(() => setPosts([]));
+    api<{ series: BlogSeries[] }>("/api/series")
+      .then((body) => setSeries(body.series))
+      .catch(() => setSeries([]));
+  }, []);
+
+  useEffect(() => {
+    if (pathname !== "/read" || !newsletterPromptDue()) return;
+    const timer = window.setTimeout(() => setLetterOpen(true), 700);
+    return () => window.clearTimeout(timer);
+  }, [pathname]);
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [pathname]);
+
   return (
-    <div className="blog-pen blog-pen--public" lang="en-GB">
-      <main>
-        <header className="masthead">
-          <Link to="/read">
-            <BlogBrandMark />
-          </Link>
-          <span>A public paper / {formatEatLongDate(new Date())}</span>
-        </header>
-        <nav className="flow-guide" aria-label="Public papers">
-          <NavLink to="/read" end className={({ isActive }) => (isActive ? "active" : undefined)}>
-            <b>01</b>
-            The papers
-          </NavLink>
-          <span className={pathname.startsWith("/read/") && pathname !== "/read" ? "active" : undefined}>
-            <b>02</b>
-            The piece
-          </span>
-        </nav>
-        <Outlet />
-        <footer>
-          <span>Sponsored by maktabahruhayn.com · Design by Abu Ruhayn</span>
-        </footer>
-      </main>
-    </div>
+    <PaperIssueContext.Provider value={issue}>
+      <div className="blog-pen blog-pen--public" lang="en-GB">
+        <main className="paper-sheet">
+          <header className="paper-masthead">
+            <div className="paper-kicker-row">
+              <time dateTime={today.toISOString()}>{formatEatLongDate(today)}</time>
+              <span>From my pen, to your mind</span>
+            </div>
+            <h1 className="paper-name">
+              <Link to="/read">
+                <BlogBrandMark />
+              </Link>
+            </h1>
+            <p className="paper-tag">Your daily dose of salafiyyah</p>
+            <div className="paper-rule-heavy" />
+            <div className="paper-issue-row">
+              <span>{issue != null ? `Issue No. ${issue}` : "Issue No. —"}</span>
+              <span>{hijri.english}</span>
+            </div>
+          </header>
+          <button
+            type="button"
+            className="paper-nav-toggle"
+            aria-expanded={navOpen}
+            aria-controls="paper-nav"
+            onClick={() => setNavOpen((open) => !open)}
+          >
+            {navOpen ? "Close sections" : "Sections of the paper"}
+          </button>
+          <nav
+            id="paper-nav"
+            className={`paper-cats${navOpen ? " is-open" : ""}`}
+            aria-label="The paper"
+          >
+            <NavLink to="/read" end className={({ isActive }) => (isActive ? "is-active" : undefined)}>
+              The papers
+            </NavLink>
+            <NavLink to={publicSavedPath()} className={({ isActive }) => (isActive ? "is-active" : undefined)}>
+              Saved
+            </NavLink>
+            {series.map((item) => (
+              <NavLink
+                key={item.id}
+                to={publicSeriesPath(item.slug)}
+                className={({ isActive }) => (isActive ? "is-active" : undefined)}
+              >
+                {item.title}
+              </NavLink>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setNavOpen(false);
+                setLetterOpen(true);
+              }}
+            >
+              The letter
+            </button>
+            {onPiece ? (
+              <a href="#the-piece" className="is-active" onClick={() => setNavOpen(false)}>
+                The piece
+              </a>
+            ) : (
+              <span>The piece</span>
+            )}
+            {onPiece ? (
+              <a href="#letters" onClick={() => setNavOpen(false)}>
+                Letters
+              </a>
+            ) : (
+              <span>Letters</span>
+            )}
+          </nav>
+          <Outlet />
+          <NewsletterPrompt open={letterOpen} onClose={closeLetter} />
+          <footer className="paper-colophon">
+            <p>
+              <BlogBrandMark /> — printed digitally, read slowly
+            </p>
+            <p>
+              Sponsored by{" "}
+              <a href="https://maktabahruhayn.com" target="_blank" rel="noreferrer noopener">
+                maktabahruhayn.com
+              </a>{" "}
+              · Design by Abu Ruhayn
+            </p>
+          </footer>
+        </main>
+      </div>
+    </PaperIssueContext.Provider>
   );
 }

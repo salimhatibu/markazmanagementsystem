@@ -1,0 +1,388 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Syne:wght@700;800&display=swap");
+
+.gate {
+  --gate-bg: #060608;
+  --gate-bg-2: #0d0d12;
+  --gate-text: #d4cfc8;
+  --gate-dim: #6b6870;
+  --gate-warm: #f0e8d8;
+  --gate-pink: #e7a3b8;
+  --gate-pink-deep: #c76a8c;
+  --gate-pink-glow: rgba(231, 163, 184, 0.16);
+  --gate-pink-line: rgba(199, 106, 140, 0.55);
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--gate-bg);
+  color: var(--gate-text);
+  font-family: "DM Mono", ui-monospace, monospace;
+  font-weight: 300;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.gate-nav {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px clamp(20px, 4vw, 48px);
+  background: linear-gradient(to bottom, rgba(6, 6, 8, 0.92), transparent);
+}
+
+.gate-logo {
+  font-family: "Syne", sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gate-warm);
+  text-decoration: none;
+}
+
+.gate-logo sup {
+  font-size: 10px;
+  color: var(--gate-pink);
+  letter-spacing: 0;
+}
+
+.gate-nav-link {
+  padding: 9px 18px;
+  border: 1px solid var(--gate-pink);
+  color: var(--gate-pink);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  background: transparent;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.gate-nav-link:hover {
+  background: var(--gate-pink);
+  color: var(--gate-bg);
+}
+
+.gate-stage {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px 20px 72px;
+}
+
+.gate-glow {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  width: min(640px, 90vw);
+  height: min(640px, 90vw);
+  transform: translate(-50%, -55%);
+  background: radial-gradient(circle, var(--gate-pink-glow) 0%, transparent 68%);
+  pointer-events: none;
+}
+
+.gate-ring,
+.gate-ring-2 {
+  position: absolute;
+  left: 50%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.gate-ring {
+  top: 38%;
+  width: min(420px, 78vw);
+  height: min(420px, 78vw);
+  border: 1px solid rgba(231, 163, 184, 0.18);
+  transform: translate(-50%, -50%);
+  animation: gate-spin 48s linear infinite;
+}
+
+.gate-ring::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--gate-pink);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.gate-ring-2 {
+  top: 46%;
+  width: min(560px, 96vw);
+  height: min(560px, 96vw);
+  border: 1px dashed rgba(231, 163, 184, 0.12);
+  transform: translate(-50%, -50%);
+  animation: gate-spin 72s linear infinite reverse;
+}
+
+@keyframes gate-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.gate-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.gate-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--gate-pink);
+  border-radius: 50%;
+  animation: gate-float linear infinite;
+}
+
+@keyframes gate-float {
+  0% { opacity: 0; transform: translateY(0) scale(0); }
+  12% { opacity: 0.7; transform: translateY(-12px) scale(1); }
+  100% { opacity: 0; transform: translateY(-220px) scale(0.4); }
+}
+
+.gate-kicker,
+.gate-title,
+.gate-lede,
+.gate-form,
+.gate-switch,
+.gate-note {
+  position: relative;
+  z-index: 2;
+}
+
+.gate-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 0 0 22px;
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gate-pink);
+}
+
+.gate-kicker::before,
+.gate-kicker::after {
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: var(--gate-pink-deep);
+}
+
+.gate-title {
+  margin: 0 0 18px;
+  font-family: "Cormorant Garamond", "Fraunces", serif;
+  font-weight: 300;
+  font-size: clamp(3.4rem, 9vw, 7.2rem);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  color: var(--gate-warm);
+}
+
+.gate-title em {
+  font-style: italic;
+  color: var(--gate-pink);
+}
+
+.gate-lede {
+  max-width: 34rem;
+  margin: 0 auto 36px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--gate-dim);
+}
+
+.gate-form {
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.gate-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gate-field span {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gate-dim);
+}
+
+.gate input {
+  width: 100%;
+  padding: 14px 16px;
+  min-height: 48px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--gate-warm);
+  font-family: "DM Mono", ui-monospace, monospace;
+  font-size: 16px;
+  font-weight: 300;
+  outline: none;
+}
+
+.gate input:focus {
+  border-color: rgba(231, 163, 184, 0.7);
+  background: rgba(231, 163, 184, 0.06);
+}
+
+.gate-submit,
+.gate-google {
+  min-height: 48px;
+  padding: 14px 22px;
+  font-family: "DM Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 4px;
+}
+
+.gate-submit {
+  margin-top: 4px;
+  background: var(--gate-pink);
+  border: 1px solid var(--gate-pink);
+  color: #1a0c12;
+}
+
+.gate-submit:hover:not(:disabled) {
+  background: #f3c5d3;
+  border-color: #f3c5d3;
+}
+
+.gate-google {
+  background: transparent;
+  border: 1px solid var(--gate-pink-line);
+  color: var(--gate-pink);
+}
+
+.gate-google:hover {
+  background: var(--gate-pink);
+  color: var(--gate-bg);
+}
+
+.gate-status {
+  margin: 0 auto 16px;
+  max-width: 440px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--gate-pink);
+}
+
+.gate-status.is-error { color: #f6c9d4; }
+
+.gate-switch,
+.gate-note {
+  margin: 18px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--gate-dim);
+}
+
+.gate-switch {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+}
+
+.gate-switch button,
+.gate-note button {
+  background: none;
+  border: 0;
+  padding: 8px 4px;
+  min-height: 44px;
+  color: var(--gate-pink);
+  font: inherit;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.gate-switch button:hover,
+.gate-note a:hover {
+  color: #f3c5d3;
+}
+
+.gate-note a {
+  color: var(--gate-pink);
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  z-index: 2;
+}
+
+.gate-marquee {
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--gate-bg-2);
+  padding: 14px 0;
+}
+
+.gate-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: gate-marquee 28s linear infinite;
+}
+
+.gate-marquee span {
+  padding: 0 28px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gate-dim);
+  white-space: nowrap;
+}
+
+.gate-marquee .is-pink { color: var(--gate-pink); }
+
+@keyframes gate-marquee {
+  to { transform: translateX(-50%); }
+}
+
+.gate code {
+  color: var(--gate-pink);
+  font-family: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-ring,
+  .gate-ring-2,
+  .gate-particle,
+  .gate-marquee-track {
+    animation: none;
+  }
+}

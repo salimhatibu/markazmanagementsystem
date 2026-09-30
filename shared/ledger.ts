@@ -33,6 +33,17 @@ export type PersonMoney = {
   paidCents: number;
 };
 
+/** Cash that moved in one set of books: fees in, salaries and expenses out. */
+export function cashBooks(feesCents: number, salariesCents: number, expensesCents: number) {
+  return {
+    feesCollectedCents: feesCents,
+    salariesPaidCents: salariesCents,
+    expensesCents,
+    inHandCents: feesCents - salariesCents - expensesCents,
+    spentCents: salariesCents + expensesCents,
+  };
+}
+
 export function operationsTotals(
   students: PersonMoney[],
   teachers: PersonMoney[],

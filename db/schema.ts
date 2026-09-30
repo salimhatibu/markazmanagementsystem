@@ -135,6 +135,21 @@ export const expenses = pgTable(
   (table) => [index("expenses_spent_on_idx").on(table.spentOn)],
 );
 
+export const series = pgTable("series", {
+  id: serial().primaryKey(),
+  slug: varchar({ length: 80 }).notNull().unique(),
+  title: varchar({ length: 120 }).notNull(),
+  blurb: varchar({ length: 400 }),
+  createdAt: createdAt(),
+});
+
+export const newsletterSubscribers = pgTable("newsletter_subscribers", {
+  id: serial().primaryKey(),
+  email: varchar({ length: 255 }).notNull().unique(),
+  token: varchar({ length: 64 }).notNull().unique(),
+  createdAt: createdAt(),
+});
+
 export const posts = pgTable(
   "posts",
   {
@@ -144,12 +159,16 @@ export const posts = pgTable(
     excerpt: varchar({ length: 500 }),
     coverKey: varchar("cover_key", { length: 400 }),
     bodyHtml: text("body_html").notNull(),
+    seriesId: integer("series_id").references(() => series.id, { onDelete: "set null" }),
     published: boolean().notNull().default(false),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (table) => [index("posts_published_idx").on(table.published, table.publishedAt)],
+  (table) => [
+    index("posts_published_idx").on(table.published, table.publishedAt),
+    index("posts_series_idx").on(table.seriesId),
+  ],
 );
 
 export const blogEvents = pgTable(
@@ -224,6 +243,8 @@ export type ReportRow = typeof reports.$inferSelect;
 export type NotificationRow = typeof notifications.$inferSelect;
 export type SettingsRow = typeof settings.$inferSelect;
 export type Expense = typeof expenses.$inferSelect;
+export type Series = typeof series.$inferSelect;
+export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type BlogEvent = typeof blogEvents.$inferSelect;
 export type BlogComment = typeof blogComments.$inferSelect;

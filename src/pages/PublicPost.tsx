@@ -2,16 +2,29 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { formatEatLongDate } from "../../shared/format";
 import { IconHeart, IconSave, IconShare } from "../components/ig-icons";
+import { PaperAlmanac } from "../components/PaperAlmanac";
 import { api } from "../lib/api";
+import { tagArabicRuns } from "../lib/arabic-runs";
 import { classifyBlogImages } from "../lib/blog-images";
-import { publicPostUrl, publicShelfPath, shareUrl } from "../lib/blog-share";
-import { blogSessionId } from "../lib/blog-track";
+import {
+  publicPostPath,
+  publicPostUrl,
+  publicSavedPath,
+  publicSeriesPath,
+  publicShelfPath,
+  shareImageUrl,
+  shareUrl,
+} from "../lib/blog-share";
+import { blogSessionId, trackBlog } from "../lib/blog-track";
+import { usePageMeta } from "../lib/page-meta";
+import { paperBrief } from "../lib/paper-almanac";
 import { usePostDwell } from "../lib/use-post-dwell";
 import type { BlogComment, BlogPost } from "../types";
 
 export function PublicPostPage() {
   const { slug } = useParams();
   const [post, setPost] = useState<BlogPost | null>(null);
+  const [related, setRelated] = useState<BlogPost[]>([]);
   const [comments, setComments] = useState<BlogComment[]>([]);
   const [likes, setLikes] = useState(0);
   const [liked, setLiked] = useState(false);
@@ -47,12 +60,33 @@ export function PublicPostPage() {
     api<{ saved: boolean }>(`/api/blog-saves/${post.id}?${query}`)
       .then((body) => setSaved(body.saved))
       .catch(() => undefined);
+    api<{ posts: BlogPost[] }>("/api/posts")
+      .then((body) => {
+        const others = body.posts.filter((item) => item.id !== post.id);
+        const same = post.seriesSlug ? others.filter((item) => item.seriesSlug === post.seriesSlug) : [];
+        setRelated((same.length ? same : others).slice(0, 6));
+      })
+      .catch(() => undefined);
   }, [post]);
 
   usePostDwell(post?.id ?? null);
 
+  usePageMeta(
+    post
+      ? {
+          title: `${post.title} · The سلفية mindset`,
+          description: paperBrief(post.excerpt, 200),
+          image: shareImageUrl(post.coverUrl),
+          url: publicPostUrl(post.slug),
+          type: "article",
+          publishedAt: post.publishedAt,
+        }
+      : null,
+  );
+
   useLayoutEffect(() => {
     classifyBlogImages(bodyRef.current);
+    tagArabicRuns(bodyRef.current);
   }, [post?.bodyHtml]);
 
   async function toggleLike() {
@@ -113,12 +147,12 @@ export function PublicPostPage() {
 
   if (error) {
     return (
-      <>
+      <section className="paper-status">
         <p className="status">{error}</p>
-        <Link className="random" to={publicShelfPath()}>
+        <Link className="paper-rail-link" to={publicShelfPath()}>
           Back to the papers
         </Link>
-      </>
+      </section>
     );
   }
 
@@ -126,54 +160,105 @@ export function PublicPostPage() {
 
   const when = post.publishedAt ?? post.createdAt;
   const date = new Date(when);
+  const pull = paperBrief(post.excerpt, 220);
 
   return (
-    <article className="blog-read">
-      <span className="eyebrow">{Number.isNaN(date.getTime()) ? "" : formatEatLongDate(date)}</span>
-      <h1>{post.title}</h1>
-      <div className="actions">
-        <Link className="random" to={publicShelfPath()}>
-          All papers
-        </Link>
-      </div>
-      <div className="blog-ig-bar">
-        <div className="blog-ig-cluster">
-          <button
-            type="button"
-            className={liked ? "blog-ig-btn is-liked" : "blog-ig-btn"}
-            aria-pressed={liked}
-            aria-label={liked ? "Unlike" : "Like"}
-            onClick={() => void toggleLike()}
-          >
-            <IconHeart filled={liked} />
-          </button>
-          <button type="button" className="blog-ig-btn" aria-label="Share" onClick={() => void share()}>
-            <IconShare />
-          </button>
-        </div>
-        <button
-          type="button"
-          className={saved ? "blog-ig-btn is-saved" : "blog-ig-btn"}
-          aria-pressed={saved}
-          aria-label={saved ? "Remove save" : "Save"}
-          onClick={() => void toggleSave()}
-        >
-          <IconSave filled={saved} />
-        </button>
-      </div>
-      {likes > 0 ? (
-        <p className="blog-ig-count">
-          {likes} {likes === 1 ? "like" : "likes"}
-        </p>
+    <>
+      <section className="paper-lead" id="the-piece">
+        <article className="paper-lead-main">
+          <p className="paper-section-kicker">
+            {post.seriesSlug ? (
+              <Link to={publicSeriesPath(post.seriesSlug)}>{post.seriesTitle}</Link>
+            ) : (
+              "Essay"
+            )}{" "}
+            · <span lang="ar" dir="rtl">مقال</span>
+          </p>
+          <h2 className="paper-headline">{post.title}</h2>
+          <p className="paper-byline">
+            {Number.isNaN(date.getTime()) ? "A public paper" : `${formatEatLongDate(date)} · A public paper`}
+          </p>
+          <div className="blog-ig-bar">
+            <div className="blog-ig-cluster">
+              <button
+                type="button"
+                className={liked ? "blog-ig-btn is-liked" : "blog-ig-btn"}
+                aria-pressed={liked}
+                aria-label={liked ? "Unlike" : "Like"}
+                onClick={() => void toggleLike()}
+              >
+                <IconHeart filled={liked} />
+              </button>
+              <button type="button" className="blog-ig-btn" aria-label="Share" onClick={() => void share()}>
+                <IconShare />
+              </button>
+            </div>
+            <button
+              type="button"
+              className={saved ? "blog-ig-btn is-saved" : "blog-ig-btn"}
+              aria-pressed={saved}
+              aria-label={saved ? "Remove save" : "Save"}
+              onClick={() => void toggleSave()}
+            >
+              <IconSave filled={saved} />
+            </button>
+          </div>
+          {likes > 0 ? (
+            <p className="blog-ig-count">
+              {likes} {likes === 1 ? "like" : "likes"}
+            </p>
+          ) : null}
+          {notice ? <p className="status">{notice}</p> : null}
+          {post.coverUrl ? <img src={post.coverUrl} alt="" className="blog-read-cover" /> : null}
+          <div
+            ref={bodyRef}
+            className="blog-body paper-drop"
+            dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
+          />
+        </article>
+        <aside className="paper-rail">
+          <PaperAlmanac note="The calendar of this paper follows both the Gregorian day and the Hijri month." />
+          {pull ? (
+            <blockquote className="paper-pull">
+              <p>{pull}</p>
+              <footer>— from this piece</footer>
+            </blockquote>
+          ) : null}
+          <Link className="paper-rail-link" to={publicSavedPath()}>
+            Saved papers
+          </Link>
+          <Link className="paper-rail-link" to={publicShelfPath()}>
+            All papers
+          </Link>
+        </aside>
+      </section>
+
+      {related.length ? (
+        <section className="paper-briefs" id="continued" aria-labelledby="continued-title">
+          <h2 id="continued-title" className="paper-section-head">
+            {post.seriesTitle ? `Also in ${post.seriesTitle}` : "Also in this paper"}
+          </h2>
+          {related.map((item) => (
+            <article key={item.id} className="paper-brief">
+              <p className="paper-section-kicker">Paper · صحيفة</p>
+              <h3>
+                <Link to={publicPostPath(item.slug)} onClick={() => trackBlog("click", item.id)}>
+                  {item.title}
+                </Link>
+              </h3>
+              {item.excerpt ? <p>{paperBrief(item.excerpt)}</p> : null}
+            </article>
+          ))}
+        </section>
       ) : null}
-      {notice ? <p className="status">{notice}</p> : null}
-      {post.coverUrl ? <img src={post.coverUrl} alt="" className="blog-read-cover" /> : null}
-      <div ref={bodyRef} className="blog-body" dangerouslySetInnerHTML={{ __html: post.bodyHtml }} />
-      <section className="blog-talk" aria-labelledby="notes-title">
-        <div className="section-title">
-          <h2 id="notes-title">Notes from readers</h2>
-          <small>{comments.length ? `${comments.length}` : "NONE YET"}</small>
-        </div>
+
+      <section className="paper-letters" id="letters" aria-labelledby="notes-title">
+        <h2 id="notes-title" className="paper-section-head">
+          Letters · <span lang="ar" dir="rtl">رسائل</span>
+        </h2>
+        <p className="paper-letters-lede">
+          Unsigned notes from readers. No name is taken.
+        </p>
         <form
           className="blog-note-form"
           onSubmit={(event) => {
@@ -182,7 +267,7 @@ export function PublicPostPage() {
           }}
         >
           <label className="blog-field">
-            <span className="eyebrow">Leave a note, unsigned</span>
+            <span className="eyebrow">Leave a letter</span>
             <textarea
               value={note}
               onChange={(event) => setNote(event.target.value)}
@@ -193,7 +278,7 @@ export function PublicPostPage() {
             />
           </label>
           <button type="submit" className="finish" disabled={busy}>
-            {busy ? "Sending…" : "Post the note"}
+            {busy ? "Sending…" : "Post the letter"}
           </button>
         </form>
         <ol className="blog-notes">
@@ -205,6 +290,6 @@ export function PublicPostPage() {
           ))}
         </ol>
       </section>
-    </article>
+    </>
   );
 }

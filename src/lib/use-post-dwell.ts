@@ -10,7 +10,7 @@ export function usePostDwell(postId: number | null) {
       if (document.visibilityState !== "visible") return;
       trackBlog("dwell", postId, { dwellMs: Date.now() - started });
     };
-    const interval = window.setInterval(beat, 15_000);
+    const interval = window.setInterval(beat, 60_000);
     const onLeave = () => trackBlog("dwell", postId, { dwellMs: Date.now() - started });
     document.addEventListener("visibilitychange", onLeave);
     window.addEventListener("pagehide", onLeave);

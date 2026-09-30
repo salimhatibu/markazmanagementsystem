@@ -411,6 +411,34 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-family: var(--serif); }
   overflow-x: clip;
 }
 
+.header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(1680px, 100%);
+  margin: 0 auto;
+}
+
+.header-row > .topbar {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  max-width: none;
+}
+
+.header-row > .sign-out {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 999px;
+  background: var(--glass);
+  text-decoration: none;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 8px 28px var(--glass-shadow);
+}
+
 .nav-measure {
   position: fixed;
   left: -2400px;
@@ -723,7 +751,7 @@ a.solid, a.ghost {
   border-radius: 0;
 }
 
-.panel-light .solid, .login-panel .solid {
+.panel-light .solid {
   background: var(--text);
   color: var(--bg);
 }
@@ -1145,28 +1173,7 @@ legend { padding: 0 8px; color: var(--mute); }
   line-height: 0.95;
 }
 
-.login {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-}
-
-.login-copy { padding: 48px; display: flex; flex-direction: column; justify-content: flex-end; }
-.login-copy h1 { font-size: clamp(3.4rem, 10vw, 6rem); }
 .lede { max-width: 36rem; }
-
-.login-panel {
-  background: var(--card);
-  color: var(--text);
-  padding: 48px 36px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 16px;
-  min-height: 100vh;
-}
-
-.login-panel form { display: flex; flex-direction: column; gap: 16px; }
 
 .linkish {
   background: none;
@@ -1188,16 +1195,6 @@ legend { padding: 0 8px; color: var(--mute); }
 .sign-out {
   font-size: 13px;
   white-space: nowrap;
-}
-
-.login-copy .lede a,
-.login-panel a {
-  color: inherit;
-}
-
-.login-panel h2 {
-  margin: 0 0 8px;
-  font-size: clamp(1.6rem, 4vw, 2.2rem);
 }
 
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
@@ -1651,8 +1648,7 @@ legend { padding: 0 8px; color: var(--mute); }
   .stat,
   .stat:nth-child(n + 5) { grid-column: auto; }
   .stat { min-height: 0; }
-  .login, .form-grid { grid-template-columns: 1fr 1fr; }
-  .login-panel { min-height: auto; }
+  .form-grid { grid-template-columns: 1fr 1fr; }
   .page-header-row { align-items: flex-start; flex-direction: column; }
   .page-header-row > .ghost,
   .page-header-row > .actions { width: 100%; }
@@ -1723,7 +1719,7 @@ legend { padding: 0 8px; color: var(--mute); }
     line-height: 0.94;
   }
   .person-title { font-size: clamp(1.9rem, 10vw, 2.8rem); }
-  .board, .login, .form-grid, .split { grid-template-columns: 1fr; }
+  .board, .form-grid, .split { grid-template-columns: 1fr; }
   .stat,
   .stat:nth-child(n + 5) { grid-column: auto; }
   .stat { min-height: 0; padding: 16px; }
