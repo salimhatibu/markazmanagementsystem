@@ -64,54 +64,68 @@ export function DashboardPage() {
         </blockquote>
       </section>
       {error ? <Notice>{error}</Notice> : null}
-      <div className="board" aria-busy={!totals && !error} aria-live="polite">
-        <article className="stat" data-guide="figures">
-          <p className="kicker kicker-icon">
-            <PenIcon /> In the office
-          </p>
-          <p className="figure">{ready ? money(inHand) : "—"}</p>
-          <p className="stat-note">Fees received {books}, minus salaries and expenses</p>
-        </article>
-        <article className="stat">
-          <p className="kicker">Fees collected</p>
-          <p className="figure">{ready ? money(feesCollected) : "—"}</p>
-          <p className="stat-note">Money that entered the account, {books}</p>
-        </article>
-        <article className="stat">
-          <p className="kicker">Still owed</p>
-          <p className="figure">{ready ? money(outstanding) : "—"}</p>
-          <p className="stat-note">Left to collect after every payment, never below zero</p>
-        </article>
-        <article className="stat">
-          <p className="kicker">Expenses</p>
-          <p className="figure">{ready ? money(expenses) : "—"}</p>
-          <p className="stat-note">Taken from the office, {books}</p>
-        </article>
-        <article className="stat">
-          <p className="kicker">Students</p>
-          <div className="split">
-            <div>
-              <p className="kicker">Morning</p>
-              <p className="figure">{ready ? morningStudents : "—"}</p>
+      <section className="desk-section" aria-labelledby="accounts-heading">
+        <header className="desk-section-head">
+          <h2 id="accounts-heading">Accounts</h2>
+          <p>{books}</p>
+        </header>
+        <div className="board" aria-busy={!totals && !error} aria-live="polite">
+          <article className="stat stat-lead" data-guide="figures">
+            <p className="kicker kicker-icon">
+              <PenIcon /> In the office
+            </p>
+            <p className="figure">{ready ? money(inHand) : "—"}</p>
+            <p className="stat-note">Fees received, less salaries and expenses</p>
+          </article>
+          <article className="stat">
+            <p className="kicker">Fees collected</p>
+            <p className="figure">{ready ? money(feesCollected) : "—"}</p>
+            <p className="stat-note">Money that entered the account</p>
+          </article>
+          <article className="stat">
+            <p className="kicker">Salaries paid</p>
+            <p className="figure">{ready ? money(salariesPaid) : "—"}</p>
+            <p className="stat-note">Paid to teachers from the office</p>
+          </article>
+          <article className="stat">
+            <p className="kicker">Expenses</p>
+            <p className="figure">{ready ? money(expenses) : "—"}</p>
+            <p className="stat-note">Spent from the office</p>
+          </article>
+          <article className="stat">
+            <p className="kicker">Still owed</p>
+            <p className="figure">{ready ? money(outstanding) : "—"}</p>
+            <p className="stat-note">Unpaid fees across all years</p>
+          </article>
+        </div>
+      </section>
+      <section className="desk-section" aria-labelledby="roll-heading">
+        <header className="desk-section-head">
+          <h2 id="roll-heading">The roll</h2>
+          <p>Morning and evening</p>
+        </header>
+        <div className="board board-roll">
+          <article className="stat">
+            <p className="kicker">Students</p>
+            <div className="split">
+              <div>
+                <p className="kicker">Morning</p>
+                <p className="figure">{ready ? morningStudents : "—"}</p>
+              </div>
+              <div>
+                <p className="kicker">Evening</p>
+                <p className="figure">{ready ? eveningStudents : "—"}</p>
+              </div>
             </div>
-            <div>
-              <p className="kicker">Evening</p>
-              <p className="figure">{ready ? eveningStudents : "—"}</p>
-            </div>
-          </div>
-          <p className="stat-note">Morning and evening enrolment</p>
-        </article>
-        <article className="stat">
-          <p className="kicker">Teachers</p>
-          <p className="figure">{ready ? teachers : "—"}</p>
-          <p className="stat-note">On the teaching roll</p>
-        </article>
-        <article className="stat">
-          <p className="kicker">Salaries paid</p>
-          <p className="figure">{ready ? money(salariesPaid) : "—"}</p>
-          <p className="stat-note">Paid from the office, {books}</p>
-        </article>
-      </div>
+            <p className="stat-note">Enrolled on the two sittings</p>
+          </article>
+          <article className="stat">
+            <p className="kicker">Teachers</p>
+            <p className="figure">{ready ? teachers : "—"}</p>
+            <p className="stat-note">On the teaching roll</p>
+          </article>
+        </div>
+      </section>
       <section className="panel panel-light hadith" data-guide="hadith" aria-labelledby="hadith-of-the-day">
         <HadithBackdrop />
         <div className="hadith-head">

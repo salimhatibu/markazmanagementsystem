@@ -40,7 +40,7 @@ export function BlogLayout() {
     <div className="blog-pen" lang="en-GB">
       <main>
         <header className="masthead">
-          <Link to="/blog">
+          <Link to="/" aria-label="Back to the dashboard">
             <BlogBrandMark />
           </Link>
           <span>Words / {formatEatLongDate(new Date())}</span>

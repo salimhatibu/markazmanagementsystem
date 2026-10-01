@@ -13,6 +13,7 @@ html[data-surface="blog"] body {
 }
 
 .blog-pen {
+  color-scheme: light;
   --paper: #f4efe3;
   --ink: #1c1914;
   --muted: #5c564c;
@@ -1822,6 +1823,14 @@ html[data-surface="blog"] body {
 .blog-pen .series-row input,
 .blog-pen .series-row button {
   min-height: 44px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+}
+
+.blog-pen .series-row span {
+  color: var(--ink);
 }
 
 .blog-pen--public .paper-series-head {

@@ -14,7 +14,6 @@ import { excerptFromHtml, sanitizePostHtml } from "../shared/post-html";
 import { slugFromTitle } from "../shared/slug";
 import { sanitizeComment } from "../shared/comment";
 import { hasAdminRole } from "../shared/roles";
-import { CHECK_IN_GAPS_MS, commitNextCheckIn, peekCheckInDelay } from "../src/lib/check-in";
 import { shapeFromSize } from "../src/lib/blog-images";
 
 function student(expected: number, paid: number) {
@@ -275,32 +274,6 @@ assert.equal(shapeFromSize(1200, 640), "is-rect");
 assert.equal(shapeFromSize(0, 0), "is-rect");
 assert.equal(sanitizeComment("<b>Peace</b>  upon  you"), "Peace upon you");
 assert.equal(sanitizeComment("   "), "");
-
-{
-  const store: Record<string, string> = {};
-  Object.defineProperty(globalThis, "sessionStorage", {
-    configurable: true,
-    value: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-      key: () => null,
-      length: 0,
-    },
-  });
-  const now = 1_700_000_000_000;
-  assert.equal(peekCheckInDelay(now), CHECK_IN_GAPS_MS[0]);
-  assert.equal(commitNextCheckIn(now), CHECK_IN_GAPS_MS[1]);
-  assert.equal(peekCheckInDelay(now), CHECK_IN_GAPS_MS[1]);
-  assert.equal(commitNextCheckIn(now), CHECK_IN_GAPS_MS[0]);
-}
 
 {
   assert.equal(hasAdminRole(["admin"], {}), true);

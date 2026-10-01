@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CURRENCY, displayName, MARKAZ_NAME } from "../../shared/format";
 import { ACCOUNT_NAME, ACCOUNT_NUMBER, BANK_NAME, OFFICIAL_ADDRESS, PAYBILL } from "../../shared/letterhead";
@@ -7,9 +7,7 @@ import { useAuth } from "../lib/auth";
 import { loadDashboard } from "../lib/dashboard";
 import { GUIDE_START, hasFinishedGuide } from "../lib/guide";
 import { claimFirstVisit, loadDailyHadith, type DailyHadith } from "../lib/hadith";
-import { shouldPlaySalam } from "../lib/sand-salam";
 import { applyTheme, readTheme, type Theme } from "../lib/theme";
-import { useNavFit } from "../lib/use-nav-fit";
 import type { Settings } from "../types";
 import { Footer } from "./Footer";
 import { GuideTour } from "./GuideTour";
@@ -30,7 +28,6 @@ import {
   SunIcon,
 } from "./Motifs";
 import { PageSlide } from "./PageSlide";
-import { SalamSplash } from "./SalamSplash";
 
 export type WorkspaceContext = {
   settings: Settings;
@@ -40,14 +37,24 @@ export type WorkspaceContext = {
   daily: DailyHadith | null;
 };
 
-const links = [
-  { to: "/", label: "Home", end: true, icon: NavHomeIcon, iconOnly: false },
-  { to: "/students", label: "Students", end: false, icon: NavPeopleIcon, iconOnly: false },
-  { to: "/teachers", label: "Teachers", end: false, icon: NavLedgerIcon, iconOnly: false },
-  { to: "/expenses", label: "Expenses", end: false, icon: NavChartIcon, iconOnly: false },
-  { to: "/reports", label: "Reports", end: false, icon: NavFileIcon, iconOnly: false },
-  { to: "/blog", label: "Blog", end: false, icon: NavBlogIcon, iconOnly: false },
-  { to: "/settings", label: "Settings", end: false, icon: NavGearIcon, iconOnly: true },
+const sections = [
+  { label: "Desk", links: [{ to: "/", label: "Home", end: true, icon: NavHomeIcon }] },
+  {
+    label: "People",
+    links: [
+      { to: "/students", label: "Students", end: false, icon: NavPeopleIcon },
+      { to: "/teachers", label: "Teachers", end: false, icon: NavLedgerIcon },
+    ],
+  },
+  {
+    label: "Books",
+    links: [
+      { to: "/expenses", label: "Expenses", end: false, icon: NavChartIcon },
+      { to: "/reports", label: "Reports", end: false, icon: NavFileIcon },
+    ],
+  },
+  { label: "Papers", links: [{ to: "/blog", label: "Blog", end: false, icon: NavBlogIcon }] },
+  { label: "Office", links: [{ to: "/settings", label: "Settings", end: false, icon: NavGearIcon }] },
 ];
 
 export function Shell() {
@@ -67,13 +74,9 @@ export function Shell() {
   const [theme, setTheme] = useState<Theme>(readTheme);
   const [daily, setDaily] = useState<DailyHadith | null>(null);
   const [showHadith, setShowHadith] = useState(false);
-  const [showSalam, setShowSalam] = useState(shouldPlaySalam);
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideStep, setGuideStep] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const barRef = useRef<HTMLElement>(null);
-  const measureRef = useRef<HTMLDivElement>(null);
-  const { compact, ready } = useNavFit(barRef, measureRef);
 
   useEffect(() => {
     applyTheme(theme);
@@ -123,14 +126,14 @@ export function Shell() {
   }, [refreshSettings, refreshAlerts]);
 
   useEffect(() => {
-    if (showSalam || !daily) return;
+    if (!daily) return;
     setShowHadith(claimFirstVisit(daily.date));
-  }, [showSalam, daily]);
+  }, [daily]);
 
   useEffect(() => {
-    if (showSalam || showHadith) return;
+    if (showHadith) return;
     if (!hasFinishedGuide()) setGuideOpen(true);
-  }, [showSalam, showHadith]);
+  }, [showHadith]);
 
   useEffect(() => {
     function open() {
@@ -143,22 +146,15 @@ export function Shell() {
 
   useEffect(() => {
     setMenuOpen(false);
-  }, [location.pathname, compact]);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
-    const onPointer = (event: PointerEvent) => {
-      if (!barRef.current?.contains(event.target as Node)) setMenuOpen(false);
-    };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMenuOpen(false);
     };
-    document.addEventListener("pointerdown", onPointer);
     document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [menuOpen]);
 
   const context: WorkspaceContext = { settings, refreshSettings, unread, refreshAlerts, daily };
@@ -178,109 +174,24 @@ export function Shell() {
           </text>
         </svg>
       </div>
-      <div className="header-wrap">
-        <div className="header-row">
-        <div className="nav-measure" ref={measureRef} aria-hidden="true">
-          {links.map((link) => {
-            const Icon = link.icon;
-            return (
-              <span key={link.to} className={link.iconOnly ? "nav-pill is-icon" : "nav-pill"}>
-                <Icon />
-                {link.iconOnly ? null : link.label}
-              </span>
-            );
-          })}
-        </div>
-        <header
-          ref={barRef}
-          className={`topbar${compact ? " is-compact" : ""}${menuOpen ? " is-open" : ""}`}
-          data-guide="nav"
-        >
-          <NavLink to="/" className="brand" end data-guide="brand">
-            <span className="logo-mark" aria-hidden="true">
-              <BooksStackIcon />
-            </span>
-            <span className="logo-text">
-              <span className="a">{brand}</span>
-              <span className="b">Imam ash-Shafi&rsquo;i</span>
-            </span>
-          </NavLink>
-          <nav
-            className={`nav-pills${ready ? "" : " is-pending"}`}
-            aria-label="Primary"
-            hidden={compact}
-          >
-            {links.map((link) => {
-              const Icon = link.icon;
-              return (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  end={link.end}
-                  aria-label={link.iconOnly ? link.label : undefined}
-                  className={({ isActive }) =>
-                    `nav-pill${link.iconOnly ? " is-icon" : ""}${isActive ? " active" : ""}`
-                  }
-                >
-                  <Icon />
-                  {link.iconOnly ? null : link.label}
-                </NavLink>
-              );
-            })}
-          </nav>
-          <div className="top-actions">
-            {unread > 0 ? (
-              <NavLink to="/reports" className="alert-pill">
-                Report ready{unread > 1 ? ` · ${unread}` : ""}
-              </NavLink>
-            ) : null}
-            {compact ? (
-              <button
-                type="button"
-                className="nav-menu-toggle"
-                aria-expanded={menuOpen}
-                aria-controls="primary-menu"
-                aria-label={menuOpen ? "Close menu" : "Open menu"}
-                onClick={() => setMenuOpen((open) => !open)}
-              >
-                {menuOpen ? <CloseIcon /> : <MenuIcon />}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="help-toggle"
-              data-guide="help"
-              aria-label="How to use this site"
-              aria-pressed={guideOpen}
-              onClick={() => {
-                setGuideStep(0);
-                setGuideOpen(true);
-              }}
-            >
-              <HelpIcon />
-            </button>
-            <button
-              type="button"
-              className={`theme-toggle theme-toggle-${theme}`}
-              aria-pressed={theme === "light"}
-              aria-label={theme === "light" ? "Switch to dark page" : "Switch to light page"}
-              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-            >
-              <span className="theme-toggle-knob" aria-hidden="true">
-                <SunIcon className="theme-icon-sun" />
-                <CrescentIcon className="theme-icon-moon" />
-              </span>
-              <span className="theme-toggle-label">{theme === "light" ? "Dark page" : "Light page"}</span>
-            </button>
-          </div>
-          {compact ? (
-            <nav
-              id="primary-menu"
-              className={`nav-drawer${menuOpen ? " is-open" : ""}`}
-              aria-label="Primary"
-              hidden={!menuOpen}
-            >
-              {links.map((link) => {
+      {menuOpen ? (
+        <button type="button" className="side-scrim" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
+      ) : null}
+      <aside className={`side${menuOpen ? " is-open" : ""}`} data-guide="nav">
+        <NavLink to="/" className="brand" end data-guide="brand">
+          <span className="logo-mark" aria-hidden="true">
+            <BooksStackIcon />
+          </span>
+          <span className="logo-text">
+            <span className="a">{brand}</span>
+            <span className="b">Imam ash-Shafi&rsquo;i</span>
+          </span>
+        </NavLink>
+        <nav id="primary-menu" className="side-nav" aria-label="Primary">
+          {sections.map((section) => (
+            <div key={section.label} className="side-group">
+              <p className="side-label">{section.label}</p>
+              {section.links.map((link) => {
                 const Icon = link.icon;
                 return (
                   <NavLink
@@ -295,27 +206,77 @@ export function Shell() {
                   </NavLink>
                 );
               })}
-            </nav>
-          ) : null}
-        </header>
-        {auth.identityOn ? (
-          <button type="button" className="text-button sign-out" onClick={() => void auth.signOut()}>
-            Sign out
+            </div>
+          ))}
+        </nav>
+      </aside>
+      <div className="workspace">
+        <header className="topbar">
+          <button
+            type="button"
+            className="nav-menu-toggle"
+            aria-expanded={menuOpen}
+            aria-controls="primary-menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? <CloseIcon /> : <MenuIcon />}
           </button>
-        ) : null}
-        </div>
+          <div className="top-actions">
+            {unread > 0 ? (
+              <NavLink to="/reports" className="alert-pill">
+                Report ready{unread > 1 ? ` · ${unread}` : ""}
+              </NavLink>
+            ) : null}
+            <button
+              type="button"
+              className="help-toggle"
+              data-guide="help"
+              aria-label="How to use this site"
+              aria-pressed={guideOpen}
+              onClick={() => {
+                setGuideStep(0);
+                setGuideOpen(true);
+              }}
+            >
+              <HelpIcon />
+            </button>
+            <div className="theme-switch" role="group" aria-label="Page colour">
+              <button
+                type="button"
+                aria-pressed={theme === "light"}
+                aria-label="Light page"
+                onClick={() => setTheme("light")}
+              >
+                <SunIcon />
+              </button>
+              <button
+                type="button"
+                aria-pressed={theme === "dark"}
+                aria-label="Dark page"
+                onClick={() => setTheme("dark")}
+              >
+                <CrescentIcon />
+              </button>
+            </div>
+            {auth.identityOn ? (
+              <button type="button" className="sign-out" onClick={() => void auth.signOut()}>
+                Sign out
+              </button>
+            ) : null}
+          </div>
+        </header>
+        <main id="content" className="content">
+          <PageSlide>
+            <Outlet context={context} />
+          </PageSlide>
+        </main>
+        <Footer />
       </div>
-      <main id="content" className="content">
-        <PageSlide>
-          <Outlet context={context} />
-        </PageSlide>
-      </main>
-      <Footer />
-      {showSalam ? <SalamSplash onDone={() => setShowSalam(false)} /> : null}
-      {showHadith && daily && !showSalam ? (
+      {showHadith && daily ? (
         <HadithDialog daily={daily} onClose={() => setShowHadith(false)} />
       ) : null}
-      {guideOpen && !showSalam && !showHadith ? (
+      {guideOpen && !showHadith ? (
         <GuideTour step={guideStep} onStep={setGuideStep} onClose={() => setGuideOpen(false)} />
       ) : null}
     </div>

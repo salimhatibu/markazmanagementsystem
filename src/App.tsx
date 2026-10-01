@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { AdminGate } from "./components/AdminGate";
 import { PublicBlogLayout } from "./components/PublicBlogLayout";
 import { AuthProvider } from "./lib/auth";
@@ -14,7 +14,6 @@ import { PublicSeriesPage } from "./pages/PublicSeries";
 const page = <T extends string>(load: () => Promise<Record<T, React.ComponentType>>, name: T) =>
   lazy(() => load().then((mod) => ({ default: mod[name] })));
 
-const CheckInLayer = page(() => import("./components/CheckInLayer"), "CheckInLayer");
 const Shell = page(() => import("./components/Shell"), "Shell");
 const BlogLayout = page(() => import("./components/BlogLayout"), "BlogLayout");
 const DashboardPage = page(() => import("./pages/Dashboard"), "DashboardPage");
@@ -33,13 +32,9 @@ const BlogSeriesPage = page(() => import("./pages/BlogSeries"), "BlogSeriesPage"
 const BlogPostPage = page(() => import("./pages/BlogPost"), "BlogPostPage");
 
 export function App() {
-  const { pathname } = useLocation();
-  const publicSurface = pathname.startsWith("/read") || pathname === "/login";
-
   return (
     <AuthProvider>
       <Suspense fallback={null}>
-        {!publicSurface && <CheckInLayer />}
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route element={<PublicBlogLayout />}>
