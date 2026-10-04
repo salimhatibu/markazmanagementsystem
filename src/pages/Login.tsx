@@ -90,8 +90,7 @@ export function LoginPage() {
           Access is <em>off</em>.
         </h1>
         <p className="gate-lede">
-          On the hosted Worker, Cloudflare Access guards the desk. Until then the local books stay open so the ledger
-          can be used without a cloud login.
+          This is the local desk. On the hosted site, Cloudflare Access signs keepers in with an allowed email.
         </p>
         <div className="gate-actions">
           <Link className="gate-nav-link" to="/">
@@ -113,9 +112,15 @@ export function LoginPage() {
         Open the <em>desk</em>.
       </h1>
       <p className="gate-lede">
-        Cloudflare Access signs keepers in. Readers can stay with the public papers without a desk login.
+        Sign in with Cloudflare Access using an email on the allow list. Readers can stay with the public papers
+        without a desk login.
       </p>
       {error ? <p className="gate-status is-error">{error}</p> : null}
+      {!auth.user ? (
+        <p className="gate-status">
+          If you were not prompted to sign in, open this site again so Access can check your email.
+        </p>
+      ) : null}
       <div className="gate-actions">
         <a className="gate-submit" href={safeFrom}>
           Continue to the desk

@@ -47,6 +47,10 @@ interface Fetcher {
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
 }
 
+interface Ai {
+  run(model: string, inputs: Record<string, unknown>): Promise<unknown>;
+}
+
 interface ScheduledEvent {
   cron: string;
   scheduledTime: number;

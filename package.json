@@ -37,7 +37,8 @@
     "pdf-lib": "^1.17.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.30.6"
+    "react-router-dom": "^6.30.6",
+    "unpdf": "^1.8.1"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.62.5",

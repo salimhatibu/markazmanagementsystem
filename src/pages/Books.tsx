@@ -1,15 +1,17 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { eatDate, formatMoney } from "../../shared/format";
+import { OcrUpload } from "../components/OcrUpload";
 import type { WorkspaceContext } from "../components/Shell";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api } from "../lib/api";
+import { bookFromOcr } from "../lib/ocr-fields";
 import type { BookInventory } from "../types";
 
 type DraftLine = { key: string; name: string; price: string };
 
-function newLine(): DraftLine {
-  return { key: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: "", price: "" };
+function newLine(name = "", price = ""): DraftLine {
+  return { key: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name, price };
 }
 
 export function BooksPage() {
@@ -164,6 +166,24 @@ export function BooksPage() {
       </PageHeader>
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
+      <Panel tone="light" className="ocr-panel">
+        <OcrUpload
+          kind="book"
+          disabled={busy}
+          onError={setError}
+          onFields={(fields) => {
+            const next = bookFromOcr(fields);
+            setTitle(next.title);
+            if (next.purchasedOn) setPurchasedOn(next.purchasedOn);
+            setLines(next.items.map((item) => newLine(item.name, item.price)));
+            setStationeriesNote(next.stationeriesNote);
+            setStationeriesCost(next.stationeriesCost);
+            setOpen(true);
+            setError("");
+            setInfo("Book list filled from the scan. Check prices, then save.");
+          }}
+        />
+      </Panel>
       {open ? (
         <form className="expense-form" onSubmit={(event) => void create(event)}>
           <Panel tone="light">

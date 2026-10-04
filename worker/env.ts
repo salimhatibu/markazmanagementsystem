@@ -2,6 +2,7 @@ export type WorkerEnv = {
   DB: D1Database;
   REPORTS: R2Bucket;
   BLOG_MEDIA: R2Bucket;
+  AI: Ai;
   ASSETS: Fetcher;
   SMTP_HOST?: string;
   SMTP_PORT?: string;

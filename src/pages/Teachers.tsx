@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { formatMoney, label } from "../../shared/format";
+import { OcrUpload } from "../components/OcrUpload";
 import { TeacherForm } from "../components/TeacherForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api, downloadRoster } from "../lib/api";
+import { teacherFromOcr } from "../lib/ocr-fields";
 import { emptyTeacher, type Teacher, type TeacherInput } from "../types";
 
 export function TeachersPage() {
@@ -92,6 +94,18 @@ export function TeachersPage() {
         </button>
       </PageHeader>
       {error ? <Notice>{error}</Notice> : null}
+      <Panel tone="light" className="ocr-panel">
+        <OcrUpload
+          kind="teacher"
+          disabled={busy}
+          onError={setError}
+          onFields={(fields) => {
+            setDraft(teacherFromOcr(fields));
+            setOpen(true);
+            setError("");
+          }}
+        />
+      </Panel>
       {open ? (
         <Panel tone="light">
           <p className="panel-title">New teacher</p>

@@ -23,6 +23,7 @@ import notifications from "./api/notifications";
 import settings from "./api/settings";
 import mail from "./api/mail";
 import session from "./api/session";
+import ocr from "./api/ocr";
 import posts from "./api/posts";
 import series from "./api/series";
 import blogMedia from "./api/blog-media";
@@ -74,6 +75,7 @@ const routes: Route[] = [
   { pattern: /^\/api\/settings\/?$/, handler: settings },
   { pattern: /^\/api\/mail\/?$/, handler: mail },
   { pattern: /^\/api\/session\/?$/, handler: session },
+  { pattern: /^\/api\/ocr\/?$/, handler: ocr },
   { pattern: /^\/api\/posts(?:\/(\d+))?\/?$/, handler: posts, params: ["id"] },
   { pattern: /^\/api\/series(?:\/([^/]+))?\/?$/, handler: series, params: ["key"] },
   { pattern: /^\/api\/blog-media\/blog\/([^/]+)\/?$/, handler: blogMedia, params: ["key"] },

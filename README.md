@@ -52,7 +52,9 @@ Do not apply DDL by hand against remote D1 outside `wrangler d1 migrations apply
 
 ## Auth (Cloudflare Access)
 
-Right now production has `DEV_OPEN_DESK=1` in `wrangler.jsonc`, so the **entire desk is open** with no Access login. Set that back to `"0"` when you want to lock it again, then:
+Production has `DEV_OPEN_DESK=0`. The desk requires Cloudflare Access for allowed emails. Local `.dev.vars` keeps `DEV_OPEN_DESK=1` for development.
+
+To (re)configure Access:
 
 1. Worker URL: https://markaz-management-system.arruhayn-87f.workers.dev (or attach a custom domain).
 2. In [Zero Trust → Access → Applications](https://one.dash.cloudflare.com/), create a **Self-hosted** application for the desk.
