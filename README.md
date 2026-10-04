@@ -29,7 +29,7 @@ npm run build
 | Account | `87f42add36c73d8668f7aaf00ffb8d70` | bound in `wrangler.jsonc` |
 | D1 | `markaz` → `604c7d61-ddc1-4ca9-9ada-59d2bc9333ba` | created; remote migrations applied |
 | R2 | `markaz-reports`, `markaz-blog` | created |
-| Worker | https://markaz-management-system.arruhayn-87f.workers.dev | deployed |
+| Worker | https://markaz.arruhayn-87f.workers.dev | deployed |
 | Access | Zero Trust application | configure secrets (below) |
 
 ## Database (D1)
@@ -56,7 +56,7 @@ Production has `DEV_OPEN_DESK=0`. The desk requires Cloudflare Access for allowe
 
 To (re)configure Access:
 
-1. Worker URL: https://markaz-management-system.arruhayn-87f.workers.dev (or attach a custom domain).
+1. Worker URL: https://markaz.arruhayn-87f.workers.dev (or attach a custom domain).
 2. In [Zero Trust → Access → Applications](https://one.dash.cloudflare.com/), create a **Self-hosted** application for the desk.
 3. Protect the desk host (or paths) so staff must sign in. **Bypass** Access for public `/read` and public blog APIs if needed.
 4. Set secrets:
