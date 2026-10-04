@@ -31,10 +31,10 @@
   "triggers": {
     "crons": ["0 6 1,15 * *", "30 6 1 * *"]
   },
-  // Production desk is locked by Cloudflare Access (CF_ACCESS_* secrets).
-  // Local open-desk mode lives only in .dev.vars (DEV_OPEN_DESK=1).
+  // Temporary: desk is open to anyone. Set back to "0" and configure
+  // CF_ACCESS_* secrets when you want Cloudflare Access again.
   "vars": {
-    "DEV_OPEN_DESK": "0"
+    "DEV_OPEN_DESK": "1"
   },
   "rules": [
     { "type": "Data", "globs": ["**/*.ttf"], "fallthrough": true }

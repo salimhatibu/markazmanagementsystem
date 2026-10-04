@@ -52,23 +52,18 @@ Do not apply DDL by hand against remote D1 outside `wrangler d1 migrations apply
 
 ## Auth (Cloudflare Access)
 
-Production has `DEV_OPEN_DESK=0`. The desk APIs require a valid Access JWT.
+Right now production has `DEV_OPEN_DESK=1` in `wrangler.jsonc`, so the **entire desk is open** with no Access login. Set that back to `"0"` when you want to lock it again, then:
 
 1. Worker URL: https://markaz-management-system.arruhayn-87f.workers.dev (or attach a custom domain).
 2. In [Zero Trust → Access → Applications](https://one.dash.cloudflare.com/), create a **Self-hosted** application for the desk.
-3. Protect the desk host (or paths) so staff must sign in. **Bypass** Access for:
-   - `/read`, `/read/*`
-   - public GETs: published posts/series/media, `/sitemap.xml`, `/rss.xml`
-   - intentionally public POSTs: newsletter subscribe/leave, blog events / likes / comments / saves  
-   (Easiest pattern: protect the whole Worker host for office staff, and put the public blog on a separate hostname — or add path bypass policies for `/read` and the public API routes above.)
-4. From the application, copy:
-   - **Team domain** (e.g. `yourteam.cloudflareaccess.com`) → secret `CF_ACCESS_TEAM_DOMAIN`
-   - **Application Audience (AUD)** → secret `CF_ACCESS_AUD`
+3. Protect the desk host (or paths) so staff must sign in. **Bypass** Access for public `/read` and public blog APIs if needed.
+4. Set secrets:
 
 ```bash
 npx wrangler secret put CF_ACCESS_TEAM_DOMAIN
 npx wrangler secret put CF_ACCESS_AUD
 ```
+
 
 ## Files (R2)
 
