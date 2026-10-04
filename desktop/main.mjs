@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const LOCAL = "http://localhost:5173/";
-const HOSTED = "https://markazimamshafii.netlify.app/";
+const HOSTED = process.env.MARKAZ_DESK_URL || "https://markaz.example.workers.dev/";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 let vite = null;

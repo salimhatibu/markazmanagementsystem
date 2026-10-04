@@ -4,7 +4,7 @@ import { eatDate, formatMoney, label } from "../../shared/format";
 import { TeacherForm } from "../components/TeacherForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
-import { api } from "../lib/api";
+import { api, downloadPersonRecord } from "../lib/api";
 import { teacherToInput, type Teacher, type TeacherInput } from "../types";
 
 function today() {
@@ -112,6 +112,22 @@ export function TeacherDetailPage() {
   return (
     <>
       <PageHeader kicker="Teacher" title={teacher.name} person>
+        <button
+          type="button"
+          className="ghost"
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            setError("");
+            void downloadPersonRecord("teachers", teacher.id, `teacher-${teacher.name}.pdf`)
+              .catch((caught: unknown) =>
+                setError(caught instanceof Error ? caught.message : "The record could not be downloaded."),
+              )
+              .finally(() => setBusy(false));
+          }}
+        >
+          Download record
+        </button>
         <Link className="ghost" to="/teachers">
           Back to teachers
         </Link>

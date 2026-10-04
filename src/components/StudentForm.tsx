@@ -1,4 +1,5 @@
 import { FormEvent } from "react";
+import { EVENING_FEES, MORNING_FEES } from "../../shared/letterhead";
 import { Field } from "./ui";
 import type { StudentInput } from "../types";
 
@@ -19,10 +20,30 @@ export function StudentForm({
     onChange({ ...value, [key]: next });
   }
 
+  function setSection(section: StudentInput["section"]) {
+    const suggested = String(section === "evening" ? EVENING_FEES.admission : MORNING_FEES.admission);
+    const previousDefault = String(
+      value.section === "evening" ? EVENING_FEES.admission : MORNING_FEES.admission,
+    );
+    onChange({
+      ...value,
+      section,
+      admissionFeeAmount:
+        !value.admissionFeeAmount || value.admissionFeeAmount === previousDefault
+          ? suggested
+          : value.admissionFeeAmount,
+    });
+  }
+
   function submit(event: FormEvent) {
     event.preventDefault();
     onSubmit();
   }
+
+  const admissionHint =
+    value.section === "evening"
+      ? `Evening admission is usually KES ${EVENING_FEES.admission.toLocaleString("en-GB")}.`
+      : `Morning admission is usually KES ${MORNING_FEES.admission.toLocaleString("en-GB")}.`;
 
   return (
     <form className="record-form" onSubmit={submit}>
@@ -58,6 +79,15 @@ export function StudentForm({
             onChange={(event) => set("dateOfBirth", event.target.value)}
           />
         </Field>
+        <Field id="admitted-on" label="Date of admission" hint="The day this student joined the markaz.">
+          <input
+            id="admitted-on"
+            type="date"
+            required
+            value={value.admittedOn}
+            onChange={(event) => set("admittedOn", event.target.value)}
+          />
+        </Field>
         <Field id="student-gender" label="Gender">
           <select
             id="student-gender"
@@ -72,7 +102,7 @@ export function StudentForm({
           <select
             id="student-section"
             value={value.section}
-            onChange={(event) => set("section", event.target.value as StudentInput["section"])}
+            onChange={(event) => setSection(event.target.value as StudentInput["section"])}
           >
             <option value="morning">Morning</option>
             <option value="evening">Evening</option>
@@ -81,7 +111,7 @@ export function StudentForm({
         <Field
           id="expected-fees"
           label="Expected fees"
-          hint="Morning is KES 15,000 a term. Evening is KES 9,000, or 10,000 for Hadhaanah. Admission is 3,000 (morning) or 1,500 (evening)."
+          hint="Morning is KES 15,000 a term. Evening is KES 9,000, or 10,000 for Hadhaanah. Admission is recorded separately below."
         >
           <input
             id="expected-fees"
@@ -91,6 +121,39 @@ export function StudentForm({
             aria-describedby="expected-fees-hint"
             value={value.expectedFees}
             onChange={(event) => set("expectedFees", event.target.value)}
+          />
+        </Field>
+      </div>
+      <p className="form-section">Admission fees</p>
+      <div className="form-grid">
+        <label className="check" htmlFor="admission-collected">
+          <input
+            id="admission-collected"
+            type="checkbox"
+            checked={value.admissionFeeCollected}
+            onChange={(event) => set("admissionFeeCollected", event.target.checked)}
+          />
+          <span>
+            Admission fees collected
+            <em className="check-hint">{admissionHint}</em>
+          </span>
+        </label>
+        <Field
+          id="admission-amount"
+          label="Admission fee amount"
+          hint={
+            value.admissionFeeCollected
+              ? "This amount is recorded as a fee payment when you save."
+              : "Tick the box above if admission has been paid."
+          }
+        >
+          <input
+            id="admission-amount"
+            inputMode="decimal"
+            required={value.admissionFeeCollected}
+            placeholder="0.00"
+            value={value.admissionFeeAmount}
+            onChange={(event) => set("admissionFeeAmount", event.target.value)}
           />
         </Field>
       </div>

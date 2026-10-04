@@ -13,28 +13,26 @@ export function AdminGate() {
     );
   }
 
-  if (!auth.identityOn) return <Outlet />;
-  if (auth.pending?.type === "invite" || auth.pending?.type === "recovery") {
-    return <Navigate to="/login" replace />;
-  }
+  if (!auth.accessOn) return <Outlet />;
+
   if (!auth.user) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
+
   if (!auth.isAdmin) {
     return (
       <main className="blocked">
         <p className="eyebrow">Markaz desk</p>
         <h1>This account cannot open the books.</h1>
         <p>
-          You are signed in as {auth.user.email ?? "this address"}, but the admin role has not been granted. Ask a
-          keeper to add the <code>admin</code> role in Netlify Identity. The public papers stay open without a desk
-          login.
+          You are signed in as {auth.user.email}, but Cloudflare Access did not admit this session. Ask a keeper to
+          add you to the Access policy. The public papers stay open without a desk login.
         </p>
         <div className="actions">
           <Link className="ghost" to="/read">
             Read the papers
           </Link>
-          <button type="button" className="ghost" onClick={() => void auth.signOut()}>
+          <button type="button" className="ghost" onClick={() => auth.signOut()}>
             Sign out
           </button>
         </div>

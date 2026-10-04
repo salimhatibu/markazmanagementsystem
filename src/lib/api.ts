@@ -31,15 +31,15 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-export async function downloadReport(id: number, filename: string) {
-  const response = await fetch(`/api/reports/${id}/file`, { credentials: "include" });
+async function downloadBlob(path: string, filename: string, fallback: string) {
+  const response = await fetch(path, { credentials: "include" });
   if (!response.ok) {
-    let message = "Could not download the report.";
+    let message = fallback;
     try {
       const body = (await response.json()) as { error?: string };
       if (body.error) message = body.error;
     } catch {
-      message = "Could not download the report.";
+      message = fallback;
     }
     throw new ApiError(response.status, message);
   }
@@ -50,4 +50,16 @@ export async function downloadReport(id: number, filename: string) {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+export async function downloadReport(id: number, filename: string) {
+  await downloadBlob(`/api/reports/${id}/file`, filename, "Could not download the report.");
+}
+
+export async function downloadPersonRecord(kind: "students" | "teachers", id: number, filename: string) {
+  await downloadBlob(`/api/${kind}/${id}/file`, filename, "Could not download the record.");
+}
+
+export async function downloadRoster(kind: "students" | "teachers", filename: string) {
+  await downloadBlob(`/api/${kind}/file`, filename, "Could not download the list.");
 }

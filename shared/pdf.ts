@@ -137,7 +137,7 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
   let bodyBold: PDFFont;
   let nums: PDFFont;
   try {
-    const files = loadPdfFonts();
+    const files = await loadPdfFonts();
     display = await pdf.embedFont(files.display, { subset: true });
     body = await pdf.embedFont(files.body, { subset: true });
     bodyBold = await pdf.embedFont(files.bodyBold, { subset: true });
@@ -615,4 +615,292 @@ function wrap(text: string, font: PDFFont, size: number, width: number): string[
   }
   if (current.length) lines.push(current.join(" "));
   return lines.length > 0 ? lines : [""];
+}
+
+export type PersonPaymentLine = {
+  paidOn: string;
+  amountCents: number;
+  note: string | null;
+};
+
+export type PersonRecordPdf = {
+  kind: "student" | "teacher";
+  markazName: string;
+  letterhead?: Letterhead;
+  currencySymbol: string | null;
+  generatedAt: string;
+  title: string;
+  fields: { label: string; value: string }[];
+  expectedCents: number;
+  paidCents: number;
+  balanceCents: number;
+  payments: PersonPaymentLine[];
+};
+
+export async function buildPersonRecordPdf(record: PersonRecordPdf): Promise<Uint8Array> {
+  const pdf = await PDFDocument.create();
+  pdf.registerFontkit(fontkit);
+  const markaz = record.letterhead?.markazName || record.markazName;
+  pdf.setTitle(`${record.title} — ${markaz}`);
+  pdf.setAuthor(markaz);
+  pdf.setCreator("Markaz Imam ash-Shafi'i");
+
+  let display: PDFFont;
+  let body: PDFFont;
+  let bodyBold: PDFFont;
+  let nums: PDFFont;
+  try {
+    const files = await loadPdfFonts();
+    display = await pdf.embedFont(files.display, { subset: true });
+    body = await pdf.embedFont(files.body, { subset: true });
+    bodyBold = await pdf.embedFont(files.bodyBold, { subset: true });
+    nums = await pdf.embedFont(files.nums, { subset: true });
+  } catch {
+    display = await pdf.embedFont(StandardFonts.TimesRomanBold);
+    body = await pdf.embedFont(StandardFonts.Helvetica);
+    bodyBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+    nums = await pdf.embedFont(StandardFonts.Helvetica);
+  }
+
+  let page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+  let y = PAGE_HEIGHT - 36;
+
+  const paint = () => {
+    page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT, color: C.paper });
+    page.drawRectangle({ x: 0, y: PAGE_HEIGHT - 8, width: PAGE_WIDTH, height: 8, color: C.accent });
+    page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: 36, color: C.wash });
+  };
+  const writeLine = (
+    text: string,
+    x: number,
+    top: number,
+    size: number,
+    font: PDFFont,
+    color: RGB,
+    maxWidth?: number,
+  ) => {
+    const lines = maxWidth ? wrap(text, font, size, maxWidth) : [text];
+    lines.forEach((line, index) => {
+      page.drawText(line, { x, y: top - index * (size + 3), size, font, color });
+    });
+    return lines.length * (size + 3);
+  };
+  const ensure = (height: number) => {
+    if (y - height < FOOTER) {
+      page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+      paint();
+      y = PAGE_HEIGHT - 36;
+      writeLine(`${record.title}  ·  continued`, MARGIN, y, 10, display, C.mute);
+      y -= 28;
+    }
+  };
+
+  paint();
+  writeLine(markaz, MARGIN, y, 11, bodyBold, C.mute);
+  y -= 22;
+  writeLine(record.title, MARGIN, y, 22, display, C.ink, CONTENT);
+  y -= 34;
+  writeLine(`Printed ${formatShortDate(record.generatedAt.slice(0, 10))}`, MARGIN, y, 9, body, C.mute);
+  y -= 28;
+
+  for (const field of record.fields) {
+    ensure(22);
+    writeLine(field.label, MARGIN, y, 9, body, C.mute);
+    writeLine(field.value || "—", MARGIN + 150, y, 10, bodyBold, C.ink, CONTENT - 150);
+    y -= 20;
+  }
+
+  y -= 10;
+  ensure(70);
+  writeLine("Balances", MARGIN, y, 14, display, C.ink);
+  y -= 24;
+  const symbol = record.currencySymbol;
+  const stats = [
+    ["Expected", money(record.expectedCents, symbol)],
+    ["Paid", money(record.paidCents, symbol)],
+    ["Balance", money(record.balanceCents, symbol)],
+  ];
+  stats.forEach(([labelText, value], index) => {
+    const x = MARGIN + index * 170;
+    page.drawRectangle({ x, y: y - 44, width: 156, height: 48, color: C.card });
+    writeLine(labelText, x + 12, y - 14, 9, body, C.mute);
+    writeLine(value, x + 12, y - 34, 12, nums, C.ink);
+  });
+  y -= 70;
+
+  ensure(40);
+  writeLine("Payment history", MARGIN, y, 14, display, C.ink);
+  y -= 22;
+  if (record.payments.length === 0) {
+    ensure(24);
+    writeLine("No payments recorded.", MARGIN, y, 10, body, C.mute);
+  } else {
+    for (const payment of record.payments) {
+      ensure(20);
+      writeLine(formatShortDate(payment.paidOn), MARGIN, y, 10, body, C.ink);
+      writeLine(payment.note?.trim() || "—", MARGIN + 90, y, 10, body, C.text2, 220);
+      writeLine(money(payment.amountCents, symbol), MARGIN + CONTENT - 90, y, 10, nums, C.ink);
+      y -= 18;
+    }
+  }
+
+  y -= 20;
+  ensure(30);
+  writeLine(BLESSING, PAGE_WIDTH / 2 - 80, y, 12, display, C.accent);
+
+  return pdf.save();
+}
+
+export type RosterColumn = {
+  label: string;
+  width: number;
+  align?: "left" | "right";
+};
+
+export type RosterPdf = {
+  markazName: string;
+  letterhead?: Letterhead;
+  currencySymbol: string | null;
+  generatedAt: string;
+  title: string;
+  subtitle?: string;
+  columns: RosterColumn[];
+  rows: string[][];
+  empty: string;
+};
+
+export async function buildRosterPdf(roster: RosterPdf): Promise<Uint8Array> {
+  const pdf = await PDFDocument.create();
+  pdf.registerFontkit(fontkit);
+  const markaz = roster.letterhead?.markazName || roster.markazName;
+  pdf.setTitle(`${roster.title} — ${markaz}`);
+  pdf.setAuthor(markaz);
+  pdf.setCreator("Markaz Imam ash-Shafi'i");
+
+  let display: PDFFont;
+  let body: PDFFont;
+  let bodyBold: PDFFont;
+  let nums: PDFFont;
+  try {
+    const files = await loadPdfFonts();
+    display = await pdf.embedFont(files.display, { subset: true });
+    body = await pdf.embedFont(files.body, { subset: true });
+    bodyBold = await pdf.embedFont(files.bodyBold, { subset: true });
+    nums = await pdf.embedFont(files.nums, { subset: true });
+  } catch {
+    display = await pdf.embedFont(StandardFonts.TimesRomanBold);
+    body = await pdf.embedFont(StandardFonts.Helvetica);
+    bodyBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+    nums = await pdf.embedFont(StandardFonts.Helvetica);
+  }
+
+  let page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+  let y = PAGE_HEIGHT - 36;
+  const headerH = 22;
+  const rowH = 18;
+  const inset = 6;
+  const totalWidth = roster.columns.reduce((sum, col) => sum + col.width, 0);
+  const widths = roster.columns.map((col) => (col.width / totalWidth) * CONTENT);
+
+  const paint = () => {
+    page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT, color: C.paper });
+    page.drawRectangle({ x: 0, y: PAGE_HEIGHT - 8, width: PAGE_WIDTH, height: 8, color: C.accent });
+    page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: 36, color: C.wash });
+  };
+  const writeLine = (
+    text: string,
+    x: number,
+    top: number,
+    size: number,
+    font: PDFFont,
+    color: RGB,
+    maxWidth?: number,
+    align: "left" | "right" = "left",
+  ) => {
+    const lines = maxWidth ? wrap(text, font, size, maxWidth) : [text];
+    lines.forEach((line, index) => {
+      let drawX = x;
+      if (align === "right" && maxWidth) {
+        drawX = x + maxWidth - font.widthOfTextAtSize(line, size);
+      }
+      page.drawText(line, { x: drawX, y: top - index * (size + 2), size, font, color });
+    });
+    return lines.length * (size + 2);
+  };
+  const drawHeader = () => {
+    page.drawRectangle({ x: MARGIN, y: y - headerH, width: CONTENT, height: headerH, color: C.header });
+    let x = MARGIN;
+    roster.columns.forEach((col, index) => {
+      writeLine(col.label, x + inset, y - 14, 8, bodyBold, C.ink, widths[index] - inset * 2, col.align ?? "left");
+      x += widths[index];
+    });
+    y -= headerH;
+  };
+  const ensure = (height: number, withHeader = false) => {
+    if (y - height < FOOTER) {
+      page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+      paint();
+      y = PAGE_HEIGHT - 36;
+      writeLine(`${roster.title}  ·  continued`, MARGIN, y, 10, display, C.mute);
+      y -= 26;
+      if (withHeader) drawHeader();
+    }
+  };
+
+  paint();
+  writeLine(markaz, MARGIN, y, 11, bodyBold, C.mute);
+  y -= 22;
+  writeLine(roster.title, MARGIN, y, 22, display, C.ink, CONTENT);
+  y -= 30;
+  writeLine(`Printed ${formatShortDate(roster.generatedAt.slice(0, 10))}`, MARGIN, y, 9, body, C.mute);
+  y -= 18;
+  if (roster.subtitle) {
+    writeLine(roster.subtitle, MARGIN, y, 10, body, C.text2, CONTENT);
+    y -= 20;
+  } else {
+    y -= 8;
+  }
+
+  ensure(headerH + rowH + 4, false);
+  drawHeader();
+
+  if (roster.rows.length === 0) {
+    ensure(28);
+    page.drawRectangle({ x: MARGIN, y: y - 28, width: CONTENT, height: 28, color: C.card });
+    writeLine(roster.empty, MARGIN + inset, y - 18, 9, body, C.mute, CONTENT - inset * 2);
+    y -= 40;
+  } else {
+    roster.rows.forEach((row, rowIndex) => {
+      ensure(rowH + 2, true);
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - rowH,
+        width: CONTENT,
+        height: rowH,
+        color: rowIndex % 2 === 0 ? C.card : C.blush,
+      });
+      let x = MARGIN;
+      row.forEach((cell, index) => {
+        const col = roster.columns[index];
+        const font = col.align === "right" ? nums : body;
+        writeLine(cell, x + inset, y - 12, 8.5, font, C.ink, widths[index] - inset * 2, col.align ?? "left");
+        x += widths[index];
+      });
+      y -= rowH;
+    });
+  }
+
+  y -= 18;
+  ensure(24);
+  writeLine(BLESSING, PAGE_WIDTH / 2 - 80, y, 12, display, C.accent);
+
+  const pages = pdf.getPages();
+  pages.forEach((item, index) => {
+    const current = page;
+    page = item;
+    writeLine(`Markaz Imam ash-Shafi'i    ${index + 1} / ${pages.length}`, PAGE_WIDTH / 2 - 70, 18, 8, body, C.mute);
+    page = current;
+  });
+
+  return pdf.save();
 }

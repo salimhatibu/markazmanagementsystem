@@ -48,8 +48,8 @@ export function BlogLayout() {
             <Link to="/blog/series" className={pathname.startsWith("/blog/series") ? "is-active" : undefined}>
               Series
             </Link>
-            {auth.identityOn ? (
-              <button type="button" className="reset" onClick={() => void auth.signOut()}>
+            {auth.accessOn ? (
+              <button type="button" className="reset" onClick={() => auth.signOut()}>
                 Sign out
               </button>
             ) : null}

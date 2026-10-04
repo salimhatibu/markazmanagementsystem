@@ -25,22 +25,11 @@ export function publicPostUrl(slug: string) {
 /** The masthead card served when a post has no cover of its own. */
 export const DEFAULT_SHARE_IMAGE = "/og-default.jpg";
 
-/**
- * Link scrapers want a 1200x630 JPEG under ~300 KB, and they skip SVG and
- * sometimes WebP. Netlify's Image CDN does the crop and the format change, so
- * covers of any shape and size still preview correctly.
- */
+/** Prefer a direct cover URL; fall back to the default masthead card. */
 export function shareImageUrl(coverUrl: string | null | undefined): string {
   if (!coverUrl) return DEFAULT_SHARE_IMAGE;
-  const params = new URLSearchParams({
-    url: coverUrl,
-    w: "1200",
-    h: "630",
-    fit: "cover",
-    fm: "jpg",
-    q: "80",
-  });
-  return `/.netlify/images?${params.toString()}`;
+  if (coverUrl.startsWith("/") || /^https?:\/\//i.test(coverUrl)) return coverUrl;
+  return DEFAULT_SHARE_IMAGE;
 }
 
 export async function shareUrl(title: string, url: string): Promise<"shared" | "copied"> {

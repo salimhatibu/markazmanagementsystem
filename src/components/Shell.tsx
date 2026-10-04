@@ -7,25 +7,33 @@ import { useAuth } from "../lib/auth";
 import { loadDashboard } from "../lib/dashboard";
 import { GUIDE_START, hasFinishedGuide } from "../lib/guide";
 import { claimFirstVisit, loadDailyHadith, type DailyHadith } from "../lib/hadith";
-import { applyTheme, readTheme, type Theme } from "../lib/theme";
+import { applyTheme } from "../lib/theme";
 import type { Settings } from "../types";
+import {
+  claimFeelingAsk,
+  ensureSessionStart,
+  feelingCheckDue,
+  msUntilFeelingCheck,
+  pickFeelingPrompt,
+  wasFeelingAskedToday,
+} from "../lib/feeling-check";
+import { FeedbackDesk } from "./FeedbackDesk";
+import { FeelingCheckDialog } from "./FeelingCheckDialog";
 import { Footer } from "./Footer";
 import { GuideTour } from "./GuideTour";
 import { HadithDialog } from "./HadithDialog";
 import {
-  BooksStackIcon,
   CloseIcon,
-  CrescentIcon,
   HelpIcon,
   MenuIcon,
   NavBlogIcon,
+  NavBooksIcon,
   NavChartIcon,
   NavFileIcon,
   NavGearIcon,
   NavHomeIcon,
   NavLedgerIcon,
   NavPeopleIcon,
-  SunIcon,
 } from "./Motifs";
 import { PageSlide } from "./PageSlide";
 
@@ -49,6 +57,7 @@ const sections = [
   {
     label: "Books",
     links: [
+      { to: "/books", label: "Books", end: false, icon: NavBooksIcon },
       { to: "/expenses", label: "Expenses", end: false, icon: NavChartIcon },
       { to: "/reports", label: "Reports", end: false, icon: NavFileIcon },
     ],
@@ -71,16 +80,16 @@ export function Shell() {
   });
   const [settings, setSettings] = useState<Settings>(fallbackSettings);
   const [unread, setUnread] = useState(0);
-  const [theme, setTheme] = useState<Theme>(readTheme);
   const [daily, setDaily] = useState<DailyHadith | null>(null);
   const [showHadith, setShowHadith] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideStep, setGuideStep] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [feelingPrompt, setFeelingPrompt] = useState<string | null>(null);
 
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+    applyTheme("light");
+  }, []);
 
   useEffect(() => {
     let cancel = false;
@@ -157,6 +166,29 @@ export function Shell() {
     return () => document.removeEventListener("keydown", onKey);
   }, [menuOpen]);
 
+  useEffect(() => {
+    ensureSessionStart();
+    if (wasFeelingAskedToday()) return;
+
+    let timer: number | undefined;
+    const tryOpen = () => {
+      if (showHadith || guideOpen || feelingPrompt) return;
+      if (!feelingCheckDue() || wasFeelingAskedToday()) return;
+      if (!claimFeelingAsk()) return;
+      setFeelingPrompt(pickFeelingPrompt());
+    };
+
+    const delay = msUntilFeelingCheck();
+    if (delay === 0) {
+      timer = window.setTimeout(tryOpen, 400);
+    } else {
+      timer = window.setTimeout(tryOpen, delay);
+    }
+    return () => {
+      if (timer != null) window.clearTimeout(timer);
+    };
+  }, [showHadith, guideOpen, feelingPrompt]);
+
   const context: WorkspaceContext = { settings, refreshSettings, unread, refreshAlerts, daily };
   const brand = displayName(settings.markazName);
 
@@ -179,9 +211,6 @@ export function Shell() {
       ) : null}
       <aside className={`side${menuOpen ? " is-open" : ""}`} data-guide="nav">
         <NavLink to="/" className="brand" end data-guide="brand">
-          <span className="logo-mark" aria-hidden="true">
-            <BooksStackIcon />
-          </span>
           <span className="logo-text">
             <span className="a">{brand}</span>
             <span className="b">Imam ash-Shafi&rsquo;i</span>
@@ -241,26 +270,8 @@ export function Shell() {
             >
               <HelpIcon />
             </button>
-            <div className="theme-switch" role="group" aria-label="Page colour">
-              <button
-                type="button"
-                aria-pressed={theme === "light"}
-                aria-label="Light page"
-                onClick={() => setTheme("light")}
-              >
-                <SunIcon />
-              </button>
-              <button
-                type="button"
-                aria-pressed={theme === "dark"}
-                aria-label="Dark page"
-                onClick={() => setTheme("dark")}
-              >
-                <CrescentIcon />
-              </button>
-            </div>
-            {auth.identityOn ? (
-              <button type="button" className="sign-out" onClick={() => void auth.signOut()}>
+            {auth.accessOn ? (
+              <button type="button" className="sign-out" onClick={() => auth.signOut()}>
                 Sign out
               </button>
             ) : null}
@@ -276,9 +287,13 @@ export function Shell() {
       {showHadith && daily ? (
         <HadithDialog daily={daily} onClose={() => setShowHadith(false)} />
       ) : null}
-      {guideOpen && !showHadith ? (
+      {guideOpen && !showHadith && !feelingPrompt ? (
         <GuideTour step={guideStep} onStep={setGuideStep} onClose={() => setGuideOpen(false)} />
       ) : null}
+      {feelingPrompt && !showHadith ? (
+        <FeelingCheckDialog prompt={feelingPrompt} onClose={() => setFeelingPrompt(null)} />
+      ) : null}
+      <FeedbackDesk />
     </div>
   );
 }

@@ -1,2 +1,0 @@
-ALTER TABLE "students" ADD COLUMN "last_balance_alert_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "reports" ADD CONSTRAINT "reports_period_range_uid" UNIQUE("period","range_start","range_end");

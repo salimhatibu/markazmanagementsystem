@@ -4,7 +4,7 @@ import { formatMoney, formatPercent, label } from "../../shared/format";
 import { StudentForm } from "../components/StudentForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
-import { api } from "../lib/api";
+import { api, downloadRoster } from "../lib/api";
 import { emptyStudent, type Student, type StudentInput } from "../types";
 
 export function StudentsPage() {
@@ -64,6 +64,22 @@ export function StudentsPage() {
         title="Students"
         lead="Admission, section, and term fees. Morning is 15,000 a term; evening is 9,000, or 10,000 for Hadhaanah."
       >
+        <button
+          type="button"
+          className="ghost"
+          disabled={busy || students.length === 0}
+          onClick={() => {
+            setBusy(true);
+            setError("");
+            void downloadRoster("students", "markaz-students.pdf")
+              .catch((caught: unknown) =>
+                setError(caught instanceof Error ? caught.message : "The student list could not be downloaded."),
+              )
+              .finally(() => setBusy(false));
+          }}
+        >
+          Download list
+        </button>
         <button
           type="button"
           className="ghost"

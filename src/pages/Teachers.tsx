@@ -4,7 +4,7 @@ import { formatMoney, label } from "../../shared/format";
 import { TeacherForm } from "../components/TeacherForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
-import { api } from "../lib/api";
+import { api, downloadRoster } from "../lib/api";
 import { emptyTeacher, type Teacher, type TeacherInput } from "../types";
 
 export function TeachersPage() {
@@ -65,6 +65,22 @@ export function TeachersPage() {
         title="Teachers"
         lead="Name, phone, ID number, and salary — the same columns as the official salary sheet."
       >
+        <button
+          type="button"
+          className="ghost"
+          disabled={busy || teachers.length === 0}
+          onClick={() => {
+            setBusy(true);
+            setError("");
+            void downloadRoster("teachers", "markaz-teachers.pdf")
+              .catch((caught: unknown) =>
+                setError(caught instanceof Error ? caught.message : "The teacher list could not be downloaded."),
+              )
+              .finally(() => setBusy(false));
+          }}
+        >
+          Download list
+        </button>
         <button
           type="button"
           className="ghost"

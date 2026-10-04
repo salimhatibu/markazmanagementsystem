@@ -1,0 +1,45 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "markaz-management-system",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-03",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "87f42add36c73d8668f7aaf00ffb8d70",
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "markaz",
+      "database_id": "604c7d61-ddc1-4ca9-9ada-59d2bc9333ba",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "REPORTS",
+      "bucket_name": "markaz-reports"
+    },
+    {
+      "binding": "BLOG_MEDIA",
+      "bucket_name": "markaz-blog"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 6 1,15 * *", "30 6 1 * *"]
+  },
+  // Production desk is locked by Cloudflare Access (CF_ACCESS_* secrets).
+  // Local open-desk mode lives only in .dev.vars (DEV_OPEN_DESK=1).
+  "vars": {
+    "DEV_OPEN_DESK": "0"
+  },
+  "rules": [
+    { "type": "Data", "globs": ["**/*.ttf"], "fallthrough": true }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

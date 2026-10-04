@@ -5,7 +5,7 @@ import { EVENING_FEES, MORNING_FEES } from "../../shared/letterhead";
 import { StudentForm } from "../components/StudentForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
-import { api } from "../lib/api";
+import { api, downloadPersonRecord } from "../lib/api";
 import { studentToInput, type Student, type StudentInput } from "../types";
 
 function today() {
@@ -132,6 +132,26 @@ export function StudentDetailPage() {
   return (
     <>
       <PageHeader kicker={student.admissionNumber} title={student.name} person>
+        <button
+          type="button"
+          className="ghost"
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            setError("");
+            void downloadPersonRecord(
+              "students",
+              student.id,
+              `student-${student.admissionNumber}.pdf`,
+            )
+              .catch((caught: unknown) =>
+                setError(caught instanceof Error ? caught.message : "The record could not be downloaded."),
+              )
+              .finally(() => setBusy(false));
+          }}
+        >
+          Download record
+        </button>
         <Link className="ghost" to="/students">
           Back to students
         </Link>
@@ -148,12 +168,24 @@ export function StudentDetailPage() {
           <strong className="meta-word">{label(student.section)}</strong>
         </div>
         <div>
+          <span className="kicker">Admitted</span>
+          <strong className="meta-word">{student.admittedOn || "—"}</strong>
+        </div>
+        <div>
           <span className="kicker">Balance</span>
           <strong>{formatMoney(student.balance, symbol)}</strong>
         </div>
         <div>
           <span className="kicker">Paid so far</span>
           <strong>{formatPercent(student.percentPaid)}</strong>
+        </div>
+        <div>
+          <span className="kicker">Admission</span>
+          <strong className="meta-word">
+            {student.admissionFeeCollected
+              ? formatMoney(student.admissionFeeAmount, symbol)
+              : "Not collected"}
+          </strong>
         </div>
       </div>
       <Panel tone="light">

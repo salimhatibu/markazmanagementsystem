@@ -21,6 +21,7 @@ const StudentsPage = page(() => import("./pages/Students"), "StudentsPage");
 const StudentDetailPage = page(() => import("./pages/StudentDetail"), "StudentDetailPage");
 const TeachersPage = page(() => import("./pages/Teachers"), "TeachersPage");
 const TeacherDetailPage = page(() => import("./pages/TeacherDetail"), "TeacherDetailPage");
+const BooksPage = page(() => import("./pages/Books"), "BooksPage");
 const ExpensesPage = page(() => import("./pages/Expenses"), "ExpensesPage");
 const ReportsPage = page(() => import("./pages/Reports"), "ReportsPage");
 const SettingsPage = page(() => import("./pages/Settings"), "SettingsPage");
@@ -50,6 +51,7 @@ export function App() {
               <Route path="/students/:id" element={<StudentDetailPage />} />
               <Route path="/teachers" element={<TeachersPage />} />
               <Route path="/teachers/:id" element={<TeacherDetailPage />} />
+              <Route path="/books" element={<BooksPage />} />
               <Route path="/expenses" element={<ExpensesPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/settings" element={<SettingsPage />} />

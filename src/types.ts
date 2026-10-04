@@ -1,3 +1,5 @@
+import { eatDate } from "../shared/format";
+
 export type Gender = "male" | "female";
 export type StudentSection = "morning" | "evening";
 export type TeacherSection = "morning" | "evening" | "both";
@@ -18,6 +20,9 @@ export type Student = {
   gender: Gender;
   section: StudentSection;
   expectedFees: number;
+  admittedOn: string;
+  admissionFeeCollected: boolean;
+  admissionFeeAmount: number;
   paid: number;
   balance: number;
   outstanding: number;
@@ -80,6 +85,46 @@ export type Expense = {
   amount: number;
   details: string | null;
   spentOn: string;
+  createdAt: string;
+};
+
+export type BookPurchase = {
+  id: number;
+  name: string;
+  unitCost: number;
+  quantity: number;
+  totalCost: number;
+  purchasedOn: string;
+  expenseId: number | null;
+  createdAt: string;
+};
+
+export type BookInventoryItem = {
+  id: number;
+  name: string;
+  price: number;
+  sortOrder: number;
+};
+
+export type BookInventory = {
+  id: number;
+  title: string;
+  purchasedOn: string;
+  stationeriesNote: string | null;
+  stationeriesCost: number | null;
+  items: BookInventoryItem[];
+  booksTotal: number;
+  totalCost: number;
+  expenseId: number | null;
+  createdAt: string;
+};
+
+export type FeedbackTicket = {
+  id: number;
+  kind: "query" | "suggestion";
+  body: string;
+  done: boolean;
+  doneAt: string | null;
   createdAt: string;
 };
 
@@ -209,9 +254,12 @@ export type StudentInput = {
   admissionNumber: string;
   name: string;
   dateOfBirth: string;
+  admittedOn: string;
   gender: Gender;
   section: StudentSection;
   expectedFees: string;
+  admissionFeeCollected: boolean;
+  admissionFeeAmount: string;
   guardianName: string;
   guardianPhone: string;
   guardianEmail: string;
@@ -238,9 +286,12 @@ export const emptyStudent = (): StudentInput => ({
   admissionNumber: "",
   name: "",
   dateOfBirth: "",
+  admittedOn: eatDate(),
   gender: "female",
   section: "morning",
   expectedFees: "",
+  admissionFeeCollected: false,
+  admissionFeeAmount: "3000",
   guardianName: "",
   guardianPhone: "",
   guardianEmail: "",
@@ -268,9 +319,12 @@ export function studentToInput(student: Student): StudentInput {
     admissionNumber: student.admissionNumber,
     name: student.name,
     dateOfBirth: student.dateOfBirth,
+    admittedOn: student.admittedOn || eatDate(),
     gender: student.gender,
     section: student.section,
     expectedFees: String(student.expectedFees),
+    admissionFeeCollected: student.admissionFeeCollected,
+    admissionFeeAmount: String(student.admissionFeeAmount),
     guardianName: student.guardianName,
     guardianPhone: student.guardianPhone,
     guardianEmail: student.guardianEmail,

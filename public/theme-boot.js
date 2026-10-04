@@ -1,5 +1,8 @@
 (() => {
-  const stored = localStorage.getItem("markaz_theme");
-  const system = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-  document.documentElement.dataset.theme = stored === "light" || stored === "dark" ? stored : system;
+  document.documentElement.dataset.theme = "light";
+  try {
+    localStorage.removeItem("markaz_theme");
+  } catch {
+    /* ignore */
+  }
 })();

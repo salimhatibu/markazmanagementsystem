@@ -1,63 +1,130 @@
 # Markaz management system
 
-A system meant to manage a markaz, similar to an educational institute or school. It covers student fees, teacher salaries, a dashboard, and biweekly and monthly PDF reports.
+Student fees, teacher salaries, a desk dashboard, public papers, and PDF reports for Markaz Imam ash-Shafi'i.
 
-The live site runs on Netlify. Records live in Netlify Database (Postgres). Report PDFs live in Netlify Blobs.
+**Stack:** Cloudflare Workers (Static Assets + API), D1 (SQLite), R2 (report PDFs and blog media), Cloudflare Access for the desk.
 
 ## Run locally
 
+Requires **Node.js 22+**.
+
 ```bash
 npm install
-npm run db:migrate
+cp .dev.vars.example .dev.vars   # opens the desk without Access locally
+npm run db:migrate:local
 npm run dev
 ```
 
-Open the printed local URL. The dashboard opens immediately. No account is required.
-
-`npm run dev` uses the Netlify Vite plugin, so functions, the local database, and Blobs all work without wrapping in `netlify dev`.
+Open the printed local URL. `.dev.vars` sets `DEV_OPEN_DESK=1` so the desk works without Access on your machine.
 
 ```bash
 npm run verify
 npm run build
 ```
 
-`verify` checks balance math, report date ranges, and that a PDF is produced. `build` typechecks and builds the client.
+## Cloudflare resources (this account)
 
-## Database
+| Resource | Name / ID | Status |
+|----------|-----------|--------|
+| Account | `87f42add36c73d8668f7aaf00ffb8d70` | bound in `wrangler.jsonc` |
+| D1 | `markaz` → `604c7d61-ddc1-4ca9-9ada-59d2bc9333ba` | created; remote migrations applied |
+| R2 | `markaz-reports`, `markaz-blog` | created |
+| Worker | https://markaz-management-system.arruhayn-87f.workers.dev | deployed |
+| Access | Zero Trust application | configure secrets (below) |
 
-Tables are defined in `db/schema.ts`. After a schema change:
+## Database (D1)
+
+Schema lives in `db/schema.ts`. SQL migrations live in `migrations/` and are applied only through Wrangler:
 
 ```bash
-npm run db:generate
-npm run db:migrate
+npm run db:generate          # after schema edits
+npm run db:migrate:local     # local D1
+npm run db:migrate           # remote D1 (production)
 ```
 
-`db:migrate` applies pending files to the **local** database only. Commit the new file under `netlify/database/migrations/` with the schema change. A Netlify deploy applies those migrations to preview and production automatically. Do not run `drizzle-kit push` or raw DDL against the hosted database.
+Do not apply DDL by hand against remote D1 outside `wrangler d1 migrations apply`.
 
-`@netlify/database` in this project is what tells Netlify to provision Postgres on the next deploy.
+### One-time import from Netlify Postgres
+
+1. Export rows into `tmp/tables.json` (snake_case columns; keep dumps out of git).
+2. `node scripts/import-pg-to-d1.mjs > tmp/import.sql`
+3. `npx wrangler d1 execute markaz --remote --file=tmp/import.sql`
+
+## Auth (Cloudflare Access)
+
+Production has `DEV_OPEN_DESK=0`. The desk APIs require a valid Access JWT.
+
+1. Worker URL: https://markaz-management-system.arruhayn-87f.workers.dev (or attach a custom domain).
+2. In [Zero Trust → Access → Applications](https://one.dash.cloudflare.com/), create a **Self-hosted** application for the desk.
+3. Protect the desk host (or paths) so staff must sign in. **Bypass** Access for:
+   - `/read`, `/read/*`
+   - public GETs: published posts/series/media, `/sitemap.xml`, `/rss.xml`
+   - intentionally public POSTs: newsletter subscribe/leave, blog events / likes / comments / saves  
+   (Easiest pattern: protect the whole Worker host for office staff, and put the public blog on a separate hostname — or add path bypass policies for `/read` and the public API routes above.)
+4. From the application, copy:
+   - **Team domain** (e.g. `yourteam.cloudflareaccess.com`) → secret `CF_ACCESS_TEAM_DOMAIN`
+   - **Application Audience (AUD)** → secret `CF_ACCESS_AUD`
+
+```bash
+npx wrangler secret put CF_ACCESS_TEAM_DOMAIN
+npx wrangler secret put CF_ACCESS_AUD
+```
+
+## Files (R2)
+
+| Binding      | Bucket            | Use                   |
+|--------------|-------------------|-----------------------|
+| `REPORTS`    | `markaz-reports`  | Operations PDFs       |
+| `BLOG_MEDIA` | `markaz-blog`     | Blog pictures / video |
 
 ## Mail
 
-Balance alerts stay off until these site environment variables are set in the Netlify UI or CLI. Do not commit real values.
+Balance alerts and newsletter sends need secrets:
 
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_USER`
-- `SMTP_PASS`
-- `MARKAZ_FROM`
+```bash
+npx wrangler secret put SMTP_HOST
+npx wrangler secret put SMTP_PORT
+npx wrangler secret put SMTP_USER
+npx wrangler secret put SMTP_PASS
+npx wrangler secret put MARKAZ_FROM
+# optional
+npx wrangler secret put SITE_URL
+```
 
-If any are missing, the API responds that mail is not configured and the student screen explains that.
+## Reports and cron
 
-## Reports
+Desk can generate biweekly/monthly PDFs. Cron triggers match:
 
-The Reports page can generate a biweekly or monthly PDF immediately. The file is stored in the `markaz-reports` Blob store, and the top bar shows an unread alert when it is ready.
+- `0 6 1,15 * *` — biweekly
+- `30 6 1 * *` — monthly
 
-After the site is published, scheduled functions also generate those packs at 06:00 UTC on the 1st and 15th (biweekly) and 06:30 UTC on the 1st (monthly).
+Student and teacher detail pages can download a full person record PDF (`/api/students/:id/file`, `/api/teachers/:id/file`).
 
 ## Deploy
 
-1. Link the GitHub repo `salimhatibu/markazmanagementsystem` to a Netlify site.
-2. Build command: `npm run build`. Publish directory: `dist`. Production branch: `main`.
-3. Push `main`. The first deploy provisions the database and applies migrations.
+### Automatic (GitHub → Cloudflare)
 
-Anyone who opens the site can manage the records. No sign-in is required.
+Every push to `main` runs [.github/workflows/deploy.yml](.github/workflows/deploy.yml): apply D1 migrations, build, and `wrangler deploy`.
+
+One-time GitHub secrets (already have `CLOUDFLARE_ACCOUNT_ID`):
+
+1. Create a Cloudflare API token: [Create Token](https://dash.cloudflare.com/profile/api-tokens) → template **Edit Cloudflare Workers** → also allow **Account → D1 → Edit** → scope to this account.
+2. Add it as the repository secret `CLOUDFLARE_API_TOKEN`:
+
+```bash
+gh secret set CLOUDFLARE_API_TOKEN
+```
+
+Then push to `main` (or run **Actions → Deploy Worker → Run workflow**).
+
+Optional native alternative: Worker → **Settings → Builds → Connect** and link this GitHub repo (Workers Builds). The GitHub Actions workflow above is the default path.
+
+### Manual
+
+```bash
+npx wrangler login          # once
+npm run db:migrate
+npm run deploy
+```
+
+Public `/read` stays open (via Access bypasses); the desk requires Access once secrets are set.

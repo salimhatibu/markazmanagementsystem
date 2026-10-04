@@ -1,111 +1,97 @@
-import {
-  getUser,
-  getSettings,
-  handleAuthCallback,
-  logout,
-  onAuthChange,
-  type User,
-} from "@netlify/identity";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
-import { hasAdminRole } from "../../shared/roles";
 
-export type PendingAuth = { type: "invite"; token: string } | { type: "recovery" } | null;
+export type DeskUser = {
+  email: string;
+  name?: string | null;
+};
 
 type AuthState = {
   ready: boolean;
-  identityOn: boolean;
-  googleOn: boolean;
-  user: User | null;
+  /** When false, the desk is open locally without Cloudflare Access. */
+  accessOn: boolean;
+  user: DeskUser | null;
   isAdmin: boolean;
-  pending: PendingAuth;
   bootError: string;
-  clearPending: () => void;
-  signOut: () => Promise<void>;
+  signOut: () => void;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
 
-export function userIsAdmin(user: User | null): boolean {
-  if (!user) return false;
-  return hasAdminRole(user.roles, user.appMetadata);
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const navigate = useNavigate();
   const [ready, setReady] = useState(false);
-  const [identityOn, setIdentityOn] = useState(false);
-  const [googleOn, setGoogleOn] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [pending, setPending] = useState<PendingAuth>(null);
+  const [accessOn, setAccessOn] = useState(false);
+  const [user, setUser] = useState<DeskUser | null>(null);
   const [bootError, setBootError] = useState("");
 
   useEffect(() => {
-    let unsubscribe: () => void = () => {};
-    const hosted = !["localhost", "127.0.0.1"].includes(window.location.hostname);
-
+    let cancelled = false;
     void (async () => {
       try {
-        const settings = await Promise.race([
-          getSettings(),
-          new Promise<never>((_, reject) => {
-            window.setTimeout(() => reject(new Error("Identity did not answer.")), 5000);
-          }),
-        ]);
-        setIdentityOn(true);
-        setGoogleOn(Boolean(settings.providers.google) && hosted);
-      } catch {
-        setIdentityOn(false);
-        setGoogleOn(false);
-        setReady(true);
-        return;
-      }
-
-      try {
-        const result = await handleAuthCallback();
-        if (result?.type === "invite" && result.token) {
-          setPending({ type: "invite", token: result.token });
-          navigate("/login", { replace: true });
-        } else if (result?.type === "recovery") {
-          setPending({ type: "recovery" });
-          navigate("/login", { replace: true });
+        const response = await fetch("/api/session", { credentials: "include" });
+        if (cancelled) return;
+        if (response.ok) {
+          const body = (await response.json()) as {
+            openDesk?: boolean;
+            email?: string | null;
+            name?: string | null;
+          };
+          if (body.openDesk) {
+            setAccessOn(false);
+            setUser(body.email ? { email: body.email, name: body.name } : null);
+          } else {
+            setAccessOn(true);
+            setUser(body.email ? { email: body.email, name: body.name } : null);
+          }
+          setReady(true);
+          return;
         }
-      } catch (caught) {
-        setBootError(caught instanceof Error ? caught.message : "That sign-in link could not be used.");
-        navigate("/login", { replace: true });
+        if (response.status === 401) {
+          setAccessOn(true);
+          setUser(null);
+          setReady(true);
+          return;
+        }
+        if (response.status === 503) {
+          const local = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+          setAccessOn(!local);
+          setUser(null);
+          setReady(true);
+          return;
+        }
+        setBootError("The desk gate could not be checked.");
+        setAccessOn(true);
+        setUser(null);
+      } catch {
+        if (cancelled) return;
+        const local = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+        setAccessOn(!local);
+        setUser(null);
+      } finally {
+        if (!cancelled) setReady(true);
       }
-      setUser(await getUser());
-      setReady(true);
     })();
-    unsubscribe = onAuthChange((_event, current) => setUser(current ?? null));
-    return () => unsubscribe();
-  }, [navigate]);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const value = useMemo<AuthState>(
     () => ({
       ready,
-      identityOn,
-      googleOn,
+      accessOn,
       user,
-      isAdmin: userIsAdmin(user),
-      pending,
+      isAdmin: !accessOn || Boolean(user),
       bootError,
-      clearPending: () => {
-        setPending(null);
-        setBootError("");
-      },
-      signOut: async () => {
-        try {
-          await logout();
-        } catch {
-          setUser(null);
-        }
+      signOut: () => {
         setUser(null);
-        setPending(null);
+        if (accessOn) {
+          window.location.assign(`/cdn-cgi/access/logout?returnTo=${encodeURIComponent(window.location.origin + "/login")}`);
+          return;
+        }
         window.location.assign("/login");
       },
     }),
-    [bootError, googleOn, identityOn, pending, ready, user],
+    [accessOn, bootError, ready, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

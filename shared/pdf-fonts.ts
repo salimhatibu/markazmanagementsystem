@@ -16,28 +16,38 @@ const FILES = {
   nums: "plex-500.ttf",
 } as const;
 
-function candidates(file: string): string[] {
-  const here = dirname(fileURLToPath(import.meta.url));
-  return [
-    join(here, "fonts", file),
-    join(here, "shared/fonts", file),
-    join(process.cwd(), "shared/fonts", file),
-    join(process.cwd(), "fonts", file),
-  ];
-}
-
-function readFont(file: string): Uint8Array {
-  for (const path of candidates(file)) {
-    if (existsSync(path)) return new Uint8Array(readFileSync(path));
+function fromDisk(file: string): Uint8Array | null {
+  try {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const paths = [
+      join(here, "fonts", file),
+      join(process.cwd(), "shared/fonts", file),
+      join(process.cwd(), "fonts", file),
+    ];
+    for (const path of paths) {
+      if (existsSync(path)) return new Uint8Array(readFileSync(path));
+    }
+  } catch {
+    /* Workers resolve fonts via fetch(import.meta.url) below. */
   }
-  throw new Error(`Missing PDF font ${file}`);
+  return null;
 }
 
-export function loadPdfFonts(): PdfFontFiles {
-  return {
-    display: readFont(FILES.display),
-    body: readFont(FILES.body),
-    bodyBold: readFont(FILES.bodyBold),
-    nums: readFont(FILES.nums),
-  };
+async function loadOne(file: string): Promise<Uint8Array> {
+  const disk = fromDisk(file);
+  if (disk) return disk;
+  const url = new URL(`./fonts/${file}`, import.meta.url);
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Missing PDF font ${file}`);
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+export async function loadPdfFonts(): Promise<PdfFontFiles> {
+  const [display, body, bodyBold, nums] = await Promise.all([
+    loadOne(FILES.display),
+    loadOne(FILES.body),
+    loadOne(FILES.bodyBold),
+    loadOne(FILES.nums),
+  ]);
+  return { display, body, bodyBold, nums };
 }

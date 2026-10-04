@@ -11,18 +11,15 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "netlify database migrations apply",
+    "db:migrate:local": "wrangler d1 migrations apply markaz --local",
+    "db:migrate": "wrangler d1 migrations apply markaz --remote",
     "verify": "tsx scripts/verify.ts",
     "og:image": "node scripts/build-og-image.mjs",
     "desktop": "node desktop/run.mjs",
-    "desktop:dist": "node desktop/run.mjs --dist"
+    "desktop:dist": "node desktop/run.mjs --dist",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
-    "@netlify/blobs": "^10.7.13",
-    "@netlify/database": "^1.1.0",
-    "@netlify/functions": "^5.3.0",
-    "@netlify/identity": "^1.2.0",
-    "@netlify/vite-plugin": "^2.12.9",
     "@pdf-lib/fontkit": "^1.1.1",
     "@tiptap/extension-highlight": "^3.31.3",
     "@tiptap/extension-image": "^3.31.3",
@@ -35,6 +32,7 @@
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
     "drizzle-orm": "^1.0.0-beta.22",
+    "jose": "^6.2.12",
     "nodemailer": "^10.0.10",
     "pdf-lib": "^1.17.1",
     "react": "^18.3.1",
@@ -42,6 +40,8 @@
     "react-router-dom": "^6.30.6"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.62.5",
+    "@cloudflare/workers-types": "^5.20261003.1",
     "@types/node": "^26.6.3",
     "@types/nodemailer": "^8.0.2",
     "@types/react": "^18.3.31",
@@ -50,6 +50,7 @@
     "drizzle-kit": "^1.0.0-beta.22",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vite": "^8.3.1"
+    "vite": "^8.3.1",
+    "wrangler": "^4.147.0"
   }
 }

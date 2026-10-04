@@ -123,27 +123,8 @@ export function CloseIcon({ className }: IconProps) {
   );
 }
 
-export function BooksStackIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 32 32" aria-hidden="true">
-      <g fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
-        <path d="M3.6 20.8h24.8v6.6H3.6z" />
-        <path d="M7.8 20.8v6.6M25.2 21.8v4.6" />
-        <path d="M4.6 13.8h22.8v6.6H4.6z" />
-        <path d="M8.6 13.8v6.6M25 14.8v4.6" />
-        <path d="M5.6 6.8h20.8v6.6H5.6z" />
-        <path d="M9.4 6.8v6.6M24.6 7.8v4.6" />
-      </g>
-    </svg>
-  );
-}
-
 export function Ornament() {
-  return (
-    <div className="ornament" aria-hidden="true">
-      <BooksStackIcon />
-    </div>
-  );
+  return <div className="ornament" aria-hidden="true" />;
 }
 
 function StrokeIcon({ className, children }: IconProps & { children: ReactNode }) {
@@ -188,6 +169,17 @@ export function NavChartIcon({ className }: IconProps) {
     <StrokeIcon className={className}>
       <path d="M4 18 L9 12 L13 16 L20 7" />
       <path d="M14 7 H20 V13" />
+    </StrokeIcon>
+  );
+}
+
+export function NavBooksIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <path d="M5 5 H11 V19 H5 Z" />
+      <path d="M13 5 H19 V19 H13 Z" />
+      <path d="M11 5 C12 7 12 17 11 19" />
+      <path d="M13 5 C12 7 12 17 13 19" />
     </StrokeIcon>
   );
 }
