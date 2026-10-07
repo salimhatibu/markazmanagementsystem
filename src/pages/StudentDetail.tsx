@@ -25,6 +25,10 @@ export function StudentDetailPage() {
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [leftOn, setLeftOn] = useState(today);
+  const [leaveReason, setLeaveReason] = useState("");
+  const [leaveNotes, setLeaveNotes] = useState("");
   const [removingPayment, setRemovingPayment] = useState<number | null>(null);
   const [mailConfigured, setMailConfigured] = useState<boolean | null>(null);
 
@@ -106,6 +110,27 @@ export function StudentDetailPage() {
       navigate("/students");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The student could not be deleted.");
+      setBusy(false);
+    }
+  }
+
+  async function moveToKharajah(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const body = await api<{ leaver: { id: number } }>("/api/kharajah", {
+        method: "POST",
+        body: JSON.stringify({
+          studentId: Number(id),
+          leftOn,
+          leaveReason,
+          notes: leaveNotes.trim() || null,
+        }),
+      });
+      navigate(`/kharajah/${body.leaver.id}`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The student could not be moved to Kharajah.");
       setBusy(false);
     }
   }
@@ -285,11 +310,73 @@ export function StudentDetailPage() {
           </p>
         )}
       </Panel>
+      <Panel tone="dark">
+        <p className="panel-title">Move to Kharajah</p>
+        <p>
+          When {student.name} leaves the markaz, record the reason here. Their details move to Kharajah and leave the
+          active students list.
+        </p>
+        {error && leaving ? <Notice>{error}</Notice> : null}
+        {leaving ? (
+          <form className="form-grid" onSubmit={(event) => void moveToKharajah(event)}>
+            <Field id="leave-date" label="Date of leaving">
+              <input
+                id="leave-date"
+                type="date"
+                required
+                value={leftOn}
+                onChange={(event) => setLeftOn(event.target.value)}
+              />
+            </Field>
+            <Field id="leave-reason" label="Reason for leaving">
+              <textarea
+                id="leave-reason"
+                required
+                rows={3}
+                value={leaveReason}
+                onChange={(event) => setLeaveReason(event.target.value)}
+                placeholder="Completed studies, transferred, family moved…"
+              />
+            </Field>
+            <Field id="leave-notes" label="Notes (optional)">
+              <textarea
+                id="leave-notes"
+                rows={2}
+                value={leaveNotes}
+                onChange={(event) => setLeaveNotes(event.target.value)}
+                placeholder="Anything else the office should keep"
+              />
+            </Field>
+            <div className="actions">
+              <button type="submit" className="solid" disabled={busy}>
+                {busy ? "Moving…" : "Confirm leave"}
+              </button>
+              <button
+                type="button"
+                className="ghost"
+                disabled={busy}
+                onClick={() => {
+                  setLeaving(false);
+                  setLeaveReason("");
+                  setLeaveNotes("");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button type="button" className="solid" disabled={busy} onClick={() => setLeaving(true)}>
+            Record leave
+          </button>
+        )}
+      </Panel>
       <div className="actions">
         {confirming ? (
           <div className="confirm-box" role="group" aria-label="Confirm deletion">
             <p>
-              This removes {student.name} and every fee payment on this record. That cannot be undone.
+              This permanently deletes {student.name} and every fee payment on this record, without keeping a Kharajah
+              entry. Prefer “Move to Kharajah” if they have left the markaz.
             </p>
             <button type="button" className="solid" onClick={() => void removeStudent()}>
               Yes, delete this record

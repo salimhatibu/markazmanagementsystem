@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { MARKAZ_NAME } from "../../shared/format";
 import { useAuth } from "../lib/auth";
+import { publicShelfHref } from "../lib/surface";
 import "../login-gate.css";
 
 const PARTICLES = Array.from({ length: 18 }, (_, index) => ({
@@ -17,12 +18,12 @@ function GateFrame({ children }: { children: ReactNode }) {
   return (
     <div className="gate">
       <header className="gate-nav">
-        <Link className="gate-logo" to="/read">
+        <a className="gate-logo" href={publicShelfHref()}>
           {MARKAZ_NAME}<sup>®</sup>
-        </Link>
-        <Link className="gate-nav-link" to="/read">
+        </a>
+        <a className="gate-nav-link" href={publicShelfHref()}>
           Read the papers
-        </Link>
+        </a>
       </header>
       <div className="gate-stage">
         <div className="gate-particles" aria-hidden="true">
@@ -125,9 +126,9 @@ export function LoginPage() {
         <a className="gate-submit" href={safeFrom}>
           Continue to the desk
         </a>
-        <Link className="gate-nav-link" to="/read">
+        <a className="gate-nav-link" href={publicShelfHref()}>
           Read the papers
-        </Link>
+        </a>
       </div>
     </GateFrame>
   );

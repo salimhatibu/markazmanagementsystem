@@ -82,6 +82,26 @@ export function expenseFromOcr(fields: Record<string, unknown>): {
   };
 }
 
+function bookLineFromUnknown(item: unknown): { name: string; price: string } | null {
+  if (typeof item === "string") {
+    const raw = item.trim();
+    if (!raw) return null;
+    const priced = raw.match(/^(.*?)[\s:-]+([\d,.]+)\s*$/);
+    if (priced) {
+      const name = priced[1].trim();
+      const price = money(priced[2]);
+      if (name || price) return { name, price };
+    }
+    return { name: raw, price: "" };
+  }
+  if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+  const row = item as Record<string, unknown>;
+  const name = text(row.name || row.title || row.book || row.item);
+  const price = money(row.price ?? row.amount ?? row.cost);
+  if (!name && !price) return null;
+  return { name, price };
+}
+
 export function bookFromOcr(fields: Record<string, unknown>): {
   title: string;
   purchasedOn: string;
@@ -89,23 +109,22 @@ export function bookFromOcr(fields: Record<string, unknown>): {
   stationeriesNote: string;
   stationeriesCost: string;
 } {
-  const rawItems = Array.isArray(fields.items) ? fields.items : [];
+  const rawItems = Array.isArray(fields.items)
+    ? fields.items
+    : Array.isArray(fields.books)
+      ? fields.books
+      : Array.isArray(fields.lineItems)
+        ? fields.lineItems
+        : [];
   const items = rawItems
-    .map((item) => {
-      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
-      const row = item as Record<string, unknown>;
-      const name = text(row.name);
-      const price = money(row.price);
-      if (!name && !price) return null;
-      return { name, price };
-    })
+    .map(bookLineFromUnknown)
     .filter((item): item is { name: string; price: string } => item != null);
 
   return {
-    title: text(fields.title),
-    purchasedOn: text(fields.purchasedOn),
+    title: text(fields.title || fields.listTitle || fields.className),
+    purchasedOn: text(fields.purchasedOn || fields.date || fields.spentOn),
     items: items.length > 0 ? items : [{ name: "", price: "" }],
-    stationeriesNote: text(fields.stationeriesNote),
-    stationeriesCost: money(fields.stationeriesCost),
+    stationeriesNote: text(fields.stationeriesNote || fields.stationery || fields.stationeries),
+    stationeriesCost: money(fields.stationeriesCost ?? fields.stationeryCost ?? fields.stationeryAmount),
   };
 }

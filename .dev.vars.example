@@ -4,6 +4,9 @@
 # Skip Cloudflare Access JWT checks while developing locally.
 DEV_OPEN_DESK=1
 
+# Optional: shared secret if you run the markaz-ai sidecar locally.
+# MARKAZ_AI_SECRET=
+
 # Optional: mail (balance alerts / newsletter) while testing locally.
 # SMTP_HOST=
 # SMTP_PORT=587
@@ -11,3 +14,7 @@ DEV_OPEN_DESK=1
 # SMTP_PASS=
 # MARKAZ_FROM=Markaz <office@example.com>
 # SITE_URL=http://localhost:5173
+
+# Production hostnames (also set in wrangler.jsonc vars).
+# PUBLIC_HOST=mysalafimindset.com
+# ADMIN_HOST=admin.mysalafimindset.com

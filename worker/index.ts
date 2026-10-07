@@ -3,6 +3,12 @@ import { bindRequest } from "./_shared/context";
 import { runWithRequest } from "./_shared/request";
 import { fail } from "./_shared/http";
 import { generateOperationsReport } from "./_shared/generate-report";
+import {
+  hostSurface,
+  isPublicApiAllowed,
+  publicOriginFromEnv,
+  stripReadPrefix,
+} from "./_shared/hosts";
 
 import dashboard from "./api/dashboard";
 import students from "./api/students";
@@ -14,6 +20,9 @@ import teacher from "./api/teacher";
 import salaryPayments from "./api/salary-payments";
 import expenses from "./api/expenses";
 import books from "./api/books";
+import kharajah from "./api/kharajah";
+import trips from "./api/trips";
+import tripEntries from "./api/trip-entries";
 import feedback from "./api/feedback";
 import reports from "./api/reports";
 import reportFile from "./api/report-file";
@@ -23,6 +32,7 @@ import notifications from "./api/notifications";
 import settings from "./api/settings";
 import mail from "./api/mail";
 import session from "./api/session";
+import presence from "./api/presence";
 import ocr from "./api/ocr";
 import posts from "./api/posts";
 import series from "./api/series";
@@ -57,6 +67,7 @@ const routes: Route[] = [
   { pattern: /^\/api\/students\/(\d+)\/balance-alert\/?$/, handler: balanceAlert, params: ["id"] },
   { pattern: /^\/api\/students\/(\d+)\/file\/?$/, handler: studentFile, params: ["id"] },
   { pattern: /^\/api\/students\/(\d+)\/?$/, handler: student, params: ["id"] },
+  { pattern: /^\/api\/kharajah(?:\/(\d+))?\/?$/, handler: kharajah, params: ["id"] },
   { pattern: /^\/api\/fee-payments\/(\d+)\/?$/, handler: feePayments, params: ["id"] },
   { pattern: /^\/api\/teachers\/?$/, handler: teachers },
   { pattern: /^\/api\/teachers\/file\/?$/, handler: teachersListFile },
@@ -66,6 +77,9 @@ const routes: Route[] = [
   { pattern: /^\/api\/salary-payments\/(\d+)\/?$/, handler: salaryPayments, params: ["id"] },
   { pattern: /^\/api\/expenses(?:\/(\d+))?\/?$/, handler: expenses, params: ["id"] },
   { pattern: /^\/api\/books(?:\/(\d+))?\/?$/, handler: books, params: ["id"] },
+  { pattern: /^\/api\/trips\/(\d+)\/entries\/?$/, handler: tripEntries, params: ["tripId"] },
+  { pattern: /^\/api\/trip-entries\/(\d+)\/?$/, handler: tripEntries, params: ["id"] },
+  { pattern: /^\/api\/trips(?:\/(\d+))?\/?$/, handler: trips, params: ["id"] },
   { pattern: /^\/api\/feedback(?:\/(\d+))?\/?$/, handler: feedback, params: ["id"] },
   { pattern: /^\/api\/reports\/(\d+)\/file\/?$/, handler: reportFile, params: ["id"] },
   { pattern: /^\/api\/reports(?:\/(\d+))?\/?$/, handler: reports, params: ["id"] },
@@ -75,6 +89,7 @@ const routes: Route[] = [
   { pattern: /^\/api\/settings\/?$/, handler: settings },
   { pattern: /^\/api\/mail\/?$/, handler: mail },
   { pattern: /^\/api\/session\/?$/, handler: session },
+  { pattern: /^\/api\/presence\/?$/, handler: presence },
   { pattern: /^\/api\/ocr\/?$/, handler: ocr },
   { pattern: /^\/api\/posts(?:\/(\d+))?\/?$/, handler: posts, params: ["id"] },
   { pattern: /^\/api\/series(?:\/([^/]+))?\/?$/, handler: series, params: ["key"] },
@@ -104,14 +119,51 @@ function matchRoute(pathname: string): { handler: Handler; params: Record<string
   return null;
 }
 
+function redirect(to: string, status: 301 | 302): Response {
+  return new Response(null, { status, headers: { Location: to } });
+}
+
+function handleHostRedirects(req: Request, url: URL): Response | null {
+  const surface = hostSurface(req);
+  const stripped = stripReadPrefix(url.pathname);
+  if (stripped == null) return null;
+
+  if (surface === "public") {
+    const target = new URL(url);
+    target.pathname = stripped;
+    return redirect(target.pathname + target.search + target.hash, 301);
+  }
+
+  if (surface === "admin" || surface === "legacy") {
+    // On admin (and production workers.dev once hosts are set), send readers to the papers host.
+    if (surface === "legacy" && (url.hostname === "localhost" || url.hostname === "127.0.0.1")) {
+      return null;
+    }
+    const origin = publicOriginFromEnv(req);
+    return redirect(`${origin}${stripped === "/" ? "/" : stripped}${url.search}${url.hash}`, 302);
+  }
+
+  return null;
+}
+
 async function handleRequest(req: Request, env: WorkerEnv): Promise<Response> {
   bindRequest(env);
   const url = new URL(req.url);
+  const surface = hostSurface(req);
+
+  const hostRedirect = handleHostRedirects(req, url);
+  if (hostRedirect) return hostRedirect;
+
   const matched = matchRoute(url.pathname);
   if (!matched) {
     if (url.pathname.startsWith("/api/")) return fail("Not found.", 404);
     return env.ASSETS.fetch(req);
   }
+
+  if (surface === "public" && !isPublicApiAllowed(url.pathname, req.method, url.search)) {
+    return fail("Not found.", 404);
+  }
+
   return runWithRequest(req, () => matched.handler(req, { params: matched.params }));
 }
 

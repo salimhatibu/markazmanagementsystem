@@ -1,4 +1,3 @@
-import { extractText, getDocumentProxy } from "unpdf";
 import { getEnv } from "../env";
 import { ValidationError } from "./http";
 
@@ -68,15 +67,6 @@ export function parseOcrKind(value: unknown): OcrKind {
   return value as OcrKind;
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(binary);
-}
-
 function extractJson(text: string): Record<string, unknown> {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -90,7 +80,8 @@ function extractJson(text: string): Record<string, unknown> {
       throw new ValidationError("Could not read structured details from that file.");
     }
     return parsed as Record<string, unknown>;
-  } catch {
+  } catch (error) {
+    if (error instanceof ValidationError) throw error;
     throw new ValidationError("Could not read structured details from that file.");
   }
 }
@@ -98,31 +89,87 @@ function extractJson(text: string): Record<string, unknown> {
 function modelText(result: unknown): string {
   if (typeof result === "string") return result;
   if (result && typeof result === "object") {
-    const row = result as { response?: unknown; result?: unknown };
+    const row = result as {
+      description?: unknown;
+      response?: unknown;
+      result?: unknown;
+      choices?: Array<{ message?: { content?: unknown } }>;
+    };
+    if (typeof row.description === "string") return row.description;
+    const choice = row.choices?.[0]?.message?.content;
+    if (typeof choice === "string") return choice;
     if (typeof row.response === "string") return row.response;
+    if (row.response && typeof row.response === "object") return JSON.stringify(row.response);
     if (typeof row.result === "string") return row.result;
+    if (row.result && typeof row.result === "object") return JSON.stringify(row.result);
   }
   return JSON.stringify(result ?? "");
 }
 
-async function runVision(kind: OcrKind, mime: string, bytes: Uint8Array): Promise<Record<string, unknown>> {
+function aiFailure(error: unknown): never {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/too many redirects/i.test(message)) {
+    throw new ValidationError("The scanner could not reach Workers AI. Try again in a moment.");
+  }
+  if (/3030|3043|8001|AiError/i.test(message)) {
+    throw new ValidationError("That picture could not be read. Try a clearer JPG or PNG under 6 MB.");
+  }
+  throw new ValidationError("The scanner could not read that file. Try another picture or PDF.");
+}
+
+async function runModel(model: string, input: Record<string, unknown>): Promise<unknown> {
   const env = getEnv();
-  const image = bytesToBase64(bytes);
-  const result = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", {
-    messages: [
-      { role: "system", content: promptFor(kind) },
-      { role: "user", content: "Read this document image and return the JSON fields only." },
-    ],
-    image: [`data:${mime};base64,${image}`],
-    max_tokens: 1200,
+  const ai = env.AI as { run: (name: string, values: Record<string, unknown>) => Promise<unknown> };
+  const secret = env.MARKAZ_AI_SECRET?.trim();
+  if (env.MARKAZ_AI && secret) {
+    try {
+      const response = await env.MARKAZ_AI.fetch("http://markaz-ai/run", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-markaz-ai-secret": secret,
+        },
+        body: JSON.stringify({ model, input }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; result?: unknown; error?: string };
+      if (response.ok && payload.ok) return payload.result;
+      console.error("markaz-ai sidecar error", response.status, payload.error);
+    } catch (error) {
+      console.error("markaz-ai sidecar fetch failed", error);
+    }
+  }
+  // Fallback: AI binding on this Worker (local dev, or if sidecar is unavailable).
+  return ai.run(model, input);
+}
+
+async function pictureToText(bytes: Uint8Array): Promise<string> {
+  // LLaVA is image-to-text: binary image bytes + prompt → { description }.
+  const result = await runModel("@cf/llava-hf/llava-1.5-7b-hf", {
+    image: Array.from(bytes),
+    prompt:
+      "This is a markaz office form or handwritten list from Kenya. Transcribe every readable word, number, name, date, and amount exactly. Do not invent missing values. Keep line breaks where helpful.",
+    max_tokens: 1024,
   });
-  return extractJson(modelText(result));
+  const text = modelText(result).trim();
+  if (text.length < 8) {
+    throw new ValidationError("That picture had little readable text. Try a clearer photo.");
+  }
+  return text;
+}
+
+async function runVision(kind: OcrKind, _mime: string, bytes: Uint8Array): Promise<Record<string, unknown>> {
+  try {
+    const transcript = await pictureToText(bytes);
+    return runText(kind, transcript);
+  } catch (error) {
+    if (error instanceof ValidationError) throw error;
+    aiFailure(error);
+  }
 }
 
 async function runText(kind: OcrKind, documentText: string): Promise<Record<string, unknown>> {
-  const env = getEnv();
   const clipped = documentText.slice(0, 12_000);
-  const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+  const input = {
     messages: [
       { role: "system", content: promptFor(kind) },
       {
@@ -131,11 +178,18 @@ async function runText(kind: OcrKind, documentText: string): Promise<Record<stri
       },
     ],
     max_tokens: 1200,
-  });
-  return extractJson(modelText(result));
+  };
+  try {
+    const result = await runModel("@cf/meta/llama-3.2-3b-instruct", input);
+    return extractJson(modelText(result));
+  } catch (error) {
+    if (error instanceof ValidationError) throw error;
+    aiFailure(error);
+  }
 }
 
 async function pdfText(bytes: Uint8Array): Promise<string> {
+  const { extractText, getDocumentProxy } = await import("unpdf");
   const document = await getDocumentProxy(bytes);
   const { text } = await extractText(document, { mergePages: true });
   return Array.isArray(text) ? text.join("\n") : String(text ?? "");
@@ -146,15 +200,21 @@ export async function readOcrUpload(req: Request): Promise<{ kind: OcrKind; name
   if (!typeHeader.toLowerCase().includes("multipart/form-data")) {
     throw new ValidationError("Upload a picture or PDF as a form file.");
   }
-  const form = await req.formData();
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    throw new ValidationError("That upload could not be read. Try a smaller JPG or PNG.");
+  }
   const kind = parseOcrKind(form.get("kind"));
   const file = form.get("file");
-  if (!(file instanceof File)) throw new ValidationError("Attach a picture or PDF.");
+  if (!(file instanceof Blob)) throw new ValidationError("Attach a picture or PDF.");
   if (file.size <= 0) throw new ValidationError("That file is empty.");
   if (file.size > MAX_BYTES) throw new ValidationError("Keep the file under 6 MB.");
-  const type = file.type || guessType(file.name);
+  const name = file instanceof File && file.name ? file.name : "upload";
+  const type = (file.type || guessType(name)).toLowerCase();
   const bytes = new Uint8Array(await file.arrayBuffer());
-  return { kind, name: file.name, type, bytes };
+  return { kind, name, type, bytes };
 }
 
 function guessType(name: string): string {
@@ -169,20 +229,20 @@ function guessType(name: string): string {
 
 export async function ocrDocument(kind: OcrKind, type: string, bytes: Uint8Array): Promise<Record<string, unknown>> {
   if (IMAGE_TYPES.has(type) || /^image\//.test(type)) {
-    return runVision(kind, type || "image/jpeg", bytes);
+    return runVision(kind, type.startsWith("image/") ? type : "image/jpeg", bytes);
   }
-  if (type === "application/pdf" || type === "") {
-    // Prefer text extraction for PDFs; fall back message if scanned/empty.
+  if (type === "application/pdf" || bytes[0] === 0x25) {
     try {
-      if (type === "application/pdf" || bytes[0] === 0x25) {
-        const text = (await pdfText(bytes)).trim();
-        if (text.length >= 40) return runText(kind, text);
-        throw new ValidationError(
-          "That PDF has little readable text. Photograph the page and upload the picture instead.",
-        );
-      }
+      const text = (await pdfText(bytes)).trim();
+      if (text.length >= 40) return runText(kind, text);
+      throw new ValidationError(
+        "That PDF has little readable text. Photograph the page and upload the picture instead.",
+      );
     } catch (error) {
       if (error instanceof ValidationError) throw error;
+      throw new ValidationError(
+        "That PDF could not be read. Photograph the page and upload the picture instead.",
+      );
     }
   }
   throw new ValidationError("Upload a JPG, PNG, WebP, or PDF.");

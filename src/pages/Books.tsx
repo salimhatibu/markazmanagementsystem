@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { eatDate, formatMoney } from "../../shared/format";
 import { OcrUpload } from "../components/OcrUpload";
@@ -16,6 +16,7 @@ function newLine(name = "", price = ""): DraftLine {
 
 export function BooksPage() {
   const { settings } = useOutletContext<WorkspaceContext>();
+  const formRef = useRef<HTMLFormElement>(null);
   const [lists, setLists] = useState<BookInventory[]>([]);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -166,26 +167,13 @@ export function BooksPage() {
       </PageHeader>
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
-      <Panel tone="light" className="ocr-panel">
-        <OcrUpload
-          kind="book"
-          disabled={busy}
-          onError={setError}
-          onFields={(fields) => {
-            const next = bookFromOcr(fields);
-            setTitle(next.title);
-            if (next.purchasedOn) setPurchasedOn(next.purchasedOn);
-            setLines(next.items.map((item) => newLine(item.name, item.price)));
-            setStationeriesNote(next.stationeriesNote);
-            setStationeriesCost(next.stationeriesCost);
-            setOpen(true);
-            setError("");
-            setInfo("Book list filled from the scan. Check prices, then save.");
-          }}
-        />
-      </Panel>
       {open ? (
-        <form className="expense-form" onSubmit={(event) => void create(event)}>
+        <form
+          ref={formRef}
+          id="book-inventory-form"
+          className="expense-form"
+          onSubmit={(event) => void create(event)}
+        >
           <Panel tone="light">
             <p className="panel-title">New book inventory</p>
             <div className="form-grid">
@@ -287,6 +275,33 @@ export function BooksPage() {
           </Panel>
         </form>
       ) : null}
+      <Panel tone="light" className="ocr-panel">
+        <OcrUpload
+          kind="book"
+          disabled={busy}
+          onError={setError}
+          onFields={(fields) => {
+            const next = bookFromOcr(fields);
+            const filled = next.items.filter((item) => item.name.trim()).length;
+            setTitle(next.title);
+            if (next.purchasedOn) setPurchasedOn(next.purchasedOn);
+            setLines(next.items.map((item) => newLine(item.name, item.price)));
+            setStationeriesNote(next.stationeriesNote);
+            setStationeriesCost(next.stationeriesCost);
+            setOpen(true);
+            setError("");
+            setInfo(
+              filled > 0
+                ? `Scan filled ${filled} ${filled === 1 ? "book" : "books"}${next.title ? ` for ${next.title}` : ""}. Check the form below, then save.`
+                : "Scan finished, but no book lines were clear. Fill the form below by hand, or try a sharper photo.",
+            );
+            requestAnimationFrame(() => {
+              formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              document.getElementById("book-list-title")?.focus();
+            });
+          }}
+        />
+      </Panel>
       <div className="toolbar">
         <Field id="book-search" label="Search">
           <input

@@ -41,7 +41,8 @@ export async function notifyNewPaper(input: {
     secure: mail.port === 465,
     auth: { user: mail.user, pass: mail.pass },
   });
-  const link = `${input.origin}/read/${input.slug}`;
+  const origin = input.origin.replace(/\/$/, "");
+  const link = `${origin}/${input.slug}`;
   const subject = headerSafe(input.title) || "New paper";
   await Promise.allSettled(
     people.map((person) =>
@@ -54,7 +55,7 @@ export async function notifyNewPaper(input: {
           "",
           `Read: ${link}`,
           "",
-          `Stop these letters: ${input.origin}/api/newsletter/leave?token=${encodeURIComponent(person.token)}`,
+          `Stop these letters: ${origin}/api/newsletter/leave?token=${encodeURIComponent(person.token)}`,
         ].join("\n"),
       }),
     ),

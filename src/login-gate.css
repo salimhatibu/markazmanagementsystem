@@ -1,15 +1,15 @@
 @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Syne:wght@700;800&display=swap");
 
 .gate {
-  --gate-bg: #060608;
-  --gate-bg-2: #0d0d12;
-  --gate-text: #d4cfc8;
-  --gate-dim: #6b6870;
-  --gate-warm: #f0e8d8;
-  --gate-pink: #e7a3b8;
-  --gate-pink-deep: #c76a8c;
-  --gate-pink-glow: rgba(231, 163, 184, 0.16);
-  --gate-pink-line: rgba(199, 106, 140, 0.55);
+  --gate-bg: #07110c;
+  --gate-bg-2: #0d1a12;
+  --gate-text: #d8e6dc;
+  --gate-dim: #6b8172;
+  --gate-warm: #eaf5ee;
+  --gate-pink: #5ec887;
+  --gate-pink-deep: #1a7a45;
+  --gate-pink-glow: rgba(47, 157, 95, 0.16);
+  --gate-pink-line: rgba(26, 122, 69, 0.55);
   position: relative;
   z-index: 1;
   min-height: 100vh;

@@ -55,6 +55,35 @@ export const feePayments = sqliteTable(
   (table) => [index("fee_payments_student_id_idx").on(table.studentId)],
 );
 
+/** Students who have left the markaz — snapshot kept after removal from active students. */
+export const kharajah = sqliteTable(
+  "kharajah",
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    admissionNumber: text("admission_number").notNull(),
+    name: text().notNull(),
+    dateOfBirth: text("date_of_birth").notNull(),
+    gender: text({ enum: ["male", "female"] }).notNull(),
+    section: text({ enum: ["morning", "evening"] }).notNull(),
+    expectedFees: money("expected_fees"),
+    admittedOn: text("admitted_on").notNull().default(""),
+    admissionFeeCollected: integer("admission_fee_collected", { mode: "boolean" }).notNull().default(false),
+    admissionFeeAmount: money("admission_fee_amount").default("0.00").notNull(),
+    feesPaid: money("fees_paid").default("0.00").notNull(),
+    guardianName: text("guardian_name").notNull(),
+    guardianPhone: text("guardian_phone").notNull(),
+    guardianEmail: text("guardian_email").notNull(),
+    secondContactName: text("second_contact_name"),
+    secondContactPhone: text("second_contact_phone"),
+    secondContactEmail: text("second_contact_email"),
+    leftOn: text("left_on").notNull(),
+    leaveReason: text("leave_reason").notNull(),
+    notes: text(),
+    createdAt: createdAt(),
+  },
+  (table) => [index("kharajah_left_on_idx").on(table.leftOn)],
+);
+
 export const teachers = sqliteTable("teachers", {
   id: integer().primaryKey({ autoIncrement: true }),
   name: text().notNull(),
@@ -132,6 +161,39 @@ export const expenses = sqliteTable(
     createdAt: createdAt(),
   },
   (table) => [index("expenses_spent_on_idx").on(table.spentOn)],
+);
+
+/** Named trip / transport ledger (e.g. Trip 2024, Transport Money). */
+export const trips = sqliteTable("trips", {
+  id: integer().primaryKey({ autoIncrement: true }),
+  title: text().notNull(),
+  notes: text(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+/** Income or spend lines under a trip ledger. */
+export const tripEntries = sqliteTable(
+  "trip_entries",
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    tripId: integer("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    description: text().notNull(),
+    /** Optional quantity / unit note, e.g. "4", "1/2 kg", "20 litres". */
+    quantity: text(),
+    amount: money("amount"),
+    /** in = money received; out = money spent on the trip. */
+    kind: text({ enum: ["in", "out"] }).notNull().default("in"),
+    entryOn: text("entry_on").notNull(),
+    notes: text(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index("trip_entries_trip_id_idx").on(table.tripId),
+    index("trip_entries_entry_on_idx").on(table.entryOn),
+  ],
 );
 
 export const bookPurchases = sqliteTable(
@@ -291,7 +353,20 @@ export const blogSaves = sqliteTable(
   ],
 );
 
+/** Keepers currently or recently on the desk — keyed by Access email. */
+export const adminPresence = sqliteTable(
+  "admin_presence",
+  {
+    email: text().primaryKey(),
+    name: text(),
+    lastSeenAt: text("last_seen_at").notNull(),
+  },
+  (table) => [index("admin_presence_last_seen_idx").on(table.lastSeenAt)],
+);
+
 export type Student = typeof students.$inferSelect;
+export type AdminPresence = typeof adminPresence.$inferSelect;
+export type KharajahRow = typeof kharajah.$inferSelect;
 export type Teacher = typeof teachers.$inferSelect;
 export type FeePayment = typeof feePayments.$inferSelect;
 export type SalaryPayment = typeof salaryPayments.$inferSelect;
@@ -299,6 +374,8 @@ export type ReportRow = typeof reports.$inferSelect;
 export type NotificationRow = typeof notifications.$inferSelect;
 export type SettingsRow = typeof settings.$inferSelect;
 export type Expense = typeof expenses.$inferSelect;
+export type Trip = typeof trips.$inferSelect;
+export type TripEntry = typeof tripEntries.$inferSelect;
 export type BookPurchase = typeof bookPurchases.$inferSelect;
 export type BookInventory = typeof bookInventories.$inferSelect;
 export type BookInventoryItem = typeof bookInventoryItems.$inferSelect;

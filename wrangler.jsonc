@@ -32,12 +32,22 @@
     "crons": ["0 6 1,15 * *", "30 6 1 * *"]
   },
   // Desk requires Cloudflare Access JWT when "0".
+  // PUBLIC_HOST / ADMIN_HOST drive host-based read vs desk surfaces.
   "vars": {
-    "DEV_OPEN_DESK": "0"
+    "DEV_OPEN_DESK": "0",
+    "PUBLIC_HOST": "mysalafimindset.com",
+    "ADMIN_HOST": "admin.mysalafimindset.com",
+    "SITE_URL": "https://mysalafimindset.com"
   },
   "ai": {
     "binding": "AI"
   },
+  "services": [
+    {
+      "binding": "MARKAZ_AI",
+      "service": "markaz-ai"
+    }
+  ],
   "rules": [
     { "type": "Data", "globs": ["**/*.ttf"], "fallthrough": true }
   ],

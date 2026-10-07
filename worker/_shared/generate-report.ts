@@ -274,23 +274,21 @@ export async function generateOperationsReport(
 
   const title = reportTitle(period, range.start, range.end);
   try {
-    const saved = await db.transaction(async (tx) => {
-      const [row] = await tx
-        .insert(reports)
-        .values({
-          period,
-          rangeStart: range.start,
-          rangeEnd: range.end,
-          blobKey,
-        })
-        .returning();
-      await tx.insert(notifications).values({
-        title,
-        reportId: row.id,
-      });
-      return row;
+    // D1 does not support BEGIN/COMMIT via drizzle transactions.
+    const [row] = await db
+      .insert(reports)
+      .values({
+        period,
+        rangeStart: range.start,
+        rangeEnd: range.end,
+        blobKey,
+      })
+      .returning();
+    await db.insert(notifications).values({
+      title,
+      reportId: row.id,
     });
-    return presentReport(saved, true);
+    return presentReport(row, true);
   } catch (error) {
     if (isUniqueViolation(error)) {
       const again = await existingReport(period, range);

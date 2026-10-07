@@ -1,5 +1,6 @@
-import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
+import { publicShelfHref } from "../lib/surface";
 
 export function AdminGate() {
   const auth = useAuth();
@@ -29,9 +30,9 @@ export function AdminGate() {
           add you to the Access policy. The public papers stay open without a desk login.
         </p>
         <div className="actions">
-          <Link className="ghost" to="/read">
+          <a className="ghost" href={publicShelfHref()}>
             Read the papers
-          </Link>
+          </a>
           <button type="button" className="ghost" onClick={() => auth.signOut()}>
             Sign out
           </button>

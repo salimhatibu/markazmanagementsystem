@@ -155,6 +155,17 @@ export function NavPeopleIcon({ className }: IconProps) {
   );
 }
 
+export function NavKharajahIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3 20 C3 16 6 14 9 14 C12 14 15 16 15 20" />
+      <path d="M15 9 H21" />
+      <path d="M18 6 L21 9 L18 12" />
+    </StrokeIcon>
+  );
+}
+
 export function NavLedgerIcon({ className }: IconProps) {
   return (
     <StrokeIcon className={className}>
@@ -180,6 +191,18 @@ export function NavBooksIcon({ className }: IconProps) {
       <path d="M13 5 H19 V19 H13 Z" />
       <path d="M11 5 C12 7 12 17 11 19" />
       <path d="M13 5 C12 7 12 17 13 19" />
+    </StrokeIcon>
+  );
+}
+
+export function NavTripsIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <path d="M4 16 H20" />
+      <path d="M6 16 V10 L12 6 L18 10 V16" />
+      <path d="M9 16 V12 H15 V16" />
+      <circle cx="8" cy="17.5" r="1.5" />
+      <circle cx="16" cy="17.5" r="1.5" />
     </StrokeIcon>
   );
 }
@@ -245,6 +268,22 @@ export function TrashIcon({ className }: IconProps) {
       <path d="M8 8 V6 H16 V8" />
       <path d="M7 8 V20 H17 V8" />
       <path d="M10 11 V17 M14 11 V17" />
+    </StrokeIcon>
+  );
+}
+
+export function ChevronLeftIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <path d="M14.5 6 L8.5 12 L14.5 18" />
+    </StrokeIcon>
+  );
+}
+
+export function ChevronRightIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <path d="M9.5 6 L15.5 12 L9.5 18" />
     </StrokeIcon>
   );
 }

@@ -9,7 +9,8 @@ import {
 const SESSION_KEY = "markaz_feeling_session_start";
 const ASKED_KEY = "markaz_feeling_asked";
 const SEEN_PREFIX = "markaz_verse_seen_";
-const HOUR_MS = 60 * 60 * 1000;
+const INTERVAL_MS = 30 * 60 * 1000;
+const MAX_ASKS_PER_DAY = 2;
 
 export const FEELING_PROMPTS = [
   "Hey — how are you feeling today?",
@@ -24,6 +25,38 @@ export const FEELING_PROMPTS = [
 
 export type FeelingAnswer = "good" | "down" | "other";
 
+type AskState = {
+  date: string;
+  count: number;
+  lastAt: number;
+};
+
+function emptyAskState(date = eatDate()): AskState {
+  return { date, count: 0, lastAt: 0 };
+}
+
+function readAskState(date = eatDate()): AskState {
+  try {
+    const raw = localStorage.getItem(ASKED_KEY);
+    if (!raw) return emptyAskState(date);
+    // Legacy: plain YYYY-MM-DD meant one ask that day.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return raw === date ? { date, count: 1, lastAt: 0 } : emptyAskState(date);
+    }
+    const parsed = JSON.parse(raw) as Partial<AskState>;
+    if (parsed.date !== date) return emptyAskState(date);
+    const count = typeof parsed.count === "number" ? Math.max(0, Math.floor(parsed.count)) : 0;
+    const lastAt = typeof parsed.lastAt === "number" ? parsed.lastAt : 0;
+    return { date, count, lastAt };
+  } catch {
+    return emptyAskState(date);
+  }
+}
+
+function writeAskState(state: AskState) {
+  localStorage.setItem(ASKED_KEY, JSON.stringify(state));
+}
+
 export function ensureSessionStart(now = Date.now()): number {
   const existing = sessionStorage.getItem(SESSION_KEY);
   if (existing && /^\d+$/.test(existing)) return Number(existing);
@@ -31,24 +64,35 @@ export function ensureSessionStart(now = Date.now()): number {
   return now;
 }
 
+/** Milliseconds until the next checkup, or Infinity when today's limit is reached. */
 export function msUntilFeelingCheck(now = Date.now()): number {
+  const state = readAskState();
+  if (state.count >= MAX_ASKS_PER_DAY) return Number.POSITIVE_INFINITY;
   const start = ensureSessionStart(now);
-  return Math.max(0, start + HOUR_MS - now);
+  const anchor = state.lastAt > 0 ? state.lastAt : start;
+  return Math.max(0, anchor + INTERVAL_MS - now);
 }
 
 export function feelingCheckDue(now = Date.now()): boolean {
-  return msUntilFeelingCheck(now) === 0;
+  const wait = msUntilFeelingCheck(now);
+  return Number.isFinite(wait) && wait === 0;
 }
 
-/** True only the first time we ask on this East Africa calendar day. */
-export function claimFeelingAsk(date = eatDate()): boolean {
-  if (localStorage.getItem(ASKED_KEY) === date) return false;
-  localStorage.setItem(ASKED_KEY, date);
-  return true;
+export function canAskFeelingToday(date = eatDate()): boolean {
+  return readAskState(date).count < MAX_ASKS_PER_DAY;
 }
 
+/** True when today's two checkups have already been used. */
 export function wasFeelingAskedToday(date = eatDate()): boolean {
-  return localStorage.getItem(ASKED_KEY) === date;
+  return !canAskFeelingToday(date);
+}
+
+/** Record one checkup. Returns false if today's limit is already reached. */
+export function claimFeelingAsk(date = eatDate(), now = Date.now()): boolean {
+  const state = readAskState(date);
+  if (state.count >= MAX_ASKS_PER_DAY) return false;
+  writeAskState({ date, count: state.count + 1, lastAt: now });
+  return true;
 }
 
 export function pickFeelingPrompt(): string {

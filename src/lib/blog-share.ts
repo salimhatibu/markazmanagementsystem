@@ -1,26 +1,38 @@
+import {
+  isPublicHost,
+  publicOrigin,
+  publicPostHref,
+  publicSavedHref,
+  publicSeriesHref,
+  publicShelfHref,
+} from "./surface";
+
+/** Same-origin path for the papers shelf (public host uses root; legacy keeps /read). */
 export function publicShelfPath() {
-  return "/read";
+  return isPublicHost() ? "/" : "/read";
 }
 
 export function publicPostPath(slug: string) {
-  return `/read/${slug}`;
+  return isPublicHost() ? `/${slug}` : `/read/${slug}`;
 }
 
 export function publicSeriesPath(slug: string) {
-  return `/read/series/${slug}`;
+  return isPublicHost() ? `/series/${slug}` : `/read/series/${slug}`;
 }
 
 export function publicSavedPath() {
-  return "/read/saved";
+  return isPublicHost() ? "/saved" : "/read/saved";
 }
 
 export function publicShelfUrl() {
-  return `${window.location.origin}${publicShelfPath()}`;
+  return `${publicOrigin()}/`;
 }
 
 export function publicPostUrl(slug: string) {
-  return `${window.location.origin}${publicPostPath(slug)}`;
+  return `${publicOrigin()}/${slug}`;
 }
+
+export { publicShelfHref, publicPostHref, publicSeriesHref, publicSavedHref, publicOrigin };
 
 /** The masthead card served when a post has no cover of its own. */
 export const DEFAULT_SHARE_IMAGE = "/og-default.jpg";

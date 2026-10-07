@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { isPublicHost } from "./surface";
 
 export type DeskUser = {
   email: string;
@@ -24,6 +25,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [bootError, setBootError] = useState("");
 
   useEffect(() => {
+    if (isPublicHost()) {
+      setReady(true);
+      return;
+    }
     let cancelled = false;
     void (async () => {
       try {

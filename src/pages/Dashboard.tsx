@@ -1,20 +1,31 @@
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { formatMoney, formatShortDate } from "../../shared/format";
+import { eatDate, formatEatLongDate, formatMoney, formatShortDate } from "../../shared/format";
 import type { WorkspaceContext } from "../components/Shell";
 import { HadithBackdrop } from "../components/HadithBackdrop";
 import { HadithNotes } from "../components/HadithNotes";
 import { HijriDate } from "../components/HijriDate";
-import { BookIcon, PenIcon, QuranIcon } from "../components/Motifs";
+import { BookIcon, ChevronLeftIcon, ChevronRightIcon, PenIcon, QuranIcon } from "../components/Motifs";
+import { PresenceIsland } from "../components/PresenceIsland";
 import { Notice } from "../components/ui";
 import { loadDashboard, peekDashboard } from "../lib/dashboard";
+import {
+  canBrowseHadithBack,
+  canBrowseHadithForward,
+  loadDailyHadith,
+  shiftHadithDate,
+  type DailyHadith,
+} from "../lib/hadith";
 import { useCountUp } from "../lib/use-count-up";
 import type { DashboardTotals } from "../types";
 
 export function DashboardPage() {
-  const { settings, daily } = useOutletContext<WorkspaceContext>();
+  const { settings, daily, keepers } = useOutletContext<WorkspaceContext>();
   const [totals, setTotals] = useState<DashboardTotals | null>(peekDashboard);
   const [error, setError] = useState("");
+  const today = eatDate();
+  const [viewDate, setViewDate] = useState(today);
+  const [viewing, setViewing] = useState<DailyHadith | null>(daily);
 
   useEffect(() => {
     let cancel = false;
@@ -29,6 +40,24 @@ export function DashboardPage() {
       cancel = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (daily && viewDate === daily.date) {
+      setViewing(daily);
+      return;
+    }
+    let cancel = false;
+    loadDailyHadith(viewDate)
+      .then((body) => {
+        if (!cancel) setViewing(body);
+      })
+      .catch(() => {
+        if (!cancel) setViewing(null);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [viewDate, daily]);
 
   const symbol = settings.currencySymbol;
   const money = (amount: number) => formatMoney(amount, symbol);
@@ -48,6 +77,7 @@ export function DashboardPage() {
 
   return (
     <>
+      <PresenceIsland keepers={keepers} />
       <section className="hero">
         <p className="eyebrow kicker-icon">
           <QuranIcon /> Today at a glance
@@ -129,21 +159,46 @@ export function DashboardPage() {
       <section className="panel panel-light hadith" data-guide="hadith" aria-labelledby="hadith-of-the-day">
         <HadithBackdrop />
         <div className="hadith-head">
-          <p className="kicker kicker-icon">
-            <BookIcon /> Hadith of the day
-            {daily ? ` · ${daily.dayNumber} of ${daily.total}` : ""}
-          </p>
+          <div className="hadith-head-main">
+            <p className="kicker kicker-icon">
+              <BookIcon /> Hadith of the day
+              {viewing ? ` · ${viewing.dayNumber} of ${viewing.total}` : ""}
+            </p>
+            <div className="hadith-day-nav" role="group" aria-label="Browse past readings">
+              <button
+                type="button"
+                className="hadith-day-btn"
+                aria-label="Previous day’s reading"
+                disabled={!canBrowseHadithBack(viewDate)}
+                onClick={() => setViewDate((date) => shiftHadithDate(date, -1))}
+              >
+                <ChevronLeftIcon />
+              </button>
+              <p className="hadith-day-label">
+                {viewDate === today ? "Today" : formatEatLongDate(new Date(`${viewDate}T12:00:00Z`))}
+              </p>
+              <button
+                type="button"
+                className="hadith-day-btn"
+                aria-label="Next day’s reading"
+                disabled={!canBrowseHadithForward(viewDate, today)}
+                onClick={() => setViewDate((date) => shiftHadithDate(date, 1))}
+              >
+                <ChevronRightIcon />
+              </button>
+            </div>
+          </div>
           <HadithNotes />
         </div>
-        {daily ? (
+        {viewing ? (
           <>
-            <h2 id="hadith-of-the-day">{daily.hadith.chapter.replace(/^Chapter:\s*/, "")}</h2>
-            <p className="arabic-line">{daily.hadith.chapterArabic}</p>
-            <p className="narrator">{daily.hadith.narrator}</p>
-            <p className="hadith-body">{daily.hadith.english}</p>
-            <p className="arabic-line hadith-arabic">{daily.hadith.arabic}</p>
+            <h2 id="hadith-of-the-day">{viewing.hadith.chapter.replace(/^Chapter:\s*/, "")}</h2>
+            <p className="arabic-line">{viewing.hadith.chapterArabic}</p>
+            <p className="narrator">{viewing.hadith.narrator}</p>
+            <p className="hadith-body">{viewing.hadith.english}</p>
+            <p className="arabic-line hadith-arabic">{viewing.hadith.arabic}</p>
             <p className="hadith-ref">
-              {daily.hadith.reference} · {daily.hadith.inBook} · Sahih al-Bukhari, Wedlock, Marriage (Nikaah)
+              {viewing.hadith.reference} · {viewing.hadith.inBook} · Sahih al-Bukhari, Wedlock, Marriage (Nikaah)
             </p>
           </>
         ) : (

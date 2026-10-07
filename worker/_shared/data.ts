@@ -6,19 +6,25 @@ import {
   bookPurchases,
   expenses,
   feePayments,
+  kharajah,
   salaryPayments,
   settings,
   students,
   teachers,
+  tripEntries,
+  trips,
   type BookInventory,
   type BookInventoryItem,
   type BookPurchase,
   type Expense,
   type FeePayment,
+  type KharajahRow,
   type SalaryPayment,
   type SettingsRow,
   type Student,
   type Teacher,
+  type Trip,
+  type TripEntry,
 } from "../../db/schema";
 import { ageFromDob } from "../../shared/format";
 import { fromCents, studentFigures, teacherFigures, toCents } from "../../shared/ledger";
@@ -57,6 +63,88 @@ export function toExpense(row: Expense) {
     spentOn: row.spentOn,
     createdAt: typeof row.createdAt === "string" ? row.createdAt : String(row.createdAt),
   };
+}
+
+export function toTripEntry(row: TripEntry) {
+  return {
+    id: row.id,
+    tripId: row.tripId,
+    description: row.description,
+    quantity: row.quantity,
+    amount: fromCents(toCents(row.amount)),
+    kind: row.kind,
+    entryOn: row.entryOn,
+    notes: row.notes,
+    createdAt: typeof row.createdAt === "string" ? row.createdAt : String(row.createdAt),
+  };
+}
+
+export function tripTotals(entries: { amount: string | number; kind: string }[]) {
+  let receivedCents = 0;
+  let spentCents = 0;
+  for (const entry of entries) {
+    const cents = toCents(entry.amount);
+    if (entry.kind === "out") spentCents += cents;
+    else receivedCents += cents;
+  }
+  return {
+    received: fromCents(receivedCents),
+    spent: fromCents(spentCents),
+    balance: fromCents(receivedCents - spentCents),
+    entryCount: entries.length,
+  };
+}
+
+export function toTripSummary(row: Trip, entries: TripEntry[]) {
+  const totals = tripTotals(entries);
+  return {
+    id: row.id,
+    title: row.title,
+    notes: row.notes,
+    createdAt: typeof row.createdAt === "string" ? row.createdAt : String(row.createdAt),
+    updatedAt: typeof row.updatedAt === "string" ? row.updatedAt : String(row.updatedAt),
+    ...totals,
+  };
+}
+
+export function toTripDetail(row: Trip, entries: TripEntry[]) {
+  return {
+    ...toTripSummary(row, entries),
+    entries: entries.map(toTripEntry),
+  };
+}
+
+export async function listTrips() {
+  const rows = await db.select().from(trips).orderBy(desc(trips.updatedAt), desc(trips.id));
+  if (rows.length === 0) return [];
+  const allEntries = await db
+    .select()
+    .from(tripEntries)
+    .where(
+      inArray(
+        tripEntries.tripId,
+        rows.map((row) => row.id),
+      ),
+    );
+  return rows.map((row) =>
+    toTripSummary(
+      row,
+      allEntries.filter((entry) => entry.tripId === row.id),
+    ),
+  );
+}
+
+export async function tripOrNull(id: number) {
+  const [row] = await db.select().from(trips).where(eq(trips.id, id)).limit(1);
+  return row ?? null;
+}
+
+export async function entriesForTrip(tripId: number) {
+  return db
+    .select()
+    .from(tripEntries)
+    .where(eq(tripEntries.tripId, tripId))
+    .orderBy(desc(tripEntries.entryOn), desc(tripEntries.id));
 }
 
 export function toBookPurchase(row: BookPurchase) {
@@ -285,6 +373,42 @@ export function toTeacher(row: Teacher, payments: SalaryPayment[]) {
 
 export async function studentOrNull(id: number) {
   const [row] = await db.select().from(students).where(eq(students.id, id)).limit(1);
+  return row ?? null;
+}
+
+export async function listKharajah(): Promise<KharajahRow[]> {
+  return db.select().from(kharajah).orderBy(desc(kharajah.leftOn), desc(kharajah.id));
+}
+
+export function toKharajah(row: KharajahRow) {
+  return {
+    id: row.id,
+    admissionNumber: row.admissionNumber,
+    name: row.name,
+    dateOfBirth: row.dateOfBirth,
+    age: ageFromDob(row.dateOfBirth),
+    gender: row.gender,
+    section: row.section,
+    expectedFees: fromCents(toCents(row.expectedFees)),
+    admittedOn: row.admittedOn || "",
+    admissionFeeCollected: Boolean(row.admissionFeeCollected),
+    admissionFeeAmount: fromCents(toCents(row.admissionFeeAmount ?? "0")),
+    feesPaid: fromCents(toCents(row.feesPaid ?? "0")),
+    guardianName: row.guardianName,
+    guardianPhone: row.guardianPhone,
+    guardianEmail: row.guardianEmail,
+    secondContactName: row.secondContactName,
+    secondContactPhone: row.secondContactPhone,
+    secondContactEmail: row.secondContactEmail,
+    leftOn: row.leftOn,
+    leaveReason: row.leaveReason,
+    notes: row.notes,
+    createdAt: typeof row.createdAt === "string" ? row.createdAt : String(row.createdAt),
+  };
+}
+
+export async function kharajahOrNull(id: number) {
+  const [row] = await db.select().from(kharajah).where(eq(kharajah.id, id)).limit(1);
   return row ?? null;
 }
 

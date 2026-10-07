@@ -4,6 +4,7 @@ import { formatEatLongDate } from "../../shared/format";
 import { api } from "../lib/api";
 import { padCount } from "../lib/blog-stats";
 import { publicShelfUrl, shareUrl } from "../lib/blog-share";
+import { publicShelfHref } from "../lib/surface";
 import type { BlogPost } from "../types";
 
 export function BlogHomePage() {
@@ -101,9 +102,9 @@ export function BlogHomePage() {
           </Link>
         </div>
         <div className="actions">
-          <Link className="random" to="/read">
+          <a className="random" href={publicShelfHref()} target="_blank" rel="noreferrer">
             Open the public page ↗
-          </Link>
+          </a>
           <button type="button" className="random" onClick={() => void copyPublic()}>
             Copy the public link
           </button>

@@ -198,6 +198,20 @@ export function studentFields(body: Record<string, unknown>) {
   };
 }
 
+export function kharajahLeaveFields(body: Record<string, unknown>) {
+  return {
+    studentId: (() => {
+      const raw = body.studentId;
+      const id = typeof raw === "number" ? raw : Number(raw);
+      if (!Number.isSafeInteger(id) || id <= 0) throw new ValidationError("Choose a student to record as leaving.");
+      return id;
+    })(),
+    leftOn: parseDate(body.leftOn, "Date of leaving"),
+    leaveReason: requiredText(body.leaveReason, "Reason for leaving", 2000),
+    notes: optionalText(body.notes, "Notes", 2000),
+  };
+}
+
 export function bookPurchaseFields(body: Record<string, unknown>) {
   return {
     name: requiredText(body.name, "Book name", 255),
@@ -254,6 +268,24 @@ export function expenseFields(body: Record<string, unknown>) {
     amount: parseMoney(body.amount, "Amount", false),
     details: optionalText(body.details, "Details", 2000),
     spentOn: parseDate(body.spentOn, "Date"),
+  };
+}
+
+export function tripFields(body: Record<string, unknown>) {
+  return {
+    title: requiredText(body.title, "Trip title", 255),
+    notes: optionalText(body.notes, "Notes", 2000),
+  };
+}
+
+export function tripEntryFields(body: Record<string, unknown>) {
+  return {
+    description: requiredText(body.description, "Description", 255),
+    quantity: optionalText(body.quantity, "Quantity", 64),
+    amount: parseMoney(body.amount, "Amount", false),
+    kind: oneOf(body.kind ?? "in", ["in", "out"] as const, "Kind"),
+    entryOn: parseDate(body.entryOn, "Date"),
+    notes: optionalText(body.notes, "Notes", 2000),
   };
 }
 

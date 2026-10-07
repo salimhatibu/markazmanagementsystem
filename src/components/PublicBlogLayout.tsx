@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useParams } from "react-router-dom"
 import { formatEatLongDate, hijriDate } from "../../shared/format";
 import { NewsletterPrompt, newsletterPromptDue } from "./NewsletterPrompt";
 import { BlogBrandMark } from "../lib/blog-brand";
-import { publicSavedPath, publicSeriesPath } from "../lib/blog-share";
+import { publicSavedPath, publicSeriesPath, publicShelfPath } from "../lib/blog-share";
 import { paperIssueNumber } from "../lib/paper-almanac";
 import { api } from "../lib/api";
 import type { BlogPost, BlogSeries } from "../types";
@@ -15,10 +15,23 @@ export function usePaperIssue() {
   return useContext(PaperIssueContext);
 }
 
+function pieceSlugFromPath(pathname: string, paramSlug?: string): string | undefined {
+  if (paramSlug) return paramSlug;
+  if (pathname.startsWith("/read/series/") || pathname.startsWith("/series/")) return undefined;
+  if (pathname === "/read/saved" || pathname === "/saved") return undefined;
+  if (pathname.startsWith("/read/")) {
+    const rest = pathname.slice("/read/".length);
+    return rest && !rest.includes("/") ? rest : undefined;
+  }
+  if (pathname.length > 1 && !pathname.slice(1).includes("/")) return pathname.slice(1);
+  return undefined;
+}
+
 export function PublicBlogLayout() {
   const { pathname } = useLocation();
   const { slug: paramSlug } = useParams();
-  const slug = paramSlug ?? (pathname.startsWith("/read/") && pathname !== "/read" ? pathname.slice("/read/".length) : undefined);
+  const slug = pieceSlugFromPath(pathname, paramSlug);
+  const shelf = publicShelfPath();
   const today = new Date();
   const hijri = hijriDate(today);
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -27,8 +40,9 @@ export function PublicBlogLayout() {
   const [letterOpen, setLetterOpen] = useState(false);
   const closeLetter = useCallback(() => setLetterOpen(false), []);
   const onSaved = pathname === publicSavedPath();
-  const onSeries = pathname.startsWith("/read/series/");
-  const onPiece = pathname.startsWith("/read/") && !onSaved && !onSeries;
+  const onSeries = pathname.startsWith("/read/series/") || pathname.startsWith("/series/");
+  const onShelf = pathname === shelf || pathname === "/read" || pathname === "/";
+  const onPiece = Boolean(slug) && !onSaved && !onSeries;
   const issue = paperIssueNumber(posts, onPiece ? slug : undefined);
 
   useEffect(() => {
@@ -51,10 +65,10 @@ export function PublicBlogLayout() {
   }, []);
 
   useEffect(() => {
-    if (pathname !== "/read" || !newsletterPromptDue()) return;
+    if (!onShelf || !newsletterPromptDue()) return;
     const timer = window.setTimeout(() => setLetterOpen(true), 700);
     return () => window.clearTimeout(timer);
-  }, [pathname]);
+  }, [pathname, onShelf]);
 
   useEffect(() => {
     setNavOpen(false);
@@ -70,7 +84,7 @@ export function PublicBlogLayout() {
               <span>From my pen, to your mind</span>
             </div>
             <h1 className="paper-name">
-              <Link to="/read">
+              <Link to={shelf}>
                 <BlogBrandMark />
               </Link>
             </h1>
@@ -95,7 +109,7 @@ export function PublicBlogLayout() {
             className={`paper-cats${navOpen ? " is-open" : ""}`}
             aria-label="The paper"
           >
-            <NavLink to="/read" end className={({ isActive }) => (isActive ? "is-active" : undefined)}>
+            <NavLink to={shelf} end className={({ isActive }) => (isActive ? "is-active" : undefined)}>
               The papers
             </NavLink>
             <NavLink to={publicSavedPath()} className={({ isActive }) => (isActive ? "is-active" : undefined)}>

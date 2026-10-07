@@ -55,6 +55,31 @@ export type Teacher = {
   payments: Payment[];
 };
 
+export type KharajahLeaver = {
+  id: number;
+  admissionNumber: string;
+  name: string;
+  dateOfBirth: string;
+  age: number;
+  gender: Gender;
+  section: StudentSection;
+  expectedFees: number;
+  admittedOn: string;
+  admissionFeeCollected: boolean;
+  admissionFeeAmount: number;
+  feesPaid: number;
+  guardianName: string;
+  guardianPhone: string;
+  guardianEmail: string;
+  secondContactName: string | null;
+  secondContactPhone: string | null;
+  secondContactEmail: string | null;
+  leftOn: string;
+  leaveReason: string;
+  notes: string | null;
+  createdAt: string;
+};
+
 export type Settings = {
   markazName: string | null;
   currencySymbol: string | null;
@@ -86,6 +111,36 @@ export type Expense = {
   details: string | null;
   spentOn: string;
   createdAt: string;
+};
+
+export type TripEntryKind = "in" | "out";
+
+export type TripEntry = {
+  id: number;
+  tripId: number;
+  description: string;
+  quantity: string | null;
+  amount: number;
+  kind: TripEntryKind;
+  entryOn: string;
+  notes: string | null;
+  createdAt: string;
+};
+
+export type TripSummary = {
+  id: number;
+  title: string;
+  notes: string | null;
+  received: number;
+  spent: number;
+  balance: number;
+  entryCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TripDetail = TripSummary & {
+  entries: TripEntry[];
 };
 
 export type BookPurchase = {

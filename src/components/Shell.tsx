@@ -7,6 +7,7 @@ import { useAuth } from "../lib/auth";
 import { loadDashboard } from "../lib/dashboard";
 import { GUIDE_START, hasFinishedGuide } from "../lib/guide";
 import { claimFirstVisit, loadDailyHadith, type DailyHadith } from "../lib/hadith";
+import { PRESENCE_POLL_MS, refreshPresence, type PresenceKeeper } from "../lib/presence";
 import { applyTheme } from "../lib/theme";
 import type { Settings } from "../types";
 import {
@@ -33,7 +34,9 @@ import {
   NavGearIcon,
   NavHomeIcon,
   NavLedgerIcon,
+  NavKharajahIcon,
   NavPeopleIcon,
+  NavTripsIcon,
 } from "./Motifs";
 import { PageSlide } from "./PageSlide";
 
@@ -43,6 +46,7 @@ export type WorkspaceContext = {
   unread: number;
   refreshAlerts: () => Promise<void>;
   daily: DailyHadith | null;
+  keepers: PresenceKeeper[];
 };
 
 const sections = [
@@ -51,13 +55,15 @@ const sections = [
     label: "People",
     links: [
       { to: "/students", label: "Students", end: false, icon: NavPeopleIcon },
+      { to: "/kharajah", label: "Kharajah", end: false, icon: NavKharajahIcon },
       { to: "/teachers", label: "Teachers", end: false, icon: NavLedgerIcon },
     ],
   },
   {
-    label: "Books",
+    label: "Miscellaneous",
     links: [
       { to: "/books", label: "Books", end: false, icon: NavBooksIcon },
+      { to: "/trips", label: "Trips", end: false, icon: NavTripsIcon },
       { to: "/expenses", label: "Expenses", end: false, icon: NavChartIcon },
       { to: "/reports", label: "Reports", end: false, icon: NavFileIcon },
     ],
@@ -86,10 +92,42 @@ export function Shell() {
   const [guideStep, setGuideStep] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [feelingPrompt, setFeelingPrompt] = useState<string | null>(null);
+  const [keepers, setKeepers] = useState<PresenceKeeper[]>([]);
 
   useEffect(() => {
     applyTheme("light");
   }, []);
+
+  useEffect(() => {
+    if (!auth.isAdmin) return;
+    let cancel = false;
+    let timer: number | undefined;
+
+    const tick = async () => {
+      try {
+        const next = await refreshPresence();
+        if (!cancel) setKeepers(next);
+      } catch {
+        /* desk still usable if presence fails */
+      }
+    };
+
+    void tick();
+    timer = window.setInterval(() => {
+      void tick();
+    }, PRESENCE_POLL_MS);
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancel = true;
+      if (timer != null) window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [auth.isAdmin]);
 
   useEffect(() => {
     let cancel = false;
@@ -179,17 +217,14 @@ export function Shell() {
     };
 
     const delay = msUntilFeelingCheck();
-    if (delay === 0) {
-      timer = window.setTimeout(tryOpen, 400);
-    } else {
-      timer = window.setTimeout(tryOpen, delay);
-    }
+    if (!Number.isFinite(delay)) return;
+    timer = window.setTimeout(tryOpen, delay === 0 ? 400 : delay);
     return () => {
       if (timer != null) window.clearTimeout(timer);
     };
   }, [showHadith, guideOpen, feelingPrompt]);
 
-  const context: WorkspaceContext = { settings, refreshSettings, unread, refreshAlerts, daily };
+  const context: WorkspaceContext = { settings, refreshSettings, unread, refreshAlerts, daily, keepers };
   const brand = displayName(settings.markazName);
 
   return (

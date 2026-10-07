@@ -7,12 +7,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "CLOUDFLARE_VITE_FORCE_LOCAL=true vite",
+    "dev:remote": "CLOUDFLARE_VITE_REMOTE=true vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply markaz --local",
-    "db:migrate": "wrangler d1 migrations apply markaz --remote",
+    "db:migrate:local": "node ./node_modules/wrangler/bin/wrangler.js d1 migrations apply markaz --local",
+    "db:migrate": "node ./node_modules/wrangler/bin/wrangler.js d1 migrations apply markaz --remote",
     "verify": "tsx scripts/verify.ts",
     "og:image": "node scripts/build-og-image.mjs",
     "desktop": "node desktop/run.mjs",
