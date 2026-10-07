@@ -10,34 +10,34 @@ One Worker serves two surfaces, chosen by the `Host` header:
 
 | Surface | Host | What it serves |
 |---------|------|----------------|
-| Public papers | `mysalafimindset.com` | Shelf at `/`, `/saved`, `/series/:slug`, `/:slug`. Open to the world. |
+| Public papers | `thesalafimindset.com` | Shelf at `/`, `/saved`, `/series/:slug`, `/:slug`. Open to the world. |
 | Desk | `admin.mysalafimindset.com` | Dashboard, students, blog editor, etc. Cloudflare Access required. |
 
 Same D1 and R2. Vars in `wrangler.jsonc`:
 
 - `PUBLIC_HOST` / `ADMIN_HOST` — hostname matching
-- `SITE_URL` — public origin for RSS, sitemap, newsletter links (`https://mysalafimindset.com`)
+- `SITE_URL` — public origin for RSS, sitemap, newsletter links (`https://thesalafimindset.com`)
 
 The SPA build reads the same names via Vite (`.env.production`: `VITE_PUBLIC_HOST`, `VITE_ADMIN_HOST`, origins). Localhost keeps the legacy `/read…` paths next to the desk.
 
 ### Cloudflare setup
 
-1. **DNS** (zone for `mysalafimindset.com` on Cloudflare):
-   - Apex / `mysalafimindset.com` → CNAME (or flattening) to `markaz.arruhayn-87f.workers.dev` (proxied).
-   - `admin` → CNAME to `markaz.arruhayn-87f.workers.dev` (proxied).
+1. **DNS**:
+   - Zone `thesalafimindset.com`: apex → CNAME (or flattening) to `markaz.arruhayn-87f.workers.dev` (proxied).
+   - Zone for desk: `admin.mysalafimindset.com` → CNAME to `markaz.arruhayn-87f.workers.dev` (proxied).
 
 2. **Worker custom domains** (Workers → `markaz` → Settings → Domains & Routes):
-   - Add `mysalafimindset.com` (public).
+   - Add `thesalafimindset.com` (public).
    - Add `admin.mysalafimindset.com` (desk).
 
 3. **Cloudflare Access** (Zero Trust → Access → Applications):
    - Self-hosted app whose Application domain is **only** `admin.mysalafimindset.com` (paths `*` or default).
-   - Do **not** add `mysalafimindset.com` to that Access app.
+   - Do **not** add `thesalafimindset.com` to that Access app.
    - Set secrets if the AUD changes: `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`.
    - Remove any old Access policy that wraps the whole `*.workers.dev` host if it still blocks public traffic.
 
 4. **Smoke test**:
-   - `https://mysalafimindset.com` — papers load, no Access login.
+   - `https://thesalafimindset.com` — papers load, no Access login.
    - `https://admin.mysalafimindset.com` — Access challenge, then desk.
    - Share links / RSS use the public host.
    - Desk “Read the papers” opens the public host.
@@ -68,7 +68,7 @@ npm run build
 | D1 | `markaz` → `604c7d61-ddc1-4ca9-9ada-59d2bc9333ba` | created; remote migrations applied |
 | R2 | `markaz-reports`, `markaz-blog` | created |
 | Worker | https://markaz.arruhayn-87f.workers.dev | deployed (cutover host) |
-| Public | https://mysalafimindset.com | custom domain |
+| Public | https://thesalafimindset.com | custom domain |
 | Desk | https://admin.mysalafimindset.com | custom domain + Access |
 | Access | Zero Trust application | desk host only (below) |
 
@@ -98,7 +98,7 @@ To (re)configure Access:
 
 1. Desk URL: https://admin.mysalafimindset.com (custom domain on the same Worker).
 2. In [Zero Trust → Access → Applications](https://one.dash.cloudflare.com/), create or update a **Self-hosted** application for **only** that desk host.
-3. Do not wrap `mysalafimindset.com` in Access. Desk APIs are also rejected on the public host by the Worker.
+3. Do not wrap `thesalafimindset.com` in Access. Desk APIs are also rejected on the public host by the Worker.
 4. Set secrets (AUD must match the Access application’s **Application Audience** — if you recreate the Access app, update `CF_ACCESS_AUD`):
 
 ```bash
@@ -163,4 +163,4 @@ npm run db:migrate
 npm run deploy
 ```
 
-Public papers stay open on `mysalafimindset.com`; the desk on `admin.mysalafimindset.com` requires Access once secrets are set.
+Public papers stay open on `thesalafimindset.com`; the desk on `admin.mysalafimindset.com` requires Access once secrets are set.

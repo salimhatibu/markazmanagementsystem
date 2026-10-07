@@ -19,9 +19,9 @@ export type WorkerEnv = {
   CF_ACCESS_AUD?: string;
   /** When "1", admin checks are skipped (local wrangler dev). */
   DEV_OPEN_DESK?: string;
-  /** Public papers origin, e.g. https://mysalafimindset.com */
+  /** Public papers origin, e.g. https://thesalafimindset.com */
   SITE_URL?: string;
-  /** Public papers hostname (no scheme), e.g. mysalafimindset.com */
+  /** Public papers hostname (no scheme), e.g. thesalafimindset.com */
   PUBLIC_HOST?: string;
   /** Admin desk hostname (no scheme), e.g. admin.mysalafimindset.com */
   ADMIN_HOST?: string;

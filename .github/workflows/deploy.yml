@@ -34,9 +34,9 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_PUBLIC_HOST: mysalafimindset.com
+          VITE_PUBLIC_HOST: thesalafimindset.com
           VITE_ADMIN_HOST: admin.mysalafimindset.com
-          VITE_PUBLIC_ORIGIN: https://mysalafimindset.com
+          VITE_PUBLIC_ORIGIN: https://thesalafimindset.com
           VITE_ADMIN_ORIGIN: https://admin.mysalafimindset.com
 
       - name: Deploy

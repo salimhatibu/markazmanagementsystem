@@ -16,5 +16,5 @@ DEV_OPEN_DESK=1
 # SITE_URL=http://localhost:5173
 
 # Production hostnames (also set in wrangler.jsonc vars).
-# PUBLIC_HOST=mysalafimindset.com
+# PUBLIC_HOST=thesalafimindset.com
 # ADMIN_HOST=admin.mysalafimindset.com

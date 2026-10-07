@@ -1256,51 +1256,6 @@ legend { padding: 0 8px; color: var(--mute); }
   font-size: 14px;
 }
 
-.ocr-panel {
-  margin-bottom: 18px;
-}
-
-.ocr-upload {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px 20px;
-}
-
-.ocr-upload-title {
-  margin: 0 0 4px;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--mute);
-}
-
-.ocr-upload-hint {
-  margin: 0;
-  max-width: 36rem;
-  font-size: 14px;
-  color: var(--text-2);
-  line-height: 1.45;
-}
-
-.ocr-file-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  overflow: hidden;
-}
-
-.ocr-upload-button {
-  cursor: pointer;
-}
-
-.ocr-upload-button.is-busy {
-  opacity: 0.7;
-  pointer-events: none;
-}
-
 .book-lines {
   display: grid;
   gap: 12px;

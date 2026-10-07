@@ -1,11 +1,9 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { eatDate, formatMoney } from "../../shared/format";
-import { OcrUpload } from "../components/OcrUpload";
 import type { WorkspaceContext } from "../components/Shell";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api } from "../lib/api";
-import { expenseFromOcr } from "../lib/ocr-fields";
 import type { Expense } from "../types";
 
 const REASONS = ["Maintenance", "Books", "Food", "Transport", "Utilities", "Other"];
@@ -110,24 +108,6 @@ export function ExpensesPage() {
       </PageHeader>
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
-      <Panel tone="light" className="ocr-panel">
-        <OcrUpload
-          kind="expense"
-          disabled={busy}
-          onError={setError}
-          onFields={(fields) => {
-            const next = expenseFromOcr(fields);
-            setReason(next.reason);
-            setCustomReason(next.customReason);
-            setAmount(next.amount);
-            setDetails(next.details);
-            if (next.spentOn) setSpentOn(next.spentOn);
-            setOpen(true);
-            setError("");
-            setInfo("Details filled from the scan. Check them, then save.");
-          }}
-        />
-      </Panel>
       {open ? (
         <form className="expense-form" onSubmit={(event) => void create(event)}>
           <Panel tone="light">

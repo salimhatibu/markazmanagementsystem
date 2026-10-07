@@ -35,9 +35,9 @@
   // PUBLIC_HOST / ADMIN_HOST drive host-based read vs desk surfaces.
   "vars": {
     "DEV_OPEN_DESK": "0",
-    "PUBLIC_HOST": "mysalafimindset.com",
+    "PUBLIC_HOST": "thesalafimindset.com",
     "ADMIN_HOST": "admin.mysalafimindset.com",
-    "SITE_URL": "https://mysalafimindset.com"
+    "SITE_URL": "https://thesalafimindset.com"
   },
   "ai": {
     "binding": "AI"

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../lib/auth";
 import { presenceLine, type PresenceKeeper } from "../lib/presence";
 
 type Props = {
@@ -6,17 +7,24 @@ type Props = {
 };
 
 export function PresenceIsland({ keepers }: Props) {
+  const auth = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [focus, setFocus] = useState(0);
 
-  const online = useMemo(() => keepers.filter((k) => k.online), [keepers]);
+  const others = useMemo(() => {
+    const self = auth.user?.email?.trim().toLowerCase();
+    if (!self) return keepers;
+    return keepers.filter((keeper) => keeper.email.toLowerCase() !== self);
+  }, [keepers, auth.user?.email]);
+
+  const online = useMemo(() => others.filter((k) => k.online), [others]);
   const ordered = useMemo(() => {
-    return [...keepers].sort((a, b) => Number(b.online) - Number(a.online));
-  }, [keepers]);
+    return [...others].sort((a, b) => Number(b.online) - Number(a.online));
+  }, [others]);
 
   useEffect(() => {
     setFocus(0);
-  }, [keepers.length]);
+  }, [others.length]);
 
   useEffect(() => {
     if (expanded || ordered.length <= 1) return;
@@ -51,11 +59,13 @@ export function PresenceIsland({ keepers }: Props) {
         }}
       >
         <span className="presence-island-pill" aria-live="polite">
-          <span className={`presence-island-dot${online.length > 0 ? " is-online" : ""}`} aria-hidden="true" />
           {!expanded ? (
-            <span className="presence-island-summary" key={summary}>
-              {summary}
-            </span>
+            <>
+              <span className={`presence-island-dot${online.length > 0 ? " is-online" : ""}`} aria-hidden="true" />
+              <span className="presence-island-summary" key={summary}>
+                {summary}
+              </span>
+            </>
           ) : (
             <span className="presence-island-list">
               {ordered.map((keeper) => (
