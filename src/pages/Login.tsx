@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { MARKAZ_NAME } from "../../shared/format";
+import { KineticText } from "../components/KineticText";
 import { useAuth } from "../lib/auth";
 import { publicShelfHref } from "../lib/surface";
 import "../login-gate.css";
@@ -88,7 +89,7 @@ export function LoginPage() {
       <GateFrame>
         <p className="gate-kicker">Local desk</p>
         <h1 className="gate-title">
-          Access is <em>off</em>.
+          <KineticText text="Access is off." />
         </h1>
         <p className="gate-lede">
           This is the local desk. On the hosted site, Cloudflare Access signs keepers in with an allowed email.
@@ -110,7 +111,7 @@ export function LoginPage() {
     <GateFrame>
       <p className="gate-kicker">Keepers</p>
       <h1 className="gate-title">
-        Open the <em>desk</em>.
+        <KineticText text="Open the desk." />
       </h1>
       <p className="gate-lede">
         Sign in with Cloudflare Access using an email on the allow list. Readers can stay with the public papers

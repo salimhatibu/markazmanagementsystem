@@ -7,7 +7,7 @@ export type PresenceKeeper = {
   online: boolean;
 };
 
-export const PRESENCE_POLL_MS = 5 * 60 * 1000;
+export const PRESENCE_POLL_MS = 30 * 1000;
 
 export async function beatPresence(): Promise<void> {
   await api<{ ok: boolean }>("/api/presence", { method: "POST" });

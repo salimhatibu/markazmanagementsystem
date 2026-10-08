@@ -4,8 +4,8 @@ import { adminPresence } from "../../db/schema";
 import { readAccessIdentity, requireAdmin } from "../_shared/auth";
 import { fail, handleError, json } from "../_shared/http";
 
-/** Consider online if a heartbeat arrived within two poll intervals. */
-const ONLINE_MS = 10 * 60 * 1000;
+/** Online while a heartbeat arrived within three 30s polls. */
+const ONLINE_MS = 90 * 1000;
 
 function displayLabel(email: string, name: string | null | undefined): string {
   const trimmed = name?.trim();

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { formatEatLongDate } from "../../shared/format";
 import { IconHeart, IconSave, IconShare } from "../components/ig-icons";
+import { KineticText } from "../components/KineticText";
 import { PaperAlmanac } from "../components/PaperAlmanac";
 import { api } from "../lib/api";
 import { tagArabicRuns } from "../lib/arabic-runs";
@@ -174,7 +175,9 @@ export function PublicPostPage() {
             )}{" "}
             · <span lang="ar" dir="rtl">مقال</span>
           </p>
-          <h2 className="paper-headline">{post.title}</h2>
+          <h2 className="paper-headline">
+            <KineticText text={post.title} />
+          </h2>
           <p className="paper-byline">
             {Number.isNaN(date.getTime()) ? "A public paper" : `${formatEatLongDate(date)} · A public paper`}
           </p>
@@ -236,7 +239,7 @@ export function PublicPostPage() {
       {related.length ? (
         <section className="paper-briefs" id="continued" aria-labelledby="continued-title">
           <h2 id="continued-title" className="paper-section-head">
-            {post.seriesTitle ? `Also in ${post.seriesTitle}` : "Also in this paper"}
+            <KineticText text={post.seriesTitle ? `Also in ${post.seriesTitle}` : "Also in this paper"} />
           </h2>
           {related.map((item) => (
             <article key={item.id} className="paper-brief">
@@ -254,7 +257,7 @@ export function PublicPostPage() {
 
       <section className="paper-letters" id="letters" aria-labelledby="notes-title">
         <h2 id="notes-title" className="paper-section-head">
-          Letters · <span lang="ar" dir="rtl">رسائل</span>
+          <KineticText text="Letters" /> · <span lang="ar" dir="rtl">رسائل</span>
         </h2>
         <p className="paper-letters-lede">
           Unsigned notes from readers. No name is taken.

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BlogEditor } from "../components/BlogEditor";
+import { KineticText } from "../components/KineticText";
 import { api } from "../lib/api";
 import { uploadBlogMedia } from "../lib/blog-media";
 import { imageFilesFromClipboard } from "../lib/blog-images";
@@ -86,7 +87,9 @@ export function BlogWritePage() {
       <section className="choices-header">
         <div>
           <span className="eyebrow">{editing ? "Revise the page" : "A blank page"}</span>
-          <h2>{editing ? "Edit post" : "Write a post"}</h2>
+          <h2>
+            <KineticText text={editing ? "Edit post" : "Write a post"} />
+          </h2>
         </div>
         <p>Shape the page: titles, pictures, video. Paste a photograph from the clipboard if you prefer. Post it when it is ready.</p>
       </section>

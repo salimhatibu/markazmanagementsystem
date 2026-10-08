@@ -38,6 +38,7 @@ import {
   NavPeopleIcon,
   NavTripsIcon,
 } from "./Motifs";
+import { KineticText } from "./KineticText";
 import { PageSlide } from "./PageSlide";
 
 export type WorkspaceContext = {
@@ -247,7 +248,9 @@ export function Shell() {
       <aside className={`side${menuOpen ? " is-open" : ""}`} data-guide="nav">
         <NavLink to="/" className="brand" end data-guide="brand">
           <span className="logo-text">
-            <span className="a">{brand}</span>
+            <span className="a">
+              <KineticText text={brand} />
+            </span>
             <span className="b">Imam ash-Shafi&rsquo;i</span>
           </span>
         </NavLink>

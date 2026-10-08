@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { KineticText } from "../components/KineticText";
 import { Link } from "react-router-dom";
 import { formatEatLongDate } from "../../shared/format";
 import { api } from "../lib/api";
@@ -37,7 +38,9 @@ export function BlogPostsPage() {
       <section className="choices-header">
         <div>
           <span className="eyebrow">The written record</span>
-          <h2>Every post on the shelf.</h2>
+          <h2>
+            <KineticText text="Every post on the shelf." />
+          </h2>
         </div>
         <p>Open a public note. Drafts stay in the drawer until you post them.</p>
       </section>
@@ -46,7 +49,9 @@ export function BlogPostsPage() {
       {ready && drafts.length ? (
         <section aria-label="Drafts">
           <div className="section-title">
-            <h2>Not yet posted</h2>
+            <h2>
+              <KineticText text="Not yet posted" />
+            </h2>
             <small>DRAWER</small>
           </div>
           <ul className="log">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { KineticText } from "../components/KineticText";
 import { formatEatLongDate } from "../../shared/format";
 import { api } from "../lib/api";
 import { padCount } from "../lib/blog-stats";
@@ -71,7 +72,9 @@ export function BlogHomePage() {
         <div className="choices-header">
           <div>
             <span className="eyebrow">Your first decision</span>
-            <h2 id="desk-title">Open a drawer—or do the writing.</h2>
+            <h2 id="desk-title">
+              <KineticText text="Open a drawer—or do the writing." />
+            </h2>
           </div>
           <p>The desk has three rooms: the posts, a blank page, and the numbers.</p>
         </div>

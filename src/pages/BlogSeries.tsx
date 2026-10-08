@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { KineticText } from "../components/KineticText";
 import { api } from "../lib/api";
 import type { BlogSeries } from "../types";
 
@@ -72,7 +73,9 @@ export function BlogSeriesPage() {
       <section className="choices-header">
         <div>
           <span className="eyebrow">Filed by topic</span>
-          <h2>Series</h2>
+          <h2>
+            <KineticText text="Series" />
+          </h2>
         </div>
         <p>Marriage, modesty, worship, or any thread you want readers to follow from one paper to the next.</p>
       </section>
@@ -98,7 +101,9 @@ export function BlogSeriesPage() {
       <section className="choices-header">
         <div>
           <span className="eyebrow">The letter</span>
-          <h2>{letters.length ? `${letters.length} on the list` : "No addresses yet"}</h2>
+          <h2>
+            <KineticText text={letters.length ? `${letters.length} on the list` : "No addresses yet"} />
+          </h2>
         </div>
         <p>Readers who asked for a note when a new paper is posted. Mail goes out only when the mailbox is configured.</p>
       </section>

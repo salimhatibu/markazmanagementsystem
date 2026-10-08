@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { KineticText } from "../components/KineticText";
 import { api } from "../lib/api";
 import { formatDwell, formatPct, padCount } from "../lib/blog-stats";
 import type { BlogAnalytics } from "../types";
@@ -32,7 +33,9 @@ export function BlogAnalyticsPage() {
       <section className="choices-header">
         <div>
           <span className="eyebrow">Where the time went</span>
-          <h2>Statistics of each post.</h2>
+          <h2>
+            <KineticText text="Statistics of each post." />
+          </h2>
         </div>
         <p>Views, time on the page, click-through from the shelf, unique readers, bounce.</p>
       </section>
@@ -42,7 +45,9 @@ export function BlogAnalyticsPage() {
         <div className="workspace">
           <section aria-labelledby="chart-title">
             <div className="section-title">
-              <h2 id="chart-title">Where the time went</h2>
+              <h2 id="chart-title">
+                <KineticText text="Where the time went" />
+              </h2>
               <small>VIEWS / EACH PUBLIC NOTE</small>
             </div>
             <div className="chart" role="img" aria-label="Views by post">
