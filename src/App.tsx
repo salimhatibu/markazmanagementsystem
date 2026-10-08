@@ -19,6 +19,7 @@ const Shell = page(() => import("./components/Shell"), "Shell");
 const BlogLayout = page(() => import("./components/BlogLayout"), "BlogLayout");
 const DashboardPage = page(() => import("./pages/Dashboard"), "DashboardPage");
 const StudentsPage = page(() => import("./pages/Students"), "StudentsPage");
+const ClassesPage = page(() => import("./pages/Classes"), "ClassesPage");
 const StudentDetailPage = page(() => import("./pages/StudentDetail"), "StudentDetailPage");
 const KharajahPage = page(() => import("./pages/Kharajah"), "KharajahPage");
 const KharajahDetailPage = page(() => import("./pages/KharajahDetail"), "KharajahDetailPage");
@@ -51,6 +52,8 @@ const deskTree = (
       <Route element={<Shell />}>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/students" element={<StudentsPage />} />
+        <Route path="/classes" element={<ClassesPage />} />
+        <Route path="/classes/:id" element={<ClassesPage />} />
         <Route path="/students/:id" element={<StudentDetailPage />} />
         <Route path="/kharajah" element={<KharajahPage />} />
         <Route path="/kharajah/:id" element={<KharajahDetailPage />} />

@@ -62,6 +62,10 @@ type Route = {
 
 const routes: Route[] = [
   { pattern: /^\/api\/dashboard\/?$/, handler: dashboard },
+  { pattern: /^\/api\/classes\/?$/, handler: classes },
+  { pattern: /^\/api\/classes\/(\d+)\/students\/(\d+)\/?$/, handler: classes, params: ["id", "studentId"] },
+  { pattern: /^\/api\/classes\/(\d+)\/students\/?$/, handler: classes, params: ["id"] },
+  { pattern: /^\/api\/classes\/(\d+)\/?$/, handler: classes, params: ["id"] },
   { pattern: /^\/api\/students\/?$/, handler: students },
   { pattern: /^\/api\/students\/file\/?$/, handler: studentsListFile },
   { pattern: /^\/api\/students\/(\d+)\/payments\/?$/, handler: feePayments, params: ["id"] },

@@ -692,7 +692,7 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-family: var(--serif); }
 }
 
 .presence-island-wrap {
-  position: absolute;
+  position: fixed;
   left: 50%;
   top: 10px;
   z-index: 46;
@@ -1554,7 +1554,7 @@ legend { padding: 0 8px; color: var(--mute); }
   isolation: isolate;
   overflow: hidden;
   margin-top: 28px;
-  padding: 24px 26px;
+  padding: 24px 68px;
   border-radius: 14px;
   background: var(--card);
   box-shadow: none;
@@ -1565,6 +1565,29 @@ legend { padding: 0 8px; color: var(--mute); }
 }
 
 .hadith > *:not(.hadith-backdrop) { position: relative; z-index: 1; }
+
+.hadith > .hadith-side-btn {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  color: var(--text);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.hadith-side-prev { left: 14px; }
+.hadith-side-next { right: 14px; }
+.hadith-side-btn svg { width: 20px; height: 20px; }
+.hadith-side-btn:hover:not(:disabled) { background: var(--card); }
+.hadith-side-btn:disabled { opacity: 0.28; cursor: not-allowed; }
 
 .hadith-backdrop {
   position: absolute;
@@ -1995,7 +2018,7 @@ legend { padding: 0 8px; color: var(--mute); }
   .page-header-row > .actions { width: 100%; }
   .toolbar { flex-direction: column; align-items: stretch; }
   .search { min-width: 0; }
-  .hadith { padding: 22px; }
+  .hadith { padding: 22px 58px; }
   .meta-row strong { font-size: 30px; }
   .footer-grid { gap: 16px 28px; }
 }
@@ -2077,7 +2100,7 @@ legend { padding: 0 8px; color: var(--mute); }
   .panel { padding: 18px; margin-top: 20px; }
   .meta-row { gap: 14px 20px; }
   .meta-row strong { font-size: 28px; }
-  .hadith { padding: 18px; }
+  .hadith { padding: 18px 48px; }
   .hadith-pen { width: 50px; height: 50px; }
   .hadith-pen svg { width: 26px; height: 26px; }
   .hadith h2 { font-size: clamp(1.5rem, 7vw, 2.1rem); }
@@ -2112,7 +2135,7 @@ legend { padding: 0 8px; color: var(--mute); }
   .content { padding-top: 16px; }
   .stat { min-height: 0; padding: 14px; }
   .figure, .figure-sm { font-size: clamp(1.45rem, 7vw, 1.85rem); }
-  .hadith { padding: 14px; }
+  .hadith { padding: 14px 44px; }
   .hijri-line { font-size: clamp(1.7rem, 8.5vw, 2.4rem); }
 }
 
@@ -2564,7 +2587,8 @@ legend { padding: 0 8px; color: var(--mute); }
 
 .feedback-ticket {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 10px;
   padding: 10px 12px;
   border-radius: 14px;
@@ -2580,16 +2604,115 @@ legend { padding: 0 8px; color: var(--mute); }
   text-decoration: line-through;
 }
 
-.feedback-done {
-  display: grid;
-  place-items: start;
-  padding-top: 2px;
+.feedback-ticket-actions {
+  display: flex;
+  gap: 4px;
 }
 
-.feedback-done input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--green);
+.feedback-ticket-action {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: var(--card);
+  font: inherit;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.feedback-ticket-action.is-done { color: var(--green); }
+.feedback-ticket-action.is-cancel { color: #a33; }
+.feedback-ticket-action:disabled { opacity: 0.5; cursor: wait; }
+
+.class-create-panel,
+.class-assign-panel { margin-top: 0; }
+
+.class-create-form,
+.class-assign-form {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+}
+
+.class-create-form .field,
+.class-assign-form .field { flex: 1; }
+
+.class-create-form .solid,
+.class-assign-form .solid { flex-shrink: 0; }
+
+.class-roster-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 28px 0 12px;
+}
+
+.class-roster-head h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.5rem;
+}
+
+.class-roster-head p {
+  margin: 0;
+  color: var(--mute);
+  font-size: 13px;
+}
+
+.class-list {
+  display: grid;
+  gap: 10px;
+}
+
+.class-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.class-list-item:hover {
+  border-color: var(--green);
+  transform: translateY(-1px);
+}
+
+.class-list-item > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.class-list-item strong { font-weight: 650; }
+.class-list-item small { color: var(--mute); font-size: 13px; }
+.class-list-arrow { color: var(--green); font-size: 26px; line-height: 1; }
+
+.class-remove {
+  border: 0;
+  background: none;
+  color: #a33;
+  cursor: pointer;
+  font: inherit;
+}
+
+.class-remove:disabled { opacity: 0.5; cursor: wait; }
+
+@media (max-width: 640px) {
+  .class-create-form,
+  .class-assign-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 .feedback-ticket-body p {
