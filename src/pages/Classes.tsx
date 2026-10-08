@@ -192,12 +192,12 @@ export function ClassesPage() {
         lead={current ? `Manage students${current.teacherName ? ` taught by ${current.teacherName}` : ""} in this class.` : "Create teaching groups, assign teachers, and manage student lists."}
       >
         {current ? (
-          <>
+          <div className="class-page-actions">
             <Link className="ghost" to="/classes">All classes</Link>
             <button type="button" className="ghost" onClick={() => setEditing((value) => !value)}>
               {editing ? "Cancel edit" : "Edit class"}
             </button>
-          </>
+          </div>
         ) : null}
       </PageHeader>
       {error ? <Notice>{error}</Notice> : null}

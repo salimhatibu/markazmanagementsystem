@@ -75,7 +75,7 @@ export function BlogHomePage() {
               Open a drawer—or do the writing.
             </h2>
           </div>
-          <p>The desk has three rooms: the posts, a blank page, and the numbers.</p>
+          <p>Browse posts and series, write a new paper, or review the numbers.</p>
         </div>
         <div className="menu" aria-label="Blog rooms">
           <Link className="quest" to="/blog/posts">
@@ -94,9 +94,17 @@ export function BlogHomePage() {
             <b>Create a post</b>
             <span className="excuse">Pictures, video, headings, then post it publicly.</span>
           </Link>
-          <Link className="quest" to="/blog/analytics">
+          <Link className="quest" to="/blog/series">
             <span className="cost">
               <span>03</span>
+              <span>FILE ↗</span>
+            </span>
+            <b>Blog series</b>
+            <span className="excuse">Create and manage topics such as marriage or women.</span>
+          </Link>
+          <Link className="quest" to="/blog/analytics">
+            <span className="cost">
+              <span>04</span>
               <span>MEASURE ↗</span>
             </span>
             <b>Analytics</b>

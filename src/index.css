@@ -983,6 +983,21 @@ a.solid, a.ghost {
   gap: 20px;
 }
 
+.page-header-row > h1 { min-width: 0; }
+
+.class-page-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.class-page-actions .ghost {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 @media (min-width: 900px) {
   .page-header {
     display: grid;
