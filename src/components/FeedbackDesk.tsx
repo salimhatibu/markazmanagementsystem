@@ -14,9 +14,12 @@ export function FeedbackDesk() {
   const [ready, setReady] = useState(false);
 
   async function load() {
-    const response = await api<{ tickets: FeedbackTicket[] }>("/api/feedback");
-    setTickets(response.tickets);
-    setReady(true);
+    try {
+      const response = await api<{ tickets: FeedbackTicket[] }>("/api/feedback");
+      setTickets(response.tickets);
+    } finally {
+      setReady(true);
+    }
   }
 
   useEffect(() => {
@@ -27,6 +30,7 @@ export function FeedbackDesk() {
 
   useEffect(() => {
     if (!open) return;
+    setError("");
     load().catch((caught: unknown) =>
       setError(caught instanceof Error ? caught.message : "Tickets could not be opened."),
     );
@@ -105,7 +109,7 @@ export function FeedbackDesk() {
           {info ? <p className="feedback-status">{info}</p> : null}
           <div className="feedback-list" role="list">
             {!ready ? <p className="feedback-empty">Opening tickets…</p> : null}
-            {ready && tickets.length === 0 ? (
+            {ready && !error && tickets.length === 0 ? (
               <p className="feedback-empty">No notes yet. Write the first one above.</p>
             ) : null}
             {tickets.map((ticket) => (
