@@ -55,7 +55,10 @@ export default async (req: Request, context: { params: Record<string, string> })
       const name = requiredText(body.name, "Class name", 80);
       const teacherId = optionalTeacherId(body.teacherId);
       if (!(await teacherExists(teacherId))) return fail("That teacher was not found.", 400);
-      const [created] = await db.insert(schoolClasses).values({ name, teacherId }).returning();
+      const [created] = await db
+        .insert(schoolClasses)
+        .values({ name, teacherId, updatedAt: new Date().toISOString() })
+        .returning();
       const teacherRows = teacherId == null
         ? []
         : await db.select({ name: teachers.name }).from(teachers).where(eq(teachers.id, teacherId)).limit(1);

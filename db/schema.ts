@@ -24,7 +24,7 @@ export const schoolClasses = sqliteTable("school_classes", {
   name: text().notNull().unique(),
   teacherId: integer("teacher_id").references(() => teachers.id, { onDelete: "set null" }),
   createdAt: createdAt(),
-  updatedAt: updatedAt(),
+  updatedAt: text("updated_at").notNull().default(""),
 });
 
 export const students = sqliteTable("students", {
