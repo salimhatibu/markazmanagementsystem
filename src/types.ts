@@ -55,6 +55,32 @@ export type Teacher = {
   payments: Payment[];
 };
 
+export type ClassAssignment = {
+  id: number;
+  studentId: number;
+  studentName: string;
+  admissionNumber: string;
+};
+
+export type Class = {
+  id: number;
+  name: string;
+  description: string | null;
+  level: string;
+  section: StudentSection;
+  createdAt: string;
+  updatedAt: string;
+  studentCount: number;
+  students: ClassAssignment[];
+};
+
+export type ClassInput = {
+  name: string;
+  description: string;
+  level: string;
+  section: StudentSection;
+};
+
 export type KharajahLeaver = {
   id: number;
   admissionNumber: string;
@@ -367,6 +393,13 @@ export const emptyTeacher = (): TeacherInput => ({
   expectedSalary: "",
   expectedReleaseDate: "",
   paidInAdvance: false,
+});
+
+export const emptyClass = (): ClassInput => ({
+  name: "",
+  description: "",
+  level: "",
+  section: "morning",
 });
 
 export function studentToInput(student: Student): StudentInput {
