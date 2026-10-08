@@ -30,11 +30,11 @@ export function PageSlide({ children }: { children: ReactNode }) {
     const root = ref.current;
     if (!root) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const nodes = [...root.querySelectorAll<HTMLElement>(FLOW)];
     if (reduce) {
-      nodes.forEach((node) => node.classList.add("is-flow"));
+      root.querySelectorAll<HTMLElement>(FLOW).forEach((node) => node.classList.add("is-flow"));
       return;
     }
+
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -45,11 +45,32 @@ export function PageSlide({ children }: { children: ReactNode }) {
       },
       { threshold: 0.14, rootMargin: "0px 0px -6% 0px" },
     );
-    nodes.forEach((node, index) => {
+    let index = 0;
+    const observe = (node: HTMLElement) => {
+      if (node.classList.contains("is-flow")) return;
       node.style.setProperty("--flow-d", `${Math.min(index % 6, 5) * 70}ms`);
+      index += 1;
       io.observe(node);
+    };
+    const observeTree = (element: Element) => {
+      if (element.matches(FLOW)) observe(element as HTMLElement);
+      element.querySelectorAll<HTMLElement>(FLOW).forEach(observe);
+    };
+    root.querySelectorAll<HTMLElement>(FLOW).forEach(observe);
+
+    const mutations = new MutationObserver((records) => {
+      for (const record of records) {
+        record.addedNodes.forEach((node) => {
+          if (node instanceof Element) observeTree(node);
+        });
+      }
     });
-    return () => io.disconnect();
+    mutations.observe(root, { childList: true, subtree: true });
+
+    return () => {
+      mutations.disconnect();
+      io.disconnect();
+    };
   }, [pathname]);
 
   return (

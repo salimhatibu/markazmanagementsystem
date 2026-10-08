@@ -1,8 +1,9 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { StudentForm } from "../components/StudentForm";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api } from "../lib/api";
-import type { Class as ClassSummary, Student } from "../types";
+import { emptyStudent, type Class as ClassSummary, type Student, type StudentInput } from "../types";
 
 type ClassDetail = Omit<ClassSummary, "students"> & {
   students: Student[];
@@ -16,6 +17,8 @@ export function ClassesPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [name, setName] = useState("");
   const [studentId, setStudentId] = useState("");
+  const [addStudentOpen, setAddStudentOpen] = useState(false);
+  const [studentDraft, setStudentDraft] = useState<StudentInput>(emptyStudent());
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
@@ -92,6 +95,26 @@ export function ClassesPage() {
     }
   }
 
+  async function createAndAssignStudent() {
+    if (!id) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api("/api/students", {
+        method: "POST",
+        body: JSON.stringify({ ...studentDraft, classId: Number(id) }),
+      });
+      setStudentDraft(emptyStudent());
+      setAddStudentOpen(false);
+      await loadDetail(id);
+      await loadList();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The student could not be added to this class.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function removeStudent(student: Student) {
     if (!id) return;
     setBusy(true);
@@ -124,7 +147,27 @@ export function ClassesPage() {
           {ready && current ? (
             <>
               <Panel tone="light" className="class-assign-panel">
-                <p className="panel-title">Assign a student</p>
+                <div className="class-assign-head">
+                  <p className="panel-title">Add a student</p>
+                  <button
+                    type="button"
+                    className="ghost"
+                    aria-expanded={addStudentOpen}
+                    onClick={() => setAddStudentOpen((open) => !open)}
+                  >
+                    {addStudentOpen ? "Cancel new student" : "Create student"}
+                  </button>
+                </div>
+                {addStudentOpen ? (
+                  <StudentForm
+                    value={studentDraft}
+                    onChange={setStudentDraft}
+                    onSubmit={() => void createAndAssignStudent()}
+                    submitLabel="Create student in this class"
+                    busy={busy}
+                  />
+                ) : null}
+                <p className="field-hint class-existing-student-label">Or add an existing student</p>
                 {availableStudents.length > 0 ? (
                   <form className="class-assign-form" onSubmit={(event) => void assign(event)}>
                     <Field id="class-student" label="Student">
