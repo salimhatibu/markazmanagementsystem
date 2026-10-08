@@ -317,7 +317,7 @@ export function toPayment(row: FeePayment | SalaryPayment) {
   };
 }
 
-export function toStudent(row: Student, payments: FeePayment[]) {
+export function toStudent(row: Student, payments: FeePayment[], className: string | null = null) {
   const expectedCents = toCents(row.expectedFees);
   const paidCents = sumCents(payments);
   const figures = studentFigures(expectedCents, paidCents);
@@ -329,6 +329,8 @@ export function toStudent(row: Student, payments: FeePayment[]) {
     age: ageFromDob(row.dateOfBirth),
     gender: row.gender,
     section: row.section,
+    classId: row.classId,
+    className,
     expectedFees: fromCents(expectedCents),
     admittedOn: row.admittedOn || (typeof row.createdAt === "string" ? row.createdAt.slice(0, 10) : ""),
     admissionFeeCollected: Boolean(row.admissionFeeCollected),

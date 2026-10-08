@@ -18,6 +18,13 @@ const updatedAt = () =>
     .notNull()
     .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`);
 
+/** Teaching groups, separate from the morning/evening sitting. */
+export const schoolClasses = sqliteTable("school_classes", {
+  id: integer().primaryKey({ autoIncrement: true }),
+  name: text().notNull().unique(),
+  createdAt: createdAt(),
+});
+
 export const students = sqliteTable("students", {
   id: integer().primaryKey({ autoIncrement: true }),
   admissionNumber: text("admission_number").notNull().unique(),
@@ -25,6 +32,7 @@ export const students = sqliteTable("students", {
   dateOfBirth: text("date_of_birth").notNull(),
   gender: text({ enum: ["male", "female"] }).notNull(),
   section: text({ enum: ["morning", "evening"] }).notNull(),
+  classId: integer("class_id").references(() => schoolClasses.id, { onDelete: "set null" }),
   expectedFees: money("expected_fees"),
   admittedOn: text("admitted_on").notNull().default(""),
   admissionFeeCollected: integer("admission_fee_collected", { mode: "boolean" }).notNull().default(false),
@@ -365,6 +373,7 @@ export const adminPresence = sqliteTable(
 );
 
 export type Student = typeof students.$inferSelect;
+export type SchoolClass = typeof schoolClasses.$inferSelect;
 export type AdminPresence = typeof adminPresence.$inferSelect;
 export type KharajahRow = typeof kharajah.$inferSelect;
 export type Teacher = typeof teachers.$inferSelect;

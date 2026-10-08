@@ -195,7 +195,15 @@ export function studentFields(body: Record<string, unknown>) {
     secondContactName: optionalText(body.secondContactName, "Second contact name", 255),
     secondContactPhone: optionalPhone(body.secondContactPhone, "Second contact phone"),
     secondContactEmail: optionalEmail(body.secondContactEmail, "Second contact email"),
+    classId: optionalClassId(body.classId),
   };
+}
+
+function optionalClassId(value: unknown): number | null {
+  if (value == null || value === "" || value === 0) return null;
+  const id = typeof value === "number" ? value : Number(value);
+  if (!Number.isSafeInteger(id) || id <= 0) throw new ValidationError("Choose a class.");
+  return id;
 }
 
 export function kharajahLeaveFields(body: Record<string, unknown>) {

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { KineticText } from "../components/KineticText";
 import { api } from "../lib/api";
 import { publicPostPath, publicShelfPath } from "../lib/blog-share";
 import { trackBlog } from "../lib/blog-track";
@@ -56,7 +55,7 @@ export function PublicSeriesPage() {
       <header className="paper-series-head">
         <p className="paper-section-kicker">Series</p>
         <h2 id="series-title" className="paper-headline">
-          <KineticText text={series.title} />
+          {series.title}
         </h2>
         {series.blurb ? <p className="paper-byline">{series.blurb}</p> : null}
       </header>

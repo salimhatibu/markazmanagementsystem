@@ -45,8 +45,6 @@ export function PresenceIsland({ keepers }: Props) {
       : presenceLine(active);
 
   return (
-    <>
-      <div className="presence-island-spacer" aria-hidden="true" />
       <div className="presence-island-wrap">
       <button
         type="button"
@@ -85,6 +83,5 @@ export function PresenceIsland({ keepers }: Props) {
         </span>
       </button>
       </div>
-    </>
   );
 }

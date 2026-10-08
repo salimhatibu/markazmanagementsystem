@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { KineticText } from "./KineticText";
 
 export function PageHeader({
   kicker,
@@ -18,9 +17,7 @@ export function PageHeader({
     <header className="page-header">
       <p className="kicker">{kicker}</p>
       <div className="page-header-row">
-        <h1 className={person ? "person-title" : undefined}>
-          <KineticText text={title} />
-        </h1>
+        <h1 className={person ? "person-title" : undefined}>{title}</h1>
         {children}
       </div>
       {lead ? <p className="page-lead">{lead}</p> : null}

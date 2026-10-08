@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatEatLongDate } from "../../shared/format";
 import { IconShare } from "../components/ig-icons";
-import { KineticText } from "../components/KineticText";
 import { PaperAlmanac } from "../components/PaperAlmanac";
 import { api } from "../lib/api";
 import { DEFAULT_SHARE_IMAGE, publicPostPath, publicPostUrl, shareUrl } from "../lib/blog-share";
@@ -70,7 +69,7 @@ export function PublicPostsPage() {
             </p>
             <h2 className="paper-headline">
               <Link to={publicPostPath(lead.slug)} onClick={() => trackBlog("click", lead.id)}>
-                <KineticText text={lead.title} />
+                {lead.title}
               </Link>
             </h2>
             <p className="paper-byline">{postedOn(lead) ? `${postedOn(lead)} · A public paper` : "A public paper"}</p>
@@ -103,7 +102,7 @@ export function PublicPostsPage() {
       {briefs.length ? (
         <section className="paper-briefs" aria-labelledby="briefs-title">
           <h2 id="briefs-title" className="paper-section-head">
-            <KineticText text="In this issue" />
+            In this issue
           </h2>
           {briefs.map((post) => (
             <article key={post.id} className="paper-brief">

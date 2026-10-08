@@ -6,8 +6,6 @@ import { HadithBackdrop } from "../components/HadithBackdrop";
 import { HadithNotes } from "../components/HadithNotes";
 import { HijriDate } from "../components/HijriDate";
 import { BookIcon, ChevronLeftIcon, ChevronRightIcon, PenIcon, QuranIcon } from "../components/Motifs";
-import { KineticText } from "../components/KineticText";
-import { PresenceIsland } from "../components/PresenceIsland";
 import { Notice } from "../components/ui";
 import { loadDashboard, peekDashboard } from "../lib/dashboard";
 import {
@@ -21,7 +19,7 @@ import { useCountUp } from "../lib/use-count-up";
 import type { DashboardTotals } from "../types";
 
 export function DashboardPage() {
-  const { settings, daily, keepers } = useOutletContext<WorkspaceContext>();
+  const { settings, daily } = useOutletContext<WorkspaceContext>();
   const [totals, setTotals] = useState<DashboardTotals | null>(peekDashboard);
   const [error, setError] = useState("");
   const today = eatDate();
@@ -78,7 +76,6 @@ export function DashboardPage() {
 
   return (
     <>
-      <PresenceIsland keepers={keepers} />
       <section className="hero">
         <p className="eyebrow kicker-icon">
           <QuranIcon /> Today at a glance
@@ -97,9 +94,7 @@ export function DashboardPage() {
       {error ? <Notice>{error}</Notice> : null}
       <section className="desk-section" aria-labelledby="accounts-heading">
         <header className="desk-section-head">
-          <h2 id="accounts-heading">
-            <KineticText text="Accounts" />
-          </h2>
+          <h2 id="accounts-heading">Accounts</h2>
           <p>{books}</p>
         </header>
         <div className="board" aria-busy={!totals && !error} aria-live="polite">
@@ -134,9 +129,7 @@ export function DashboardPage() {
       </section>
       <section className="desk-section" aria-labelledby="roll-heading">
         <header className="desk-section-head">
-          <h2 id="roll-heading">
-            <KineticText text="The roll" />
-          </h2>
+          <h2 id="roll-heading">The roll</h2>
           <p>Morning and evening</p>
         </header>
         <div className="board board-roll">
@@ -197,9 +190,7 @@ export function DashboardPage() {
         </div>
         {viewing ? (
           <>
-            <h2 id="hadith-of-the-day">
-              <KineticText text={viewing.hadith.chapter.replace(/^Chapter:\s*/, "")} />
-            </h2>
+            <h2 id="hadith-of-the-day">{viewing.hadith.chapter.replace(/^Chapter:\s*/, "")}</h2>
             <p className="arabic-line">{viewing.hadith.chapterArabic}</p>
             <p className="narrator">{viewing.hadith.narrator}</p>
             <p className="hadith-body">{viewing.hadith.english}</p>
@@ -209,9 +200,7 @@ export function DashboardPage() {
             </p>
           </>
         ) : (
-          <h2 id="hadith-of-the-day">
-            <KineticText text="Today's reading is on its way" />
-          </h2>
+          <h2 id="hadith-of-the-day">Today&rsquo;s reading is on its way</h2>
         )}
       </section>
     </>

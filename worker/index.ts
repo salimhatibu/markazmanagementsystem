@@ -12,6 +12,7 @@ import {
 
 import dashboard from "./api/dashboard";
 import students from "./api/students";
+import classes from "./api/classes";
 import student from "./api/student";
 import feePayments from "./api/fee-payments";
 import balanceAlert from "./api/balance-alert";

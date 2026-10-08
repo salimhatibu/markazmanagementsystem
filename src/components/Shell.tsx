@@ -38,8 +38,8 @@ import {
   NavPeopleIcon,
   NavTripsIcon,
 } from "./Motifs";
-import { KineticText } from "./KineticText";
 import { PageSlide } from "./PageSlide";
+import { PresenceIsland } from "./PresenceIsland";
 
 export type WorkspaceContext = {
   settings: Settings;
@@ -248,9 +248,7 @@ export function Shell() {
       <aside className={`side${menuOpen ? " is-open" : ""}`} data-guide="nav">
         <NavLink to="/" className="brand" end data-guide="brand">
           <span className="logo-text">
-            <span className="a">
-              <KineticText text={brand} />
-            </span>
+            <span className="a">{brand}</span>
             <span className="b">Imam ash-Shafi&rsquo;i</span>
           </span>
         </NavLink>
@@ -269,7 +267,13 @@ export function Shell() {
                     onClick={() => setMenuOpen(false)}
                   >
                     <Icon />
-                    {link.label}
+                    <span className="nav-motion">
+                      {[...link.label].map((ch, index) => (
+                        <span key={`${link.to}-${index}`} className="nav-ch" style={{ ["--i" as string]: index }}>
+                          {ch === " " ? "\u00A0" : ch}
+                        </span>
+                      ))}
+                    </span>
                   </NavLink>
                 );
               })}
@@ -289,6 +293,7 @@ export function Shell() {
           >
             {menuOpen ? <CloseIcon /> : <MenuIcon />}
           </button>
+          <PresenceIsland keepers={keepers} />
           <div className="top-actions">
             {unread > 0 ? (
               <NavLink to="/reports" className="alert-pill">

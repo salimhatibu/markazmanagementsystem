@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { KineticText } from "../components/KineticText";
 import { api } from "../lib/api";
 import { publicPostPath, publicShelfPath } from "../lib/blog-share";
 import { blogSessionId, trackBlog } from "../lib/blog-track";
@@ -36,7 +35,7 @@ export function PublicSavedPage() {
       <header className="paper-series-head">
         <p className="paper-section-kicker">Kept</p>
         <h2 id="saved-title" className="paper-headline">
-          <KineticText text="Saved papers" />
+          Saved papers
         </h2>
         <p className="paper-byline">These stay with this browser. Another device has its own list.</p>
       </header>
