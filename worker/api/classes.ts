@@ -1,4 +1,4 @@
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "../../db/index";
 import { schoolClasses, students } from "../../db/schema";
 import { requireAdmin } from "../_shared/auth";
@@ -74,11 +74,18 @@ export default async (req: Request, context: { params: Record<string, string> })
       if (id == null) return fail("Choose a student.", 400);
       const [student] = await db.select().from(students).where(eq(students.id, id)).limit(1);
       if (!student) return fail("Student not found.", 404);
+      if (student.classId != null) return fail("This student is already assigned to a class.", 400);
       await db.update(students).set({ classId, updatedAt: new Date().toISOString() }).where(eq(students.id, id));
       return json({ ok: true });
     }
 
     if (req.method === "DELETE" && studentId != null) {
+      const [membership] = await db
+        .select({ id: students.id })
+        .from(students)
+        .where(and(eq(students.id, studentId), eq(students.classId, classId)))
+        .limit(1);
+      if (!membership) return fail("Student is not in this class.", 404);
       await db
         .update(students)
         .set({ classId: null, updatedAt: new Date().toISOString() })
