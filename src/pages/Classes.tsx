@@ -70,8 +70,8 @@ export function ClassesPage() {
   }, [id]);
 
   const availableStudents = useMemo(
-    () => students.filter((student) => student.classId == null),
-    [students],
+    () => students.filter((student) => student.classId !== current?.id),
+    [current?.id, students],
   );
 
   async function create(event: FormEvent) {
@@ -272,10 +272,11 @@ export function ClassesPage() {
                         onChange={(event) => setStudentId(event.target.value)}
                         required
                       >
-                        <option value="">Choose an unassigned student</option>
+                        <option value="">Choose a student to add</option>
                         {availableStudents.map((student) => (
                           <option key={student.id} value={student.id}>
                             {student.name} · {student.admissionNumber}
+                            {student.className ? ` · Move from ${student.className}` : ""}
                           </option>
                         ))}
                       </select>
@@ -288,7 +289,7 @@ export function ClassesPage() {
                   <p className="field-hint">
                     {students.length === 0
                       ? "There are no students on the student list yet."
-                      : "All students are already assigned to a class."}
+                      : "All students are already in this class."}
                   </p>
                 )}
               </Panel>

@@ -12,6 +12,12 @@ function asScope(value: unknown): ReceiptScope | null {
   return null;
 }
 
+function asSection(value: unknown): "all" | "morning" | "evening" | null {
+  if (value === undefined || value === "all") return "all";
+  if (value === "morning" || value === "evening") return value;
+  return null;
+}
+
 export default async (req: Request, context: Context) => {
   const denied = await requireAdmin();
   if (denied) return denied;
@@ -27,12 +33,18 @@ export default async (req: Request, context: Context) => {
     }
 
     if (req.method === "GET") {
-      const scope = asScope(new URL(req.url).searchParams.get("scope"));
-      if (scope) return json(await feeReceiptPreview(scope));
+      const url = new URL(req.url);
+      const scope = asScope(url.searchParams.get("scope"));
+      if (scope) {
+        const section = asSection(url.searchParams.get("section") ?? "all");
+        if (section == null) return fail("Section must be all, morning, or evening.", 400);
+        return json(await feeReceiptPreview(scope, new Date(), section));
+      }
       const rows = await db
         .select({
           id: reports.id,
           period: reports.period,
+          section: reports.section,
           rangeStart: reports.rangeStart,
           rangeEnd: reports.rangeEnd,
           createdAt: reports.createdAt,
@@ -43,6 +55,7 @@ export default async (req: Request, context: Context) => {
         reports: rows.map((row) => ({
           id: row.id,
           period: row.period,
+          section: row.section,
           rangeStart: row.rangeStart,
           rangeEnd: row.rangeEnd,
           createdAt: asIso(row.createdAt),
@@ -57,7 +70,9 @@ export default async (req: Request, context: Context) => {
         return fail("Period must be biweekly or monthly.", 400);
       }
       const scope = asScope(body?.scope) ?? (period === "biweekly" ? "biweekly" : "monthly");
-      const report = await generateOperationsReport(period, new Date(), scope);
+      const section = asSection(body?.section);
+      if (section == null) return fail("Section must be all, morning, or evening.", 400);
+      const report = await generateOperationsReport(period, new Date(), scope, section);
       return json({ report }, report.created ? 201 : 200);
     }
 
@@ -66,4 +81,3 @@ export default async (req: Request, context: Context) => {
     return handleError(error);
   }
 };
-
