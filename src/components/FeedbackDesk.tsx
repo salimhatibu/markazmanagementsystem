@@ -43,7 +43,7 @@ export function FeedbackDesk() {
       await api("/api/feedback", { method: "POST", body: JSON.stringify({ kind, body }) });
       setBody("");
       setKind("query");
-      setInfo("Saved. It will stay on the list until it is confirmed or cancelled.");
+      setInfo("Saved. It will stay on the list until it is confirmed or rejected.");
       await load();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "That note could not be saved.");
@@ -124,7 +124,7 @@ export function FeedbackDesk() {
                     <p className="feedback-done-note">Confirmed {formatEat(ticket.doneAt)}</p>
                   ) : null}
                   {ticket.cancelled && ticket.cancelledAt ? (
-                    <p className="feedback-cancelled-note">Cancelled {formatEat(ticket.cancelledAt)}</p>
+                    <p className="feedback-cancelled-note">Read and rejected {formatEat(ticket.cancelledAt)}</p>
                   ) : null}
                 </div>
                 <div className="feedback-ticket-actions">
@@ -143,8 +143,9 @@ export function FeedbackDesk() {
                   <button
                     type="button"
                     className={`feedback-ticket-action${ticket.cancelled ? " is-selected-cancelled" : " is-cancel"}`}
-                    aria-label={ticket.cancelled ? `Restore ${ticket.kind}` : `Cancel ${ticket.kind}`}
-                    title={ticket.cancelled ? "Restore" : "Cancel"}
+                    aria-label={ticket.cancelled ? `Restore rejected ${ticket.kind}` : `Mark ${ticket.kind} as read and rejected`}
+                    aria-pressed={ticket.cancelled}
+                    title={ticket.cancelled ? "Restore" : "Reject"}
                     disabled={busy}
                     onClick={() =>
                       void updateTicket(ticket, { done: false, cancelled: !ticket.cancelled })
