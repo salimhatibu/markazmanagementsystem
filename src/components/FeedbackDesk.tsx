@@ -32,7 +32,7 @@ export function FeedbackDesk() {
     );
   }, [open]);
 
-  const openCount = tickets.filter((ticket) => !ticket.done).length;
+  const openCount = tickets.filter((ticket) => !ticket.done && !ticket.cancelled).length;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -43,7 +43,7 @@ export function FeedbackDesk() {
       await api("/api/feedback", { method: "POST", body: JSON.stringify({ kind, body }) });
       setBody("");
       setKind("query");
-      setInfo("Saved. It will stay on the list until someone marks it done.");
+      setInfo("Saved. It will stay on the list until it is confirmed or rejected.");
       await load();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "That note could not be saved.");
@@ -52,31 +52,17 @@ export function FeedbackDesk() {
     }
   }
 
-  async function setDone(ticket: FeedbackTicket, done: boolean) {
+  async function updateTicket(ticket: FeedbackTicket, update: { done: boolean; cancelled: boolean }) {
     setBusy(true);
     setError("");
     try {
       await api(`/api/feedback/${ticket.id}`, {
         method: "PUT",
-        body: JSON.stringify({ done }),
+        body: JSON.stringify(update),
       });
       await load();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "That ticket could not be updated.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function cancel(ticket: FeedbackTicket) {
-    setBusy(true);
-    setError("");
-    setInfo("");
-    try {
-      await api(`/api/feedback/${ticket.id}`, { method: "DELETE" });
-      await load();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "That query could not be cancelled.");
     } finally {
       setBusy(false);
     }
@@ -125,7 +111,7 @@ export function FeedbackDesk() {
             {tickets.map((ticket) => (
               <article
                 key={ticket.id}
-                className={`feedback-ticket${ticket.done ? " is-done" : ""}`}
+                className={`feedback-ticket${ticket.done ? " is-done" : ""}${ticket.cancelled ? " is-cancelled" : ""}`}
                 role="listitem"
               >
                 <div className="feedback-ticket-body">
@@ -137,25 +123,33 @@ export function FeedbackDesk() {
                   {ticket.done && ticket.doneAt ? (
                     <p className="feedback-done-note">Confirmed {formatEat(ticket.doneAt)}</p>
                   ) : null}
+                  {ticket.cancelled && ticket.cancelledAt ? (
+                    <p className="feedback-cancelled-note">Read and rejected {formatEat(ticket.cancelledAt)}</p>
+                  ) : null}
                 </div>
                 <div className="feedback-ticket-actions">
                   <button
                     type="button"
-                    className="feedback-ticket-action is-done"
-                    aria-label={ticket.done ? `Reopen ${ticket.kind}` : `Accept ${ticket.kind}`}
-                    title={ticket.done ? "Reopen" : "Accept"}
+                    className={`feedback-ticket-action${ticket.done ? " is-selected" : " is-done"}`}
+                    aria-label={ticket.done ? `Reopen ${ticket.kind}` : `Confirm ${ticket.kind}`}
+                    title={ticket.done ? "Reopen" : "Confirm"}
                     disabled={busy}
-                    onClick={() => void setDone(ticket, !ticket.done)}
+                    onClick={() =>
+                      void updateTicket(ticket, { done: !ticket.done, cancelled: false })
+                    }
                   >
                     ✓
                   </button>
                   <button
                     type="button"
-                    className="feedback-ticket-action is-cancel"
-                    aria-label={`Cancel ${ticket.kind}`}
-                    title="Cancel"
+                    className={`feedback-ticket-action${ticket.cancelled ? " is-selected-cancelled" : " is-cancel"}`}
+                    aria-label={ticket.cancelled ? `Restore rejected ${ticket.kind}` : `Mark ${ticket.kind} as read and rejected`}
+                    aria-pressed={ticket.cancelled}
+                    title={ticket.cancelled ? "Restore" : "Reject"}
                     disabled={busy}
-                    onClick={() => void cancel(ticket)}
+                    onClick={() =>
+                      void updateTicket(ticket, { done: false, cancelled: !ticket.cancelled })
+                    }
                   >
                     ×
                   </button>

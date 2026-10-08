@@ -983,6 +983,21 @@ a.solid, a.ghost {
   gap: 20px;
 }
 
+.page-header-row > h1 { min-width: 0; }
+
+.class-page-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.class-page-actions .ghost {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 @media (min-width: 900px) {
   .page-header {
     display: grid;
@@ -2621,6 +2636,17 @@ legend { padding: 0 8px; color: var(--mute); }
   text-decoration: line-through;
 }
 
+.feedback-ticket.is-cancelled {
+  border-color: color-mix(in srgb, #b42318 36%, var(--line));
+  background: color-mix(in srgb, #b42318 5%, var(--card-soft));
+}
+
+.feedback-ticket.is-cancelled .feedback-ticket-body p:not(.feedback-meta):not(.feedback-cancelled-note) {
+  color: #9b2018;
+  text-decoration: line-through;
+  text-decoration-color: #b42318;
+}
+
 .feedback-ticket-actions {
   display: flex;
   gap: 4px;
@@ -2643,7 +2669,18 @@ legend { padding: 0 8px; color: var(--mute); }
 
 .feedback-ticket-action.is-done { color: var(--green); }
 .feedback-ticket-action.is-cancel { color: #a33; }
+.feedback-ticket-action.is-selected { background: color-mix(in srgb, var(--green) 12%, var(--card)); }
+.feedback-ticket-action.is-selected-cancelled {
+  background: color-mix(in srgb, #b42318 12%, var(--card));
+  color: #b42318;
+}
 .feedback-ticket-action:disabled { opacity: 0.5; cursor: wait; }
+.feedback-cancelled-note {
+  margin-top: 6px !important;
+  color: #b42318 !important;
+  font-size: 12px !important;
+  font-weight: 600;
+}
 
 .class-create-panel,
 .class-assign-panel { margin-top: 0; }
@@ -2697,6 +2734,35 @@ legend { padding: 0 8px; color: var(--mute); }
   gap: 10px;
 }
 
+.student-class-groups {
+  display: grid;
+  gap: 28px;
+}
+
+.student-class-group {
+  min-width: 0;
+}
+
+.student-class-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 10px;
+}
+
+.student-class-heading h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+}
+
+.student-class-heading p {
+  margin: 0;
+  color: var(--mute);
+  font-size: 13px;
+}
+
 .class-list-item {
   display: flex;
   align-items: center;
@@ -2735,12 +2801,22 @@ legend { padding: 0 8px; color: var(--mute); }
 
 .class-remove:disabled { opacity: 0.5; cursor: wait; }
 
+.class-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 28px;
+}
+
+.class-delete-button { color: #a33; }
+
 @media (max-width: 640px) {
   .class-create-form,
   .class-assign-form {
     align-items: stretch;
     flex-direction: column;
   }
+
+  .student-class-heading { align-items: flex-start; flex-direction: column; }
 }
 
 .feedback-ticket-body p {

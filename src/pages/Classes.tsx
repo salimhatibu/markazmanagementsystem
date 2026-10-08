@@ -3,7 +3,16 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { StudentForm } from "../components/StudentForm";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api } from "../lib/api";
-import { emptyStudent, type Class as ClassSummary, type Student, type StudentInput } from "../types";
+import {
+  emptyClass,
+  emptyStudent,
+  type Class as ClassSummary,
+  type ClassInput,
+  type Student,
+  type StudentInput,
+} from "../types";
+
+type TeacherOption = { id: number; name: string };
 
 type ClassDetail = Omit<ClassSummary, "students"> & {
   students: Student[];
@@ -15,7 +24,10 @@ export function ClassesPage() {
   const [classes, setClasses] = useState<ClassSummary[]>([]);
   const [current, setCurrent] = useState<ClassDetail | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
-  const [name, setName] = useState("");
+  const [teachers, setTeachers] = useState<TeacherOption[]>([]);
+  const [draft, setDraft] = useState<ClassInput>(emptyClass());
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [studentId, setStudentId] = useState("");
   const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [studentDraft, setStudentDraft] = useState<StudentInput>(emptyStudent());
@@ -24,18 +36,25 @@ export function ClassesPage() {
   const [ready, setReady] = useState(false);
 
   async function loadList() {
-    const body = await api<{ classes: ClassSummary[] }>("/api/classes");
+    const [body, roster] = await Promise.all([
+      api<{ classes: ClassSummary[] }>("/api/classes"),
+      api<{ teachers: TeacherOption[] }>("/api/teachers"),
+    ]);
     setClasses(body.classes);
+    setTeachers(roster.teachers);
     setReady(true);
   }
 
   async function loadDetail(classId: string) {
-    const [detail, roster] = await Promise.all([
+    const [detail, roster, teacherRoster] = await Promise.all([
       api<{ class: ClassSummary; students: Student[] }>(`/api/classes/${classId}`),
       api<{ students: Student[] }>("/api/students"),
+      api<{ teachers: TeacherOption[] }>("/api/teachers"),
     ]);
     setCurrent({ ...detail.class, students: detail.students });
     setStudents(roster.students);
+    setTeachers(teacherRoster.teachers);
+    setDraft({ name: detail.class.name, teacherId: detail.class.teacherId });
     setReady(true);
   }
 
@@ -57,19 +76,54 @@ export function ClassesPage() {
 
   async function create(event: FormEvent) {
     event.preventDefault();
-    if (!name.trim()) return;
+    if (!draft.name.trim()) return;
     setBusy(true);
     setError("");
     try {
       const body = await api<{ class: ClassSummary }>("/api/classes", {
         method: "POST",
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(draft),
       });
-      setName("");
+      setDraft(emptyClass());
       await loadList();
       navigate(`/classes/${body.class.id}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The class could not be created.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveClass(event: FormEvent) {
+    event.preventDefault();
+    if (!id || !draft.name.trim()) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api(`/api/classes/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(draft),
+      });
+      setEditing(false);
+      await loadDetail(id);
+      await loadList();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The class could not be updated.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteClass() {
+    if (!id) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api(`/api/classes/${id}`, { method: "DELETE" });
+      await loadList();
+      navigate("/classes");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The class could not be deleted.");
     } finally {
       setBusy(false);
     }
@@ -135,9 +189,16 @@ export function ClassesPage() {
       <PageHeader
         kicker="Records"
         title={current ? current.name : "Classes"}
-        lead={current ? "Manage the students assigned to this class." : "Create teaching groups and manage their student lists."}
+        lead={current ? `Manage students${current.teacherName ? ` taught by ${current.teacherName}` : ""} in this class.` : "Create teaching groups, assign teachers, and manage student lists."}
       >
-        {current ? <Link className="ghost" to="/classes">All classes</Link> : null}
+        {current ? (
+          <div className="class-page-actions">
+            <Link className="ghost" to="/classes">All classes</Link>
+            <button type="button" className="ghost" onClick={() => setEditing((value) => !value)}>
+              {editing ? "Cancel edit" : "Edit class"}
+            </button>
+          </div>
+        ) : null}
       </PageHeader>
       {error ? <Notice>{error}</Notice> : null}
 
@@ -146,6 +207,39 @@ export function ClassesPage() {
           {!ready && !error ? <p className="loading-line">Opening this class…</p> : null}
           {ready && current ? (
             <>
+              {editing ? (
+                <Panel tone="light" className="class-create-panel">
+                  <p className="panel-title">Edit class</p>
+                  <form className="class-create-form" onSubmit={(event) => void saveClass(event)}>
+                    <Field id="edit-class-name" label="Class name">
+                      <input
+                        id="edit-class-name"
+                        value={draft.name}
+                        onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+                        maxLength={80}
+                        required
+                      />
+                    </Field>
+                    <Field id="edit-class-teacher" label="Teacher">
+                      <select
+                        id="edit-class-teacher"
+                        value={draft.teacherId ?? ""}
+                        onChange={(event) =>
+                          setDraft({ ...draft, teacherId: event.target.value ? Number(event.target.value) : null })
+                        }
+                      >
+                        <option value="">No teacher assigned</option>
+                        {teachers.map((teacher) => (
+                          <option key={teacher.id} value={teacher.id}>{teacher.name}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <button type="submit" className="solid" disabled={busy || !draft.name.trim()}>
+                      {busy ? "Saving…" : "Save class"}
+                    </button>
+                  </form>
+                </Panel>
+              ) : null}
               <Panel tone="light" className="class-assign-panel">
                 <div className="class-assign-head">
                   <p className="panel-title">Add a student</p>
@@ -165,6 +259,7 @@ export function ClassesPage() {
                     onSubmit={() => void createAndAssignStudent()}
                     submitLabel="Create student in this class"
                     busy={busy}
+                    classes={current ? [current] : []}
                   />
                 ) : null}
                 <p className="field-hint class-existing-student-label">Or add an existing student</p>
@@ -227,6 +322,25 @@ export function ClassesPage() {
                   </table>
                 </div>
               )}
+              <div className="class-delete-actions">
+                {confirmDelete ? (
+                  <div className="confirm-box" role="group" aria-label="Confirm class deletion">
+                    <p>
+                      Delete {current.name}? Its students will remain in the student list, unassigned to a class.
+                    </p>
+                    <button type="button" className="solid" disabled={busy} onClick={() => void deleteClass()}>
+                      {busy ? "Deleting…" : "Yes, delete class"}
+                    </button>
+                    <button type="button" className="ghost" disabled={busy} onClick={() => setConfirmDelete(false)}>
+                      Keep class
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" className="text-button class-delete-button" onClick={() => setConfirmDelete(true)}>
+                    Delete this class
+                  </button>
+                )}
+              </div>
             </>
           ) : null}
         </>
@@ -238,14 +352,28 @@ export function ClassesPage() {
               <Field id="class-name" label="Class name">
                 <input
                   id="class-name"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
+                  value={draft.name}
+                  onChange={(event) => setDraft({ ...draft, name: event.target.value })}
                   maxLength={80}
                   placeholder="e.g. Qur’an class"
                   required
                 />
               </Field>
-              <button type="submit" className="solid" disabled={busy || !name.trim()}>
+              <Field id="class-teacher" label="Teacher">
+                <select
+                  id="class-teacher"
+                  value={draft.teacherId ?? ""}
+                  onChange={(event) =>
+                    setDraft({ ...draft, teacherId: event.target.value ? Number(event.target.value) : null })
+                  }
+                >
+                  <option value="">No teacher assigned</option>
+                  {teachers.map((teacher) => (
+                    <option key={teacher.id} value={teacher.id}>{teacher.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <button type="submit" className="solid" disabled={busy || !draft.name.trim()}>
                 {busy ? "Saving…" : "Create class"}
               </button>
             </form>
@@ -264,7 +392,10 @@ export function ClassesPage() {
                 <Link key={schoolClass.id} className="class-list-item" to={`/classes/${schoolClass.id}`}>
                   <span>
                     <strong>{schoolClass.name}</strong>
-                    <small>{schoolClass.students} {schoolClass.students === 1 ? "student" : "students"}</small>
+                    <small>
+                      {schoolClass.teacherName ? `${schoolClass.teacherName} · ` : ""}
+                      {schoolClass.students} {schoolClass.students === 1 ? "student" : "students"}
+                    </small>
                   </span>
                   <span className="class-list-arrow" aria-hidden="true">›</span>
                 </Link>

@@ -13,6 +13,8 @@ function present(row: typeof feedbackTickets.$inferSelect) {
     body: row.body,
     done: Boolean(row.done),
     doneAt: row.doneAt ? asIso(row.doneAt) : null,
+    cancelled: Boolean(row.cancelled),
+    cancelledAt: row.cancelledAt ? asIso(row.cancelledAt) : null,
     createdAt: asIso(row.createdAt),
   };
 }
@@ -25,7 +27,7 @@ export default async (req: Request, context: Context) => {
       const rows = await db
         .select()
         .from(feedbackTickets)
-        .orderBy(asc(feedbackTickets.done), desc(feedbackTickets.createdAt));
+        .orderBy(asc(feedbackTickets.done), asc(feedbackTickets.cancelled), desc(feedbackTickets.createdAt));
       return json({ tickets: rows.map(present) });
     }
 
@@ -42,26 +44,48 @@ export default async (req: Request, context: Context) => {
       if (id == null) return fail("Ticket not found.", 404);
       const body = await readBody(req);
       if (!body) return fail("Request body must be an object.", 400);
-      const done = parseBoolean(body.done, "Done");
       const [existing] = await db.select().from(feedbackTickets).where(eq(feedbackTickets.id, id)).limit(1);
       if (!existing) return fail("Ticket not found.", 404);
+      const done = body.done === undefined ? existing.done : parseBoolean(body.done, "Done");
+      const cancelled =
+        body.cancelled === undefined ? existing.cancelled : parseBoolean(body.cancelled, "Cancelled");
+      if (body.done !== undefined && body.cancelled === undefined && done) {
+        const [updated] = await db
+          .update(feedbackTickets)
+          .set({
+            done: true,
+            doneAt: existing.doneAt ?? new Date().toISOString(),
+            cancelled: false,
+            cancelledAt: null,
+          })
+          .where(eq(feedbackTickets.id, id))
+          .returning();
+        return json({ ticket: present(updated) });
+      }
+      if (body.cancelled !== undefined && cancelled) {
+        const [updated] = await db
+          .update(feedbackTickets)
+          .set({
+            done: false,
+            doneAt: null,
+            cancelled: true,
+            cancelledAt: existing.cancelledAt ?? new Date().toISOString(),
+          })
+          .where(eq(feedbackTickets.id, id))
+          .returning();
+        return json({ ticket: present(updated) });
+      }
       const [updated] = await db
         .update(feedbackTickets)
         .set({
           done,
           doneAt: done ? existing.doneAt ?? new Date().toISOString() : null,
+          cancelled: false,
+          cancelledAt: null,
         })
         .where(eq(feedbackTickets.id, id))
         .returning();
       return json({ ticket: present(updated) });
-    }
-
-    if (req.method === "DELETE") {
-      const id = parseId(context.params.id);
-      if (id == null) return fail("Ticket not found.", 404);
-      const [removed] = await db.delete(feedbackTickets).where(eq(feedbackTickets.id, id)).returning();
-      if (!removed) return fail("Ticket not found.", 404);
-      return json({ ok: true });
     }
 
     return fail("Method not allowed.", 405);
