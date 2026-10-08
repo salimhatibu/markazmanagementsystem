@@ -39,6 +39,32 @@
     "ADMIN_HOST": "admin.mysalafimindset.com",
     "SITE_URL": "https://thesalafimindset.com"
   },
+  "previews": {
+    "vars": {
+      "DEV_OPEN_DESK": "0",
+      "PUBLIC_HOST": "preview.invalid",
+      "ADMIN_HOST": "admin.preview.invalid",
+      "SITE_URL": "https://preview.invalid"
+    },
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "markaz-preview",
+        "migrations_dir": "migrations"
+      }
+    ],
+    "r2_buckets": [
+      {
+        "binding": "REPORTS"
+      },
+      {
+        "binding": "BLOG_MEDIA"
+      }
+    ],
+    "ai": {
+      "binding": "AI"
+    }
+  },
   "ai": {
     "binding": "AI"
   },
