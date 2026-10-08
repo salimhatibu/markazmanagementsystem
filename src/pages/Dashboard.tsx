@@ -70,7 +70,8 @@ export function DashboardPage() {
   const outstanding = useCountUp(totals?.outstanding ?? 0, 1050, 2);
   const morningStudents = useCountUp(totals?.morningStudents ?? 0, 800);
   const eveningStudents = useCountUp(totals?.eveningStudents ?? 0, 900);
-  const teachers = useCountUp(totals?.teachers ?? 0, 850);
+  const morningTeachers = useCountUp(totals?.morningTeachers ?? 0, 850);
+  const eveningTeachers = useCountUp(totals?.eveningTeachers ?? 0, 950);
   const feesCollected = useCountUp(totals?.feesCollected ?? 0, 1200, 2);
   const expenses = useCountUp(totals?.expenses ?? 0, 1000, 2);
 
@@ -129,28 +130,37 @@ export function DashboardPage() {
       </section>
       <section className="desk-section" aria-labelledby="roll-heading">
         <header className="desk-section-head">
-          <h2 id="roll-heading">The roll</h2>
-          <p>Morning and evening</p>
+          <h2 id="roll-heading">Teaching sections</h2>
+          <p>Student and teacher totals</p>
         </header>
-        <div className="board board-roll">
+        <div className="board board-roll board-sections">
           <article className="stat">
-            <p className="kicker">Students</p>
-            <div className="split">
+            <p className="kicker">Tahfeedh · Morning</p>
+            <div className="section-roll">
               <div>
-                <p className="kicker">Morning</p>
+                <p className="kicker">Students</p>
                 <p className="figure">{ready ? morningStudents : "—"}</p>
               </div>
               <div>
-                <p className="kicker">Evening</p>
-                <p className="figure">{ready ? eveningStudents : "—"}</p>
+                <p className="kicker">Teachers</p>
+                <p className="figure">{ready ? morningTeachers : "—"}</p>
               </div>
             </div>
-            <p className="stat-note">Enrolled on the two sittings</p>
+            <p className="stat-note">Teachers assigned to morning or both sections</p>
           </article>
           <article className="stat">
-            <p className="kicker">Teachers</p>
-            <p className="figure">{ready ? teachers : "—"}</p>
-            <p className="stat-note">On the teaching roll</p>
+            <p className="kicker">Taaleem · Evening</p>
+            <div className="section-roll">
+              <div>
+                <p className="kicker">Students</p>
+                <p className="figure">{ready ? eveningStudents : "—"}</p>
+              </div>
+              <div>
+                <p className="kicker">Teachers</p>
+                <p className="figure">{ready ? eveningTeachers : "—"}</p>
+              </div>
+            </div>
+            <p className="stat-note">Teachers assigned to evening or both sections</p>
           </article>
         </div>
       </section>

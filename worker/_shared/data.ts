@@ -271,6 +271,8 @@ export async function loadDashboardTotals(now = new Date()) {
         (SELECT COUNT(*) FROM students WHERE section = 'morning') AS morning_students,
         (SELECT COUNT(*) FROM students WHERE section = 'evening') AS evening_students,
         (SELECT COUNT(*) FROM teachers) AS teachers,
+        (SELECT COUNT(*) FROM teachers WHERE section IN ('morning', 'both')) AS morning_teachers,
+        (SELECT COUNT(*) FROM teachers WHERE section IN ('evening', 'both')) AS evening_teachers,
         COALESCE((
           SELECT SUM(
             CASE
@@ -297,6 +299,8 @@ export async function loadDashboardTotals(now = new Date()) {
     morningStudents: intFrom(row.morning_students ?? row.morningStudents),
     eveningStudents: intFrom(row.evening_students ?? row.eveningStudents),
     teachers: intFrom(row.teachers),
+    morningTeachers: intFrom(row.morning_teachers ?? row.morningTeachers),
+    eveningTeachers: intFrom(row.evening_teachers ?? row.eveningTeachers),
     feesCollected,
     salariesPaid,
     expenses: expensesTotal,
