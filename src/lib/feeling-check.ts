@@ -10,7 +10,7 @@ const SESSION_KEY = "markaz_feeling_session_start";
 const ASKED_KEY = "markaz_feeling_asked";
 const SEEN_PREFIX = "markaz_verse_seen_";
 const INTERVAL_MS = 30 * 60 * 1000;
-const MAX_ASKS_PER_DAY = 2;
+const MAX_ASKS_PER_DAY = 3;
 
 export const FEELING_PROMPTS = [
   "Hey — how are you feeling today?",
@@ -21,7 +21,8 @@ export const FEELING_PROMPTS = [
   "Hey, it's KFC here. Checking in — how are things with you today?",
   "Meemy. How are you feeling this hour?",
   "A soft question for you: how is your heart today?",
-];
+  "I'm still here with you, so how you holding up so far?",
+  ];
 
 export type FeelingAnswer = "good" | "down" | "other";
 
