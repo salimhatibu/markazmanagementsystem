@@ -15,17 +15,20 @@
       "binding": "DB",
       "database_name": "markaz",
       "database_id": "604c7d61-ddc1-4ca9-9ada-59d2bc9333ba",
+      "preview_database_id": "3f9bef1b-2cca-4691-b50d-124034b9ef6c",
       "migrations_dir": "migrations"
     }
   ],
   "r2_buckets": [
     {
       "binding": "REPORTS",
-      "bucket_name": "markaz-reports"
+      "bucket_name": "markaz-reports",
+      "preview_bucket_name": "markaz-reports-preview"
     },
     {
       "binding": "BLOG_MEDIA",
-      "bucket_name": "markaz-blog"
+      "bucket_name": "markaz-blog",
+      "preview_bucket_name": "markaz-blog-preview"
     }
   ],
   "triggers": {
@@ -50,15 +53,18 @@
       {
         "binding": "DB",
         "database_name": "markaz-preview",
+        "database_id": "3f9bef1b-2cca-4691-b50d-124034b9ef6c",
         "migrations_dir": "migrations"
       }
     ],
     "r2_buckets": [
       {
-        "binding": "REPORTS"
+        "binding": "REPORTS",
+        "bucket_name": "markaz-reports-preview"
       },
       {
-        "binding": "BLOG_MEDIA"
+        "binding": "BLOG_MEDIA",
+        "bucket_name": "markaz-blog-preview"
       }
     ],
   },
