@@ -68,6 +68,20 @@ export function FeedbackDesk() {
     }
   }
 
+  async function cancel(ticket: FeedbackTicket) {
+    setBusy(true);
+    setError("");
+    setInfo("");
+    try {
+      await api(`/api/feedback/${ticket.id}`, { method: "DELETE" });
+      await load();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "That query could not be cancelled.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className={`feedback-desk${open ? " is-open" : ""}`}>
       {open ? (
@@ -114,15 +128,6 @@ export function FeedbackDesk() {
                 className={`feedback-ticket${ticket.done ? " is-done" : ""}`}
                 role="listitem"
               >
-                <label className="feedback-done">
-                  <input
-                    type="checkbox"
-                    checked={ticket.done}
-                    disabled={busy}
-                    onChange={(event) => void setDone(ticket, event.target.checked)}
-                  />
-                  <span className="sr-only">Mark ticket done</span>
-                </label>
                 <div className="feedback-ticket-body">
                   <p className="feedback-meta">
                     <span>{ticket.kind === "suggestion" ? "Suggestion" : "Query"}</span>
@@ -132,6 +137,28 @@ export function FeedbackDesk() {
                   {ticket.done && ticket.doneAt ? (
                     <p className="feedback-done-note">Confirmed {formatEat(ticket.doneAt)}</p>
                   ) : null}
+                </div>
+                <div className="feedback-ticket-actions">
+                  <button
+                    type="button"
+                    className="feedback-ticket-action is-done"
+                    aria-label={ticket.done ? `Reopen ${ticket.kind}` : `Accept ${ticket.kind}`}
+                    title={ticket.done ? "Reopen" : "Accept"}
+                    disabled={busy}
+                    onClick={() => void setDone(ticket, !ticket.done)}
+                  >
+                    ✓
+                  </button>
+                  <button
+                    type="button"
+                    className="feedback-ticket-action is-cancel"
+                    aria-label={`Cancel ${ticket.kind}`}
+                    title="Cancel"
+                    disabled={busy}
+                    onClick={() => void cancel(ticket)}
+                  >
+                    ×
+                  </button>
                 </div>
               </article>
             ))}

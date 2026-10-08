@@ -156,35 +156,33 @@ export function DashboardPage() {
       </section>
       <section className="panel panel-light hadith" data-guide="hadith" aria-labelledby="hadith-of-the-day">
         <HadithBackdrop />
+        <button
+          type="button"
+          className="hadith-side-btn hadith-side-prev"
+          aria-label="Previous day’s reading"
+          disabled={!canBrowseHadithBack(viewDate)}
+          onClick={() => setViewDate((date) => shiftHadithDate(date, -1))}
+        >
+          <ChevronLeftIcon />
+        </button>
+        <button
+          type="button"
+          className="hadith-side-btn hadith-side-next"
+          aria-label="Next day’s reading"
+          disabled={!canBrowseHadithForward(viewDate, today)}
+          onClick={() => setViewDate((date) => shiftHadithDate(date, 1))}
+        >
+          <ChevronRightIcon />
+        </button>
         <div className="hadith-head">
           <div className="hadith-head-main">
             <p className="kicker kicker-icon">
               <BookIcon /> Hadith of the day
               {viewing ? ` · ${viewing.dayNumber} of ${viewing.total}` : ""}
             </p>
-            <div className="hadith-day-nav" role="group" aria-label="Browse past readings">
-              <button
-                type="button"
-                className="hadith-day-btn"
-                aria-label="Previous day’s reading"
-                disabled={!canBrowseHadithBack(viewDate)}
-                onClick={() => setViewDate((date) => shiftHadithDate(date, -1))}
-              >
-                <ChevronLeftIcon />
-              </button>
-              <p className="hadith-day-label">
-                {viewDate === today ? "Today" : formatEatLongDate(new Date(`${viewDate}T12:00:00Z`))}
-              </p>
-              <button
-                type="button"
-                className="hadith-day-btn"
-                aria-label="Next day’s reading"
-                disabled={!canBrowseHadithForward(viewDate, today)}
-                onClick={() => setViewDate((date) => shiftHadithDate(date, 1))}
-              >
-                <ChevronRightIcon />
-              </button>
-            </div>
+            <p className="hadith-day-label">
+              {viewDate === today ? "Today" : formatEatLongDate(new Date(`${viewDate}T12:00:00Z`))}
+            </p>
           </div>
           <HadithNotes />
         </div>

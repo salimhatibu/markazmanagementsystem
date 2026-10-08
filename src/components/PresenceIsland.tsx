@@ -17,7 +17,6 @@ export function PresenceIsland({ keepers }: Props) {
     return keepers.filter((keeper) => keeper.email.toLowerCase() !== self);
   }, [keepers, auth.user?.email]);
 
-  const online = useMemo(() => others.filter((k) => k.online), [others]);
   const ordered = useMemo(() => {
     return [...others].sort((a, b) => Number(b.online) - Number(a.online));
   }, [others]);
@@ -37,18 +36,13 @@ export function PresenceIsland({ keepers }: Props) {
   if (ordered.length === 0) return null;
 
   const active = ordered[Math.min(focus, ordered.length - 1)]!;
-  const summary =
-    online.length > 0
-      ? online.length === 1
-        ? `${online[0]!.label} is online`
-        : `${online.length} keepers online`
-      : presenceLine(active);
+  const summary = active.online ? `${active.label} is online` : presenceLine(active);
 
   return (
-      <div className="presence-island-wrap">
+    <div className="presence-island-wrap">
       <button
         type="button"
-        className={`presence-island${expanded ? " is-expanded" : ""}${online.length > 0 ? " has-online" : ""}`}
+        className={`presence-island${expanded ? " is-expanded" : ""}${active.online ? " has-online" : ""}`}
         aria-expanded={expanded}
         aria-label="Keeper presence"
         onClick={() => setExpanded((open) => !open)}
@@ -61,7 +55,7 @@ export function PresenceIsland({ keepers }: Props) {
         <span className="presence-island-pill" aria-live="polite">
           {!expanded ? (
             <>
-              <span className={`presence-island-dot${online.length > 0 ? " is-online" : ""}`} aria-hidden="true" />
+              <span className={`presence-island-dot${active.online ? " is-online" : ""}`} aria-hidden="true" />
               <span className="presence-island-summary" key={summary}>
                 {summary}
               </span>
@@ -82,6 +76,6 @@ export function PresenceIsland({ keepers }: Props) {
           )}
         </span>
       </button>
-      </div>
+    </div>
   );
 }

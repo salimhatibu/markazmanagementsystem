@@ -56,6 +56,7 @@ const sections = [
     label: "People",
     links: [
       { to: "/students", label: "Students", end: false, icon: NavPeopleIcon },
+      { to: "/classes", label: "Classes", end: false, icon: NavBooksIcon },
       { to: "/kharajah", label: "Kharajah", end: false, icon: NavKharajahIcon },
       { to: "/teachers", label: "Teachers", end: false, icon: NavLedgerIcon },
     ],
