@@ -2,17 +2,12 @@ export type WorkerEnv = {
   DB: D1Database;
   REPORTS: R2Bucket;
   BLOG_MEDIA: R2Bucket;
-  AI: Ai;
-  /** Optional sidecar Worker that runs Workers AI away from Access-protected traffic. */
-  MARKAZ_AI?: Fetcher;
   ASSETS: Fetcher;
   SMTP_HOST?: string;
   SMTP_PORT?: string;
   SMTP_USER?: string;
   SMTP_PASS?: string;
   MARKAZ_FROM?: string;
-  /** Shared secret for the markaz-ai sidecar. */
-  MARKAZ_AI_SECRET?: string;
   /** Cloudflare Access team domain, e.g. markaz.cloudflareaccess.com */
   CF_ACCESS_TEAM_DOMAIN?: string;
   /** Cloudflare Access application AUD tag */

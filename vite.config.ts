@@ -6,7 +6,7 @@ export default defineConfig({
   appType: "spa",
   plugins: [
     react(),
-    // Default: fully local bindings (no Access/cloudflared). Use `npm run dev:remote` for Workers AI.
+    // Default: fully local bindings (no Access/cloudflared). Use `npm run dev:remote` for remote resources.
     cloudflare({
       remoteBindings: process.env.CLOUDFLARE_VITE_REMOTE === "true",
     }),
