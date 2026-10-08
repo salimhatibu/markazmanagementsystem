@@ -64,6 +64,7 @@ export type OperationsReport = {
   letterhead?: Letterhead;
   currencySymbol: string | null;
   period: "biweekly" | "monthly";
+  section?: "all" | "morning" | "evening";
   rangeStart: string;
   rangeEnd: string;
   generatedAt: string;
@@ -126,9 +127,11 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
 
   const head = report.letterhead;
   const month = monthName(report.rangeStart);
-  const title = `${month} report`;
+  const sectionTitle =
+    report.section === "morning" ? "Tahfeedh morning" : report.section === "evening" ? "Taaleem evening" : "";
+  const title = `${month}${sectionTitle ? ` ${sectionTitle}` : ""} report`;
   const markaz = head?.markazName || report.markazName;
-  pdf.setTitle(`${month} report — ${markaz}`);
+  pdf.setTitle(`${month}${sectionTitle ? ` ${sectionTitle}` : ""} report — ${markaz}`);
   pdf.setAuthor(markaz);
   pdf.setCreator("Markaz Imam ash-Shafi'i");
 
@@ -154,6 +157,9 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
 
   paint();
   drawCover();
+  if (report.section && report.section !== "all") {
+    prose("This section-only report excludes shared expenses and teachers assigned to both sections. See the all-sections report for those totals.");
+  }
 
   section("Fees received");
   note("Amounts in KES");
@@ -218,10 +224,14 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
     { label: "Still owed", value: money(report.outstandingCents, report.currencySymbol), tone: "pink" },
   ]);
 
-  section("Morning students");
-  writeRoster(report.students.filter((student) => student.section === "morning"));
-  section("Evening students");
-  writeRoster(report.students.filter((student) => student.section === "evening"));
+  if (report.section !== "evening") {
+    section("Morning students");
+    writeRoster(report.students.filter((student) => student.section === "morning"));
+  }
+  if (report.section !== "morning") {
+    section("Evening students");
+    writeRoster(report.students.filter((student) => student.section === "evening"));
+  }
 
   section("Teachers");
   drawTable(

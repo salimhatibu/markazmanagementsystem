@@ -149,7 +149,7 @@ export function headerSafe(value: string, fallback = ""): string {
 
 export function isReportBlobKey(key: string): boolean {
   return (
-    /^reports\/(biweekly|monthly)\/\d{4}-\d{2}-\d{2}_\d{4}-\d{2}-\d{2}-\d+\.pdf$/.test(key) &&
+    /^reports\/(biweekly|monthly)\/(?:(?:all|morning|evening)\/)?\d{4}-\d{2}-\d{2}_\d{4}-\d{2}-\d{2}-\d+\.pdf$/.test(key) &&
     !key.includes("..") &&
     !key.includes("\\")
   );

@@ -1,7 +1,7 @@
 import { getStore } from "./r2";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "../../db/index";
-import { expenses, feePayments, notifications, reports, salaryPayments, type ReportRow } from "../../db/schema";
+import { expenses, notifications, reports, type ReportRow } from "../../db/schema";
 import { isUniqueViolation } from "./http";
 import { ageFromDob, asIso, CURRENCY, displayName, eatDate, monthName } from "../../shared/format";
 import { presentLetterhead } from "../../shared/letterhead";
@@ -22,28 +22,37 @@ import { isReportBlobKey } from "./validate";
 /** Report PDFs are files, so they live in Blobs and the row only keeps the key. */
 const reportStore = () => getStore("markaz-reports");
 
-function reportTitle(period: "biweekly" | "monthly", start: string, end: string) {
-  return `${period === "biweekly" ? "Biweekly" : "Monthly"} report ${start} to ${end}`;
+type ReportSection = "all" | "morning" | "evening";
+
+function reportTitle(period: "biweekly" | "monthly", start: string, end: string, section: ReportSection) {
+  const sectionLabel = section === "morning" ? "Tahfeedh morning" : section === "evening" ? "Taaleem evening" : "";
+  return `${period === "biweekly" ? "Biweekly" : "Monthly"}${sectionLabel ? ` ${sectionLabel}` : ""} report ${start} to ${end}`;
 }
 
 function presentReport(row: ReportRow, created: boolean) {
   return {
     id: row.id,
     period: row.period,
+    section: row.section,
     rangeStart: row.rangeStart,
     rangeEnd: row.rangeEnd,
     createdAt: asIso(row.createdAt),
-    title: reportTitle(row.period, row.rangeStart, row.rangeEnd),
+    title: reportTitle(row.period, row.rangeStart, row.rangeEnd, row.section),
     created,
   };
 }
 
-async function existingReport(period: "biweekly" | "monthly", range: DateRange) {
+async function existingReport(period: "biweekly" | "monthly", range: DateRange, section: ReportSection) {
   const [row] = await db
     .select()
     .from(reports)
     .where(
-      and(eq(reports.period, period), eq(reports.rangeStart, range.start), eq(reports.rangeEnd, range.end)),
+      and(
+        eq(reports.period, period),
+        eq(reports.rangeStart, range.start),
+        eq(reports.rangeEnd, range.end),
+        eq(reports.section, section),
+      ),
     )
     .limit(1);
   return row ?? null;
@@ -119,7 +128,7 @@ function salaryLinesFor(
   return lines;
 }
 
-export async function feeReceiptPreview(scope: ReceiptScope, now = new Date()) {
+export async function feeReceiptPreview(scope: ReceiptScope, now = new Date(), section: ReportSection = "all") {
   const range = rangeForScope(scope, now);
   const [feeRows, studentRows, teacherRows, salaryRows, settingsRow] = await Promise.all([
     listFeePayments(),
@@ -128,8 +137,16 @@ export async function feeReceiptPreview(scope: ReceiptScope, now = new Date()) {
     listSalaryPayments(),
     loadSettings(),
   ]);
-  const lines = feeLinesInRange(feeRows, studentRows, range);
-  const salaries = salaryLinesFor(teacherRows, salaryRows, range);
+  const sectionStudents = section === "all"
+    ? studentRows
+    : studentRows.filter((student) => student.section === section);
+  const sectionTeachers = section === "all"
+    ? teacherRows
+    : teacherRows.filter((teacher) => teacher.section === section);
+  const studentIds = new Set(sectionStudents.map((student) => student.id));
+  const teacherIds = new Set(sectionTeachers.map((teacher) => teacher.id));
+  const lines = feeLinesInRange(feeRows.filter((row) => studentIds.has(row.studentId)), sectionStudents, range);
+  const salaries = salaryLinesFor(sectionTeachers, salaryRows.filter((row) => teacherIds.has(row.teacherId)), range);
   const totalCents = lines.reduce((sum, line) => sum + line.amountCents, 0);
   const salaryCents = salaries.reduce((sum, line) => sum + line.salaryCents, 0);
   const month = monthName(range.start);
@@ -137,6 +154,7 @@ export async function feeReceiptPreview(scope: ReceiptScope, now = new Date()) {
   const letterhead = presentLetterhead(settingsRow);
   return {
     scope,
+    section,
     rangeStart: range.start,
     rangeEnd: range.end,
     title: `${month} report`,
@@ -175,9 +193,10 @@ export async function generateOperationsReport(
   period: "biweekly" | "monthly",
   now = new Date(),
   scope?: ReceiptScope,
+  section: ReportSection = "all",
 ) {
   const range = scope ? rangeForScope(scope, now) : rangeFor(period, now);
-  const already = await existingReport(period, range);
+  const already = await existingReport(period, range, section);
   if (already) return presentReport(already, false);
   const [studentRows, teacherRows, feeRows, salaryRows, expenseRows, settingsRow] = await Promise.all([
     listStudents(),
@@ -187,6 +206,17 @@ export async function generateOperationsReport(
     listExpenses(),
     loadSettings(),
   ]);
+
+  const sectionStudents = section === "all"
+    ? studentRows
+    : studentRows.filter((student) => student.section === section);
+  const sectionTeachers = section === "all"
+    ? teacherRows
+    : teacherRows.filter((teacher) => teacher.section === section);
+  const sectionStudentIds = new Set(sectionStudents.map((student) => student.id));
+  const sectionTeacherIds = new Set(sectionTeachers.map((teacher) => teacher.id));
+  const sectionFeeRows = feeRows.filter((row) => sectionStudentIds.has(row.studentId));
+  const sectionSalaryRows = salaryRows.filter((row) => sectionTeacherIds.has(row.teacherId));
 
   const feesByStudent = new Map<number, typeof feeRows>();
   for (const payment of feeRows) {
@@ -201,24 +231,26 @@ export async function generateOperationsReport(
     salaryByTeacher.set(payment.teacherId, list);
   }
 
-  const studentMoney = studentRows.map((student) => ({
+  const studentMoney = sectionStudents.map((student) => ({
     expectedCents: toCents(student.expectedFees),
     paidCents: sumCents(feesByStudent.get(student.id) ?? []),
   }));
-  const teacherMoney = teacherRows.map((teacher) => ({
+  const teacherMoney = sectionTeachers.map((teacher) => ({
     expectedCents: toCents(teacher.expectedSalary),
     paidCents: sumCents(salaryByTeacher.get(teacher.id) ?? []),
   }));
-  const totals = operationsTotals(studentMoney, teacherMoney, sumCents(expenseRows));
-  const feesInPeriod = await sumInRange(feePayments, range);
-  const salariesInPeriod = await sumInRange(salaryPayments, range);
-  const expensesInPeriod = await sumExpensesInRange(range);
+  const sectionExpenses = section === "all" ? sumCents(expenseRows) : 0;
+  const totals = operationsTotals(studentMoney, teacherMoney, sectionExpenses);
+  const feesInPeriod = sumCents(sectionFeeRows.filter((row) => row.paidOn >= range.start && row.paidOn <= range.end));
+  const salariesInPeriod = sumCents(sectionSalaryRows.filter((row) => row.paidOn >= range.start && row.paidOn <= range.end));
+  const expensesInPeriod = section === "all" ? await sumExpensesInRange(range) : 0;
 
   const symbol = settingsRow?.currencySymbol?.trim() || CURRENCY;
   const report: OperationsReport = {
     markazName: displayName(settingsRow?.markazName),
     currencySymbol: symbol,
     period,
+    section,
     rangeStart: range.start,
     rangeEnd: range.end,
     generatedAt: now.toISOString(),
@@ -230,9 +262,9 @@ export async function generateOperationsReport(
     salariesInPeriodCents: salariesInPeriod,
     expensesInPeriodCents: expensesInPeriod,
     letterhead: presentLetterhead(settingsRow),
-    feeLines: feeLinesInRange(feeRows, studentRows, range),
-    salaryLines: salaryLinesFor(teacherRows, salaryRows, range),
-    students: studentRows.map((student) => {
+    feeLines: feeLinesInRange(sectionFeeRows, sectionStudents, range),
+    salaryLines: salaryLinesFor(sectionTeachers, sectionSalaryRows, range),
+    students: sectionStudents.map((student) => {
       const paidCents = sumCents(feesByStudent.get(student.id) ?? []);
       const expectedCents = toCents(student.expectedFees);
       const figures = studentFigures(expectedCents, paidCents);
@@ -250,7 +282,7 @@ export async function generateOperationsReport(
         guardianName: student.guardianName,
       };
     }),
-    teachers: teacherRows.map((teacher) => {
+    teachers: sectionTeachers.map((teacher) => {
       const paidCents = sumCents(salaryByTeacher.get(teacher.id) ?? []);
       const expectedCents = toCents(teacher.expectedSalary);
       const figures = teacherFigures(expectedCents, paidCents);
@@ -269,16 +301,17 @@ export async function generateOperationsReport(
   };
 
   const pdfBytes = await buildOperationsPdf(report);
-  const blobKey = `reports/${period}/${range.start}_${range.end}-${now.getTime()}.pdf`;
+  const blobKey = `reports/${period}/${section}/${range.start}_${range.end}-${now.getTime()}.pdf`;
   await reportStore().set(blobKey, Uint8Array.from(pdfBytes).buffer);
 
-  const title = reportTitle(period, range.start, range.end);
+  const title = reportTitle(period, range.start, range.end, section);
   try {
     // D1 does not support BEGIN/COMMIT via drizzle transactions.
     const [row] = await db
       .insert(reports)
       .values({
         period,
+        section,
         rangeStart: range.start,
         rangeEnd: range.end,
         blobKey,
@@ -291,22 +324,11 @@ export async function generateOperationsReport(
     return presentReport(row, true);
   } catch (error) {
     if (isUniqueViolation(error)) {
-      const again = await existingReport(period, range);
+      const again = await existingReport(period, range, section);
       if (again) return presentReport(again, false);
     }
     throw error;
   }
-}
-
-async function sumInRange(
-  table: typeof feePayments | typeof salaryPayments,
-  range: DateRange,
-): Promise<number> {
-  const rows = await db
-    .select({ amount: table.amount })
-    .from(table)
-    .where(and(gte(table.paidOn, range.start), lte(table.paidOn, range.end)));
-  return sumCents(rows);
 }
 
 async function sumExpensesInRange(range: DateRange): Promise<number> {

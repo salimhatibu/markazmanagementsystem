@@ -131,12 +131,13 @@ export const reports = sqliteTable(
   {
     id: integer().primaryKey({ autoIncrement: true }),
     period: text({ enum: ["biweekly", "monthly"] }).notNull(),
+    section: text({ enum: ["all", "morning", "evening"] }).notNull().default("all"),
     rangeStart: text("range_start").notNull(),
     rangeEnd: text("range_end").notNull(),
     blobKey: text("blob_key").notNull(),
     createdAt: createdAt(),
   },
-  (table) => [unique("reports_period_range_uid").on(table.period, table.rangeStart, table.rangeEnd)],
+  (table) => [uniqueIndex("reports_period_range_section_uid").on(table.period, table.rangeStart, table.rangeEnd, table.section)],
 );
 
 export const notifications = sqliteTable("notifications", {

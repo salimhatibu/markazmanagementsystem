@@ -276,6 +276,7 @@ export type BlogAnalytics = {
 export type ReportItem = {
   id: number;
   period: "biweekly" | "monthly";
+  section: "all" | StudentSection;
   rangeStart: string;
   rangeEnd: string;
   createdAt: string;
@@ -285,6 +286,7 @@ export type ReceiptScope = "current" | "monthly" | "biweekly";
 
 export type FeeReceiptPreview = {
   scope: ReceiptScope;
+  section: "all" | StudentSection;
   rangeStart: string;
   rangeEnd: string;
   title: string;

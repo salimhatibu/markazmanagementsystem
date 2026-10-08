@@ -17,6 +17,7 @@ const VIEWS: { scope: ReceiptScope; period: "biweekly" | "monthly"; label: strin
 export function ReportsPage() {
   const { settings, refreshAlerts } = useOutletContext<WorkspaceContext>();
   const [scope, setScope] = useState<ReceiptScope>("current");
+  const [section, setSection] = useState<"all" | "morning" | "evening">("all");
   const [preview, setPreview] = useState<FeeReceiptPreview | null>(null);
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [error, setError] = useState("");
@@ -32,8 +33,8 @@ export function ReportsPage() {
     setReports(body.reports);
   }
 
-  async function loadPreview(next: ReceiptScope) {
-    const body = await api<FeeReceiptPreview>(`/api/reports?scope=${next}`);
+  async function loadPreview(next: ReceiptScope, nextSection = section) {
+    const body = await api<FeeReceiptPreview>(`/api/reports?scope=${next}&section=${nextSection}`);
     setPreview(body);
   }
 
@@ -56,11 +57,23 @@ export function ReportsPage() {
 
   async function show(next: ReceiptScope) {
     setScope(next);
+    if (next === "biweekly") setSection("all");
+    const nextSection = next === "biweekly" ? "all" : section;
     setError("");
     try {
-      await loadPreview(next);
+      await loadPreview(next, nextSection);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "This table could not be opened.");
+    }
+  }
+
+  async function showSection(next: "all" | "morning" | "evening") {
+    setSection(next);
+    setError("");
+    try {
+      await loadPreview(scope, next);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "This section report could not be opened.");
     }
   }
 
@@ -71,7 +84,7 @@ export function ReportsPage() {
     try {
       const body = await api<{ report: { created: boolean; id?: number } }>("/api/reports", {
         method: "POST",
-        body: JSON.stringify({ period, scope }),
+        body: JSON.stringify({ period, scope, section: period === "monthly" ? section : "all" }),
       });
       await api("/api/notifications/read", { method: "POST" });
       await refreshAlerts();
@@ -79,7 +92,7 @@ export function ReportsPage() {
       setInfo(
         body.report.created === false
           ? "That report is already ready to download."
-          : "The report is ready to download.",
+          : `The ${section === "all" || period === "biweekly" ? "combined" : section === "morning" ? "Tahfeedh morning" : "Taaleem evening"} report is ready to download.`,
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The report could not be prepared.");
@@ -105,6 +118,7 @@ export function ReportsPage() {
 
   const symbol = preview?.currencySymbol || settings.currencySymbol;
   const month = preview?.monthName?.toUpperCase() ?? "";
+  const sectionLabel = section === "morning" ? "TAHFEEDH MORNING" : section === "evening" ? "TAALEEM EVENING" : "";
 
   return (
     <>
@@ -127,6 +141,25 @@ export function ReportsPage() {
           ))}
         </div>
       </PageHeader>
+      {period === "monthly" ? (
+        <div className="actions report-section-views" aria-label="Monthly report section">
+          {([
+            ["all", "All sections"],
+            ["morning", "Tahfeedh · Morning"],
+            ["evening", "Taaleem · Evening"],
+          ] as const).map(([value, text]) => (
+            <button
+              key={value}
+              type="button"
+              className="ghost"
+              aria-pressed={section === value}
+              onClick={() => void showSection(value)}
+            >
+              {text}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
       {!ready && !error ? (
@@ -135,12 +168,17 @@ export function ReportsPage() {
         <Panel tone="light" className="ledger">
           <OfficialLetterhead
             letterhead={preview.letterhead}
-            title={`${month} REPORT`}
+            title={`${month}${sectionLabel ? ` · ${sectionLabel}` : ""} REPORT`}
             preparedOn={formatShortDate(preview.preparedOn)}
           />
           <p className="ledger-range">
             {formatShortDate(preview.rangeStart)} to {formatShortDate(preview.rangeEnd)}
           </p>
+          {section !== "all" ? (
+            <p className="ledger-summary">
+              Section-only totals exclude shared expenses and teachers assigned to both sections; those are shown in the combined report.
+            </p>
+          ) : null}
           <h3 className="panel-title">Fees received</h3>
           {preview.lines.length === 0 ? (
             <Empty>No fees have entered the account in this period yet.</Empty>
@@ -250,7 +288,15 @@ export function ReportsPage() {
                 <tbody>
                   {reports.map((report) => (
                     <tr key={report.id}>
-                      <td data-label="Period">{report.period === "biweekly" ? "Mid-month" : "Monthly"}</td>
+                      <td data-label="Period">
+                        {report.period === "biweekly"
+                          ? "Mid-month"
+                          : report.section === "morning"
+                            ? "Monthly · Tahfeedh morning"
+                            : report.section === "evening"
+                              ? "Monthly · Taaleem evening"
+                              : "Monthly · All sections"}
+                      </td>
                       <td data-label="Range">
                         {formatShortDate(report.rangeStart)} to {formatShortDate(report.rangeEnd)}
                       </td>
@@ -272,7 +318,10 @@ export function ReportsPage() {
                               type="button"
                               className="ghost"
                               onClick={() =>
-                                void downloadReport(report.id, `markaz-${report.period}-${report.rangeStart}.pdf`).catch(
+                                void downloadReport(
+                                  report.id,
+                                  `markaz-${report.period}-${report.section}-${report.rangeStart}.pdf`,
+                                ).catch(
                                   (caught: unknown) => {
                                     setError(
                                       caught instanceof Error ? caught.message : "The report could not be downloaded.",

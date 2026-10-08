@@ -142,7 +142,7 @@ export default async (req: Request, context: { params: Record<string, string> })
       if (id == null) return fail("Choose a student.", 400);
       const [student] = await db.select().from(students).where(eq(students.id, id)).limit(1);
       if (!student) return fail("Student not found.", 404);
-      if (student.classId != null) return fail("This student is already assigned to a class.", 400);
+      if (student.classId === classId) return fail("This student is already in this class.", 400);
       await db.update(students).set({ classId, updatedAt: new Date().toISOString() }).where(eq(students.id, id));
       return json({ ok: true });
     }
