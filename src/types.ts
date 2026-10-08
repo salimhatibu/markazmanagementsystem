@@ -61,11 +61,13 @@ export type Class = {
   id: number;
   name: string;
   students: number;
+  teacherId: number | null;
+  teacherName: string | null;
 };
 
 export type ClassAssignment = Student;
 
-export type ClassInput = Pick<Class, "name">;
+export type ClassInput = Pick<Class, "name" | "teacherId">;
 
 export type KharajahLeaver = {
   id: number;
@@ -192,6 +194,8 @@ export type FeedbackTicket = {
   body: string;
   done: boolean;
   doneAt: string | null;
+  cancelled: boolean;
+  cancelledAt: string | null;
   createdAt: string;
 };
 
@@ -318,6 +322,7 @@ export type FeeReceiptPreview = {
 };
 
 export type StudentInput = {
+  classId: number | null;
   admissionNumber: string;
   name: string;
   dateOfBirth: string;
@@ -350,6 +355,7 @@ export type TeacherInput = {
 };
 
 export const emptyStudent = (): StudentInput => ({
+  classId: null,
   admissionNumber: "",
   name: "",
   dateOfBirth: "",
@@ -381,10 +387,11 @@ export const emptyTeacher = (): TeacherInput => ({
   paidInAdvance: false,
 });
 
-export const emptyClass = (): ClassInput => ({ name: "" });
+export const emptyClass = (): ClassInput => ({ name: "", teacherId: null });
 
 export function studentToInput(student: Student): StudentInput {
   return {
+    classId: student.classId ?? null,
     admissionNumber: student.admissionNumber,
     name: student.name,
     dateOfBirth: student.dateOfBirth,

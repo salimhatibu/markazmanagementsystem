@@ -5,12 +5,14 @@ import { StudentForm } from "../components/StudentForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api, downloadRoster } from "../lib/api";
-import { emptyStudent, type Student, type StudentInput } from "../types";
+import { emptyStudent, type Class as SchoolClass, type Student, type StudentInput } from "../types";
 
 export function StudentsPage() {
   const { settings } = useOutletContext<WorkspaceContext>();
   const [students, setStudents] = useState<Student[]>([]);
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [query, setQuery] = useState("");
+  const [classFilter, setClassFilter] = useState("");
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<StudentInput>(emptyStudent());
   const [error, setError] = useState("");
@@ -18,8 +20,12 @@ export function StudentsPage() {
   const [ready, setReady] = useState(false);
 
   async function load() {
-    const body = await api<{ students: Student[] }>("/api/students");
+    const [body, classBody] = await Promise.all([
+      api<{ students: Student[] }>("/api/students"),
+      api<{ classes: SchoolClass[] }>("/api/classes"),
+    ]);
     setStudents(body.students);
+    setClasses(classBody.classes);
     setReady(true);
   }
 
@@ -33,12 +39,47 @@ export function StudentsPage() {
     const needle = query.trim().toLowerCase();
     if (!needle) return students;
     return students.filter((student) =>
-      [student.admissionNumber, student.name, student.guardianName, student.guardianEmail, student.guardianPhone]
+      [
+        student.admissionNumber,
+        student.name,
+        student.guardianName,
+        student.guardianEmail,
+        student.guardianPhone,
+        student.className,
+        classes.find((schoolClass) => schoolClass.id === student.classId)?.teacherName,
+      ]
+        .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(needle),
     );
-  }, [query, students]);
+  }, [query, students, classes]);
+
+  const groups = useMemo(() => {
+    const selected = classFilter;
+    const grouped = classes
+      .filter((schoolClass) => !selected || selected === String(schoolClass.id))
+      .map((schoolClass) => ({
+        id: String(schoolClass.id),
+        title: schoolClass.name,
+        teacherName: schoolClass.teacherName,
+        students: filtered.filter((student) => student.classId === schoolClass.id),
+      }))
+      .filter((group) => group.students.length > 0);
+    if (!selected || selected === "unassigned") {
+      const unassigned = filtered.filter((student) => student.classId == null);
+      if (unassigned.length > 0) {
+        grouped.push({
+          id: "unassigned",
+          title: "Not assigned to a class",
+          teacherName: null,
+          students: unassigned,
+        });
+      }
+    }
+    return grouped;
+  }, [classFilter, classes, filtered]);
+  const visibleStudentCount = groups.reduce((count, group) => count + group.students.length, 0);
 
   async function create() {
     setBusy(true);
@@ -100,6 +141,7 @@ export function StudentsPage() {
             onSubmit={() => void create()}
             submitLabel="Save student"
             busy={busy}
+            classes={classes}
           />
         </Panel>
       ) : null}
@@ -110,60 +152,94 @@ export function StudentsPage() {
             className="search"
             type="search"
             autoComplete="off"
-            placeholder="Name, admission number, or guardian"
+            placeholder="Name, admission, class, teacher, or guardian"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
         </Field>
+        <Field id="student-class-filter" label="Show class">
+          <select
+            id="student-class-filter"
+            value={classFilter}
+            onChange={(event) => setClassFilter(event.target.value)}
+          >
+            <option value="">All classes</option>
+            {classes.map((schoolClass) => (
+              <option key={schoolClass.id} value={schoolClass.id}>
+                {schoolClass.name}{schoolClass.teacherName ? ` · ${schoolClass.teacherName}` : ""}
+              </option>
+            ))}
+            <option value="unassigned">Not assigned to a class</option>
+          </select>
+        </Field>
         <p className="count-label">
-          {filtered.length} {filtered.length === 1 ? "student" : "students"}
+          {visibleStudentCount} {visibleStudentCount === 1 ? "student" : "students"}
         </p>
       </div>
       {!ready && !error ? (
         <p className="loading-line">Opening the student list…</p>
-      ) : filtered.length === 0 ? (
+      ) : groups.length === 0 ? (
         <Empty>
           {students.length === 0
             ? "No students yet. Add the first one when you are ready — fees and payments will stay here."
-            : "Nothing matches that search. Try a name or admission number."}
+            : classFilter === "unassigned"
+              ? students.some((student) => student.classId == null)
+                ? "No unassigned students match that search."
+                : "No students are currently unassigned."
+              : classFilter
+                ? students.some((student) => String(student.classId) === classFilter)
+                  ? "No students in this class match that search."
+                  : "No students are assigned to this class yet."
+                : "Nothing matches that search. Try a name, admission number, class, or teacher."}
         </Empty>
       ) : (
-        <div className="table-wrap" data-guide="student-list">
-          <table>
-            <caption className="table-caption">Student fees</caption>
-            <thead>
-              <tr>
-                <th>Admission</th>
-                <th>Name</th>
-                <th>Class time</th>
-                <th>Age</th>
-                <th>Expected</th>
-                <th>Paid</th>
-                <th>Balance</th>
-                <th>Paid so far</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((student) => (
-                <tr key={student.id}>
-                  <td data-label="Admission">{student.admissionNumber}</td>
-                  <td data-label="Name">{student.name}</td>
-                  <td data-label="Class time">{label(student.section)}</td>
-                  <td data-label="Age">{student.age}</td>
-                  <td data-label="Expected">{formatMoney(student.expectedFees, symbol)}</td>
-                  <td data-label="Paid">{formatMoney(student.paid, symbol)}</td>
-                  <td data-label="Balance">{formatMoney(student.balance, symbol)}</td>
-                  <td data-label="Paid so far">{formatPercent(student.percentPaid)}</td>
-                  <td>
-                    <Link className="row-link" to={`/students/${student.id}`}>
-                      Open record
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="student-class-groups" data-guide="student-list">
+          {groups.map((group) => (
+            <section className="student-class-group" key={group.id} aria-labelledby={`student-class-${group.id}`}>
+              <header className="student-class-heading">
+                <h2 id={`student-class-${group.id}`}>{group.title}</h2>
+                <p>
+                  {group.teacherName ? `${group.teacherName} · ` : ""}
+                  {group.students.length} {group.students.length === 1 ? "student" : "students"}
+                </p>
+              </header>
+              <div className="table-wrap">
+                <table>
+                  <caption className="table-caption">{group.title} student fees</caption>
+                  <thead>
+                    <tr>
+                      <th>Admission</th>
+                      <th>Name</th>
+                      <th>Class time</th>
+                      <th>Age</th>
+                      <th>Expected</th>
+                      <th>Paid</th>
+                      <th>Balance</th>
+                      <th>Paid so far</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.students.map((student) => (
+                      <tr key={student.id}>
+                        <td data-label="Admission">{student.admissionNumber}</td>
+                        <td data-label="Name">{student.name}</td>
+                        <td data-label="Class time">{label(student.section)}</td>
+                        <td data-label="Age">{student.age}</td>
+                        <td data-label="Expected">{formatMoney(student.expectedFees, symbol)}</td>
+                        <td data-label="Paid">{formatMoney(student.paid, symbol)}</td>
+                        <td data-label="Balance">{formatMoney(student.balance, symbol)}</td>
+                        <td data-label="Paid so far">{formatPercent(student.percentPaid)}</td>
+                        <td>
+                          <Link className="row-link" to={`/students/${student.id}`}>Open record</Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ))}
         </div>
       )}
     </>

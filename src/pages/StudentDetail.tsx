@@ -6,7 +6,7 @@ import { StudentForm } from "../components/StudentForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api, downloadPersonRecord } from "../lib/api";
-import { studentToInput, type Student, type StudentInput } from "../types";
+import { studentToInput, type Class as SchoolClass, type Student, type StudentInput } from "../types";
 
 function today() {
   return eatDate();
@@ -17,6 +17,7 @@ export function StudentDetailPage() {
   const navigate = useNavigate();
   const { settings } = useOutletContext<WorkspaceContext>();
   const [student, setStudent] = useState<Student | null>(null);
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [draft, setDraft] = useState<StudentInput | null>(null);
   const [amount, setAmount] = useState("");
   const [paidOn, setPaidOn] = useState(today);
@@ -33,9 +34,13 @@ export function StudentDetailPage() {
   const [mailConfigured, setMailConfigured] = useState<boolean | null>(null);
 
   async function load() {
-    const body = await api<{ student: Student }>(`/api/students/${id}`);
+    const [body, classBody] = await Promise.all([
+      api<{ student: Student }>(`/api/students/${id}`),
+      api<{ classes: SchoolClass[] }>("/api/classes"),
+    ]);
     setStudent(body.student);
     setDraft(studentToInput(body.student));
+    setClasses(classBody.classes);
   }
 
   useEffect(() => {
@@ -215,7 +220,14 @@ export function StudentDetailPage() {
       </div>
       <Panel tone="light">
         <p className="panel-title">Edit this record</p>
-        <StudentForm value={draft} onChange={setDraft} onSubmit={() => void save()} submitLabel="Save changes" busy={busy} />
+        <StudentForm
+          value={draft}
+          onChange={setDraft}
+          onSubmit={() => void save()}
+          submitLabel="Save changes"
+          busy={busy}
+          classes={classes}
+        />
       </Panel>
       <Panel tone="dark">
         <p className="panel-title">Record a fee payment</p>

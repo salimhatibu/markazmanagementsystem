@@ -22,7 +22,9 @@ const updatedAt = () =>
 export const schoolClasses = sqliteTable("school_classes", {
   id: integer().primaryKey({ autoIncrement: true }),
   name: text().notNull().unique(),
+  teacherId: integer("teacher_id").references(() => teachers.id, { onDelete: "set null" }),
   createdAt: createdAt(),
+  updatedAt: updatedAt(),
 });
 
 export const students = sqliteTable("students", {
@@ -255,9 +257,11 @@ export const feedbackTickets = sqliteTable(
     body: text().notNull(),
     done: integer({ mode: "boolean" }).notNull().default(false),
     doneAt: text("done_at"),
+    cancelled: integer({ mode: "boolean" }).notNull().default(false),
+    cancelledAt: text("cancelled_at"),
     createdAt: createdAt(),
   },
-  (table) => [index("feedback_tickets_done_idx").on(table.done, table.createdAt)],
+  (table) => [index("feedback_tickets_done_idx").on(table.done, table.cancelled, table.createdAt)],
 );
 
 export const series = sqliteTable("series", {

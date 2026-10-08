@@ -1,7 +1,7 @@
 import { FormEvent } from "react";
 import { EVENING_FEES, MORNING_FEES } from "../../shared/letterhead";
 import { Field } from "./ui";
-import type { StudentInput } from "../types";
+import type { Class, StudentInput } from "../types";
 
 export function StudentForm({
   value,
@@ -9,12 +9,14 @@ export function StudentForm({
   onSubmit,
   submitLabel,
   busy,
+  classes,
 }: {
   value: StudentInput;
   onChange: (value: StudentInput) => void;
   onSubmit: () => void;
   submitLabel: string;
   busy: boolean;
+  classes?: Pick<Class, "id" | "name" | "teacherName">[];
 }) {
   function set<K extends keyof StudentInput>(key: K, next: StudentInput[K]) {
     onChange({ ...value, [key]: next });
@@ -108,6 +110,22 @@ export function StudentForm({
             <option value="evening">Evening</option>
           </select>
         </Field>
+        {classes ? (
+          <Field id="student-class" label="Teaching class">
+            <select
+              id="student-class"
+              value={value.classId ?? ""}
+              onChange={(event) => set("classId", event.target.value ? Number(event.target.value) : null)}
+            >
+              <option value="">Not assigned to a class</option>
+              {classes.map((schoolClass) => (
+                <option key={schoolClass.id} value={schoolClass.id}>
+                  {schoolClass.name}{schoolClass.teacherName ? ` · ${schoolClass.teacherName}` : ""}
+                </option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
         <Field
           id="expected-fees"
           label="Expected fees"
