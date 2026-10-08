@@ -108,6 +108,8 @@ export type DashboardTotals = {
   morningStudents: number;
   eveningStudents: number;
   teachers: number;
+  morningTeachers: number;
+  eveningTeachers: number;
   feesCollected: number;
   inHand: number;
   spent: number;
