@@ -77,6 +77,7 @@ export function BlogPostsPage() {
               <Link to={`/blog/${post.slug}`} onClick={() => trackBlog("click", post.id)}>
                 {post.title}
               </Link>
+              {post.visibility === "private" ? <span className="blog-private-tag">Private</span> : null}
             </h2>
             {post.excerpt ? <p className="excuse">{post.excerpt}</p> : null}
             <Link className="quest-read" to={`/blog/${post.slug}`} onClick={() => trackBlog("click", post.id)}>

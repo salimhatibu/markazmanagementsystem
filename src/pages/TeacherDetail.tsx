@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
-import { eatDate, formatMoney, label } from "../../shared/format";
+import { eatDate, formatMoney, formatShortDate, label } from "../../shared/format";
 import { TeacherForm } from "../components/TeacherForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
@@ -137,7 +137,7 @@ export function TeacherDetailPage() {
       <div className="meta-row">
         <div>
           <span className="kicker">Age</span>
-          <strong>{teacher.age}</strong>
+          <strong>{teacher.age ?? "—"}</strong>
         </div>
         <div>
           <span className="kicker">Class time</span>
@@ -157,7 +157,9 @@ export function TeacherDetailPage() {
         </div>
         <div>
           <span className="kicker">Last day</span>
-          <strong className="meta-word">{teacher.expectedReleaseDate}</strong>
+          <strong className="meta-word">
+            {teacher.expectedReleaseDate ? formatShortDate(teacher.expectedReleaseDate) : "—"}
+          </strong>
         </div>
       </div>
       <Panel tone="light">
@@ -202,7 +204,7 @@ export function TeacherDetailPage() {
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Amount</th>
+                  <th className="num">Amount</th>
                     <th>M-Pesa ref no</th>
                   <th></th>
                 </tr>

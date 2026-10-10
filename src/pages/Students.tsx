@@ -46,7 +46,7 @@ export function StudentsPage() {
         student.guardianEmail,
         student.guardianPhone,
         student.className,
-        classes.find((schoolClass) => schoolClass.id === student.classId)?.teacherName,
+        classes.find((schoolClass) => schoolClass.id === student.classId)?.teacherNames.join(" "),
       ]
         .filter(Boolean)
         .join(" ")
@@ -62,7 +62,7 @@ export function StudentsPage() {
       .map((schoolClass) => ({
         id: String(schoolClass.id),
         title: schoolClass.name,
-        teacherName: schoolClass.teacherName,
+        teacherNames: schoolClass.teacherNames,
         students: filtered.filter((student) => student.classId === schoolClass.id),
       }))
       .filter((group) => group.students.length > 0);
@@ -72,7 +72,7 @@ export function StudentsPage() {
         grouped.push({
           id: "unassigned",
           title: "Not assigned to a class",
-          teacherName: null,
+          teacherNames: [],
           students: unassigned,
         });
       }
@@ -166,7 +166,8 @@ export function StudentsPage() {
             <option value="">All classes</option>
             {classes.map((schoolClass) => (
               <option key={schoolClass.id} value={schoolClass.id}>
-                {schoolClass.name}{schoolClass.teacherName ? ` · ${schoolClass.teacherName}` : ""}
+                {schoolClass.name}
+                {schoolClass.teacherNames.length ? ` · ${schoolClass.teacherNames.join(", ")}` : ""}
               </option>
             ))}
             <option value="unassigned">Not assigned to a class</option>
@@ -199,7 +200,7 @@ export function StudentsPage() {
               <header className="student-class-heading">
                 <h2 id={`student-class-${group.id}`}>{group.title}</h2>
                 <p>
-                  {group.teacherName ? `${group.teacherName} · ` : ""}
+                  {group.teacherNames.length ? `${group.teacherNames.join(", ")} · ` : ""}
                   {group.students.length} {group.students.length === 1 ? "student" : "students"}
                 </p>
               </header>
@@ -211,11 +212,11 @@ export function StudentsPage() {
                       <th>Admission</th>
                       <th>Name</th>
                       <th>Class time</th>
-                      <th>Age</th>
-                      <th>Expected</th>
-                      <th>Paid</th>
-                      <th>Balance</th>
-                      <th>Paid so far</th>
+                      <th className="num">Age</th>
+                      <th className="num">Expected</th>
+                      <th className="num">Paid</th>
+                      <th className="num">Balance</th>
+                      <th className="num">Paid so far</th>
                       <th></th>
                     </tr>
                   </thead>

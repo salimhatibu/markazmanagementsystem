@@ -1,9 +1,10 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/index";
 import { posts, series } from "../../db/schema";
 import { notifyNewPaper, siteOrigin } from "../_shared/newsletter";
 import { excerptFromHtml, sanitizePostHtml } from "../../shared/post-html";
 import { slugFromTitle } from "../../shared/slug";
+import { BLOG_FONT_IDS } from "../../shared/blog-fonts";
 import { requireAdmin } from "../_shared/auth";
 import { fail, handleError, isUniqueViolation, json, parseId, readBody, ValidationError } from "../_shared/http";
 import { presentPost, presentPostCard } from "../_shared/posts";
@@ -40,8 +41,13 @@ function fields(body: Record<string, unknown>, existingTitle?: string) {
         ? body.coverKey
         : undefined;
   const published = body.published === true;
+  const visibility: "public" | "private" = body.visibility === "private" ? "private" : "public";
+  const fontFamily =
+    typeof body.fontFamily === "string" && BLOG_FONT_IDS.includes(body.fontFamily) && body.fontFamily !== "default"
+      ? body.fontFamily
+      : null;
   const seriesId = seriesIdOf(body);
-  return { title, bodyHtml, excerpt, coverKey, published, seriesId };
+  return { title, bodyHtml, excerpt, coverKey, published, visibility, fontFamily, seriesId };
 }
 
 function seriesIdOf(body: Record<string, unknown>): number | null {
@@ -78,6 +84,7 @@ const cardColumns = {
   seriesTitle: series.title,
   published: posts.published,
   publishedAt: posts.publishedAt,
+  visibility: posts.visibility,
   createdAt: posts.createdAt,
   updatedAt: posts.updatedAt,
 };
@@ -114,7 +121,7 @@ export default async (req: Request, context: Context) => {
       const rows = includeDrafts
         ? await base.orderBy(desc(posts.updatedAt)).limit(POST_LIST_MAX)
         : await base
-            .where(eq(posts.published, true))
+            .where(and(eq(posts.published, true), eq(posts.visibility, "public")))
             .orderBy(desc(posts.publishedAt), desc(posts.createdAt))
             .limit(POST_LIST_MAX);
       return json({ posts: rows.map(presentPostCard) });
@@ -138,9 +145,11 @@ export default async (req: Request, context: Context) => {
           seriesId: input.seriesId,
           published: input.published,
           publishedAt: input.published ? now : null,
+          visibility: input.visibility,
+          fontFamily: input.fontFamily,
         })
         .returning();
-      if (created.published) {
+      if (created.published && created.visibility === "public") {
         await notifyNewPaper({
           title: created.title,
           excerpt: created.excerpt ?? "",
@@ -160,7 +169,10 @@ export default async (req: Request, context: Context) => {
       await assertSeries(input.seriesId);
       const slug =
         input.title !== existing.title ? await uniqueSlug(slugFromTitle(input.title), id) : existing.slug;
-      const becomingPublic = input.published && !existing.published;
+      const becomingPublic =
+        input.published &&
+        input.visibility === "public" &&
+        !(existing.published && existing.visibility === "public");
       const [updated] = await db
         .update(posts)
         .set({
@@ -172,6 +184,8 @@ export default async (req: Request, context: Context) => {
           seriesId: input.seriesId,
           published: input.published,
           publishedAt: input.published ? existing.publishedAt ?? isoNow() : null,
+          visibility: input.visibility,
+          fontFamily: input.fontFamily,
           updatedAt: isoNow(),
         })
         .where(eq(posts.id, id))

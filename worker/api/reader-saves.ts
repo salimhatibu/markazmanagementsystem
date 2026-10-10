@@ -23,13 +23,16 @@ export default async (req: Request) => {
         seriesTitle: series.title,
         published: posts.published,
         publishedAt: posts.publishedAt,
+        visibility: posts.visibility,
         createdAt: posts.createdAt,
         updatedAt: posts.updatedAt,
       })
       .from(blogSaves)
       .innerJoin(posts, eq(blogSaves.postId, posts.id))
       .leftJoin(series, eq(posts.seriesId, series.id))
-      .where(and(eq(blogSaves.sessionId, sessionId), eq(posts.published, true)))
+      .where(
+        and(eq(blogSaves.sessionId, sessionId), eq(posts.published, true), eq(posts.visibility, "public")),
+      )
       .orderBy(desc(blogSaves.createdAt))
       .limit(100);
     return json({ posts: rows.map(presentPostCard) });

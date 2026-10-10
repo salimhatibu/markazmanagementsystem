@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { formatMoney, label } from "../../shared/format";
+import { formatMoney, formatShortDate, label } from "../../shared/format";
 import { TeacherForm } from "../components/TeacherForm";
 import type { WorkspaceContext } from "../components/Shell";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
@@ -139,9 +139,9 @@ export function TeachersPage() {
                 <th>Phone number</th>
                 <th>ID number</th>
                 <th>Class time</th>
-                <th>Salary</th>
-                <th>Paid</th>
-                <th>Balance</th>
+                <th className="num">Salary</th>
+                <th className="num">Paid</th>
+                <th className="num">Balance</th>
                 <th>Last day</th>
                 <th></th>
               </tr>
@@ -161,7 +161,9 @@ export function TeachersPage() {
                   <td data-label="Salary">{formatMoney(teacher.expectedSalary, symbol)}</td>
                   <td data-label="Paid">{formatMoney(teacher.paid, symbol)}</td>
                   <td data-label="Balance">{formatMoney(teacher.balance, symbol)}</td>
-                  <td data-label="Last day">{teacher.expectedReleaseDate}</td>
+                  <td data-label="Last day">
+                    {teacher.expectedReleaseDate ? formatShortDate(teacher.expectedReleaseDate) : "—"}
+                  </td>
                   <td>
                     <Link className="row-link" to={`/teachers/${teacher.id}`}>
                       Open record

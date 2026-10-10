@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../lib/auth";
-import { presenceLine, type PresenceKeeper } from "../lib/presence";
+import { formatLastSeen, presenceLine, type PresenceKeeper } from "../lib/presence";
 
 type Props = {
   keepers: PresenceKeeper[];
@@ -36,7 +36,12 @@ export function PresenceIsland({ keepers }: Props) {
   if (ordered.length === 0) return null;
 
   const active = ordered[Math.min(focus, ordered.length - 1)]!;
-  const summary = active.online ? `${active.label} is online` : presenceLine(active);
+  // The collapsed pill truncates with an ellipsis on narrow screens, so lead with
+  // the time-sensitive "last seen" info rather than the name — otherwise the name
+  // alone survives truncation and the actually useful part gets clipped off.
+  const summary = active.online
+    ? `${active.label} is online`
+    : `Last seen ${formatLastSeen(active.lastSeenAt)} · ${active.label}`;
 
   return (
     <div className="presence-island-wrap">

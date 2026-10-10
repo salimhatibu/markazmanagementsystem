@@ -1,4 +1,4 @@
-import { ageFromDob, CURRENCY, displayName, formatPercent, label } from "../../shared/format";
+import { ageFromDob, CURRENCY, displayName, formatPercent, formatShortDate, label } from "../../shared/format";
 import { presentLetterhead } from "../../shared/letterhead";
 import { fromCents, studentFigures, teacherFigures, toCents } from "../../shared/ledger";
 import { buildPersonRecordPdf, buildRosterPdf } from "../../shared/pdf";
@@ -90,15 +90,13 @@ export async function teacherRecordPdf(id: number): Promise<{ bytes: Uint8Array;
     title: `${row.name} · teacher record`,
     fields: [
       { label: "Name", value: row.name },
-      { label: "Date of birth", value: row.dateOfBirth },
-      { label: "Age", value: String(ageFromDob(row.dateOfBirth)) },
       { label: "Gender", value: label(row.gender) },
       { label: "Section", value: label(row.section) },
       { label: "Phone", value: row.phone ?? "" },
       { label: "National ID", value: row.nationalId ?? "" },
       { label: "M-Pesa name", value: row.mpesaName ?? "" },
       { label: "M-Pesa number", value: row.mpesaNumber ?? "" },
-      { label: "Release date", value: row.expectedReleaseDate },
+      { label: "Release date", value: row.expectedReleaseDate ? formatShortDate(row.expectedReleaseDate) : "—" },
       { label: "Paid in advance", value: row.paidInAdvance ? "Yes" : "No" },
       { label: "Expected salary", value: fromCents(expectedCents).toFixed(2) },
     ],
@@ -215,7 +213,7 @@ export async function teachersRosterPdf(): Promise<{ bytes: Uint8Array; filename
         moneyText(expectedCents),
         moneyText(paidCents),
         moneyText(figures.balanceCents),
-        teacher.expectedReleaseDate,
+        teacher.expectedReleaseDate ? formatShortDate(teacher.expectedReleaseDate) : "—",
       ];
     }),
     empty: "No teachers recorded.",

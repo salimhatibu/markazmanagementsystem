@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatEatLongDate } from "../../shared/format";
+import { CursorToast } from "../components/CursorToast";
 import { IconShare } from "../components/ig-icons";
 import { PaperAlmanac } from "../components/PaperAlmanac";
 import { api } from "../lib/api";
 import { DEFAULT_SHARE_IMAGE, publicPostPath, publicPostUrl, shareUrl } from "../lib/blog-share";
 import { trackBlog, trackImpressions } from "../lib/blog-track";
+import { useCursorToast } from "../lib/use-cursor-toast";
 import { usePageMeta } from "../lib/page-meta";
 import { paperBrief } from "../lib/paper-almanac";
 import type { BlogPost } from "../types";
@@ -20,7 +22,7 @@ export function PublicPostsPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
-  const [notice, setNotice] = useState("");
+  const { toast, showToast } = useCursorToast();
 
   useEffect(() => {
     api<{ posts: BlogPost[] }>("/api/posts")
@@ -35,13 +37,12 @@ export function PublicPostsPage() {
       });
   }, []);
 
-  async function share(post: BlogPost) {
-    setNotice("");
+  async function share(post: BlogPost, event: { clientX: number; clientY: number }) {
     try {
       const result = await shareUrl(post.title, publicPostUrl(post.slug));
-      setNotice(result === "copied" ? "The link is on the clipboard." : "Ready to pass on.");
+      showToast(result === "copied" ? "The link is on the clipboard." : "Ready to pass on.", event);
     } catch {
-      setNotice("The link could not be shared just then.");
+      showToast("The link could not be shared just then.", event);
     }
   }
 
@@ -57,7 +58,7 @@ export function PublicPostsPage() {
   return (
     <>
       {error ? <p className="status">{error}</p> : null}
-      {notice ? <p className="status">{notice}</p> : null}
+      <CursorToast toast={toast} />
       {!ready ? <p className="status">Opening the papers…</p> : null}
       {ready && !posts.length ? <p className="status">Nothing public yet.</p> : null}
 
@@ -82,7 +83,12 @@ export function PublicPostsPage() {
               <Link className="paper-rail-link" to={publicPostPath(lead.slug)} onClick={() => trackBlog("click", lead.id)}>
                 Read the piece
               </Link>
-              <button type="button" className="blog-ig-btn" aria-label={`Share ${lead.title}`} onClick={() => void share(lead)}>
+              <button
+                type="button"
+                className="blog-ig-btn"
+                aria-label={`Share ${lead.title}`}
+                onClick={(event) => void share(lead, event)}
+              >
                 <IconShare />
               </button>
             </div>
@@ -121,7 +127,7 @@ export function PublicPostsPage() {
                   type="button"
                   className="blog-ig-btn"
                   aria-label={`Share ${post.title}`}
-                  onClick={() => void share(post)}
+                  onClick={(event) => void share(post, event)}
                 >
                   <IconShare />
                 </button>

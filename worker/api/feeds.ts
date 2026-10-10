@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/index";
 import { posts } from "../../db/schema";
 import { asIso } from "../../shared/format";
@@ -46,7 +46,7 @@ export default async (req: Request, _context: Context) => {
         updatedAt: posts.updatedAt,
       })
       .from(posts)
-      .where(eq(posts.published, true))
+      .where(and(eq(posts.published, true), eq(posts.visibility, "public")))
       .orderBy(desc(posts.publishedAt), desc(posts.createdAt))
       .limit(FEED_MAX);
 

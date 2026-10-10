@@ -16,7 +16,7 @@ export function StudentForm({
   onSubmit: () => void;
   submitLabel: string;
   busy: boolean;
-  classes?: Pick<Class, "id" | "name" | "teacherName">[];
+  classes?: Pick<Class, "id" | "name" | "teacherNames">[];
 }) {
   function set<K extends keyof StudentInput>(key: K, next: StudentInput[K]) {
     onChange({ ...value, [key]: next });
@@ -111,7 +111,7 @@ export function StudentForm({
           </select>
         </Field>
         {classes ? (
-          <Field id="student-class" label="Teaching class">
+          <Field id="student-class" label="Class">
             <select
               id="student-class"
               value={value.classId ?? ""}
@@ -120,7 +120,8 @@ export function StudentForm({
               <option value="">Not assigned to a class</option>
               {classes.map((schoolClass) => (
                 <option key={schoolClass.id} value={schoolClass.id}>
-                  {schoolClass.name}{schoolClass.teacherName ? ` · ${schoolClass.teacherName}` : ""}
+                  {schoolClass.name}
+                  {schoolClass.teacherNames.length ? ` · ${schoolClass.teacherNames.join(", ")}` : ""}
                 </option>
               ))}
             </select>

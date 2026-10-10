@@ -77,9 +77,11 @@ async function uploadMedia(file: File): Promise<string> {
 export function BlogEditor({
   value,
   onChange,
+  fontFamily,
 }: {
   value: string;
   onChange: (html: string) => void;
+  fontFamily?: string;
 }) {
   const imageInput = useRef<HTMLInputElement>(null);
   const videoInput = useRef<HTMLInputElement>(null);
@@ -256,7 +258,7 @@ export function BlogEditor({
           });
         }}
       />
-      <EditorContent editor={editor} className="blog-canvas" />
+      <EditorContent editor={editor} className="blog-canvas" style={fontFamily ? { fontFamily } : undefined} />
       <p className="blog-paste-hint">Paste a picture from the clipboard into the copy, or use the picture tool.</p>
     </div>
   );

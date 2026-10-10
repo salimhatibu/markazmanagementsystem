@@ -361,7 +361,7 @@ export function toTeacher(row: Teacher, payments: SalaryPayment[]) {
     id: row.id,
     name: row.name,
     dateOfBirth: row.dateOfBirth,
-    age: ageFromDob(row.dateOfBirth),
+    age: row.dateOfBirth ? ageFromDob(row.dateOfBirth) : null,
     gender: row.gender,
     section: row.section,
     phone: row.phone,

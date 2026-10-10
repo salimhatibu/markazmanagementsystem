@@ -54,7 +54,7 @@ export function ClassesPage() {
     setCurrent({ ...detail.class, students: detail.students });
     setStudents(roster.students);
     setTeachers(teacherRoster.teachers);
-    setDraft({ name: detail.class.name, teacherId: detail.class.teacherId });
+    setDraft({ name: detail.class.name, section: detail.class.section, teacherIds: detail.class.teacherIds });
     setReady(true);
   }
 
@@ -68,6 +68,15 @@ export function ClassesPage() {
       setReady(true);
     });
   }, [id]);
+
+  function toggleTeacher(teacherId: number) {
+    setDraft((current) => ({
+      ...current,
+      teacherIds: current.teacherIds.includes(teacherId)
+        ? current.teacherIds.filter((id) => id !== teacherId)
+        : [...current.teacherIds, teacherId],
+    }));
+  }
 
   const availableStudents = useMemo(
     () => students.filter((student) => student.classId !== current?.id),
@@ -189,7 +198,7 @@ export function ClassesPage() {
       <PageHeader
         kicker="Records"
         title={current ? current.name : "Classes"}
-        lead={current ? `Manage students${current.teacherName ? ` taught by ${current.teacherName}` : ""} in this class.` : "Create teaching groups, assign teachers, and manage student lists."}
+        lead={current ? `Manage students${current.teacherNames.length ? ` taught by ${current.teacherNames.join(", ")}` : ""} in this class.` : "Create teaching groups, assign teachers, and manage student lists."}
       >
         {current ? (
           <div className="class-page-actions">
@@ -220,20 +229,36 @@ export function ClassesPage() {
                         required
                       />
                     </Field>
-                    <Field id="edit-class-teacher" label="Teacher">
+                    <Field id="edit-class-section" label="Section">
                       <select
-                        id="edit-class-teacher"
-                        value={draft.teacherId ?? ""}
+                        id="edit-class-section"
+                        value={draft.section}
                         onChange={(event) =>
-                          setDraft({ ...draft, teacherId: event.target.value ? Number(event.target.value) : null })
+                          setDraft({ ...draft, section: event.target.value as ClassInput["section"] })
                         }
                       >
-                        <option value="">No teacher assigned</option>
-                        {teachers.map((teacher) => (
-                          <option key={teacher.id} value={teacher.id}>{teacher.name}</option>
-                        ))}
+                        <option value="morning">Morning</option>
+                        <option value="evening">Evening</option>
                       </select>
                     </Field>
+                    <fieldset className="class-teacher-picker">
+                      <legend>Teachers</legend>
+                      {teachers.length === 0 ? (
+                        <p className="field-hint">No teachers on file yet.</p>
+                      ) : (
+                        teachers.map((teacher) => (
+                          <label className="check" key={teacher.id} htmlFor={`edit-class-teacher-${teacher.id}`}>
+                            <input
+                              id={`edit-class-teacher-${teacher.id}`}
+                              type="checkbox"
+                              checked={draft.teacherIds.includes(teacher.id)}
+                              onChange={() => toggleTeacher(teacher.id)}
+                            />
+                            <span>{teacher.name}</span>
+                          </label>
+                        ))
+                      )}
+                    </fieldset>
                     <button type="submit" className="solid" disabled={busy || !draft.name.trim()}>
                       {busy ? "Saving…" : "Save class"}
                     </button>
@@ -347,7 +372,7 @@ export function ClassesPage() {
         </>
       ) : (
         <>
-          <Panel tone="light" className="class-create-panel">
+          <Panel tone="light" className="class-create-panel" data-guide="classes-create">
             <p className="panel-title">Create a class</p>
             <form className="class-create-form" onSubmit={(event) => void create(event)}>
               <Field id="class-name" label="Class name">
@@ -360,20 +385,34 @@ export function ClassesPage() {
                   required
                 />
               </Field>
-              <Field id="class-teacher" label="Teacher">
+              <Field id="class-section" label="Section">
                 <select
-                  id="class-teacher"
-                  value={draft.teacherId ?? ""}
-                  onChange={(event) =>
-                    setDraft({ ...draft, teacherId: event.target.value ? Number(event.target.value) : null })
-                  }
+                  id="class-section"
+                  value={draft.section}
+                  onChange={(event) => setDraft({ ...draft, section: event.target.value as ClassInput["section"] })}
                 >
-                  <option value="">No teacher assigned</option>
-                  {teachers.map((teacher) => (
-                    <option key={teacher.id} value={teacher.id}>{teacher.name}</option>
-                  ))}
+                  <option value="morning">Morning</option>
+                  <option value="evening">Evening</option>
                 </select>
               </Field>
+              <fieldset className="class-teacher-picker">
+                <legend>Teachers</legend>
+                {teachers.length === 0 ? (
+                  <p className="field-hint">No teachers on file yet.</p>
+                ) : (
+                  teachers.map((teacher) => (
+                    <label className="check" key={teacher.id} htmlFor={`class-teacher-${teacher.id}`}>
+                      <input
+                        id={`class-teacher-${teacher.id}`}
+                        type="checkbox"
+                        checked={draft.teacherIds.includes(teacher.id)}
+                        onChange={() => toggleTeacher(teacher.id)}
+                      />
+                      <span>{teacher.name}</span>
+                    </label>
+                  ))
+                )}
+              </fieldset>
               <button type="submit" className="solid" disabled={busy || !draft.name.trim()}>
                 {busy ? "Saving…" : "Create class"}
               </button>
@@ -394,7 +433,8 @@ export function ClassesPage() {
                   <span>
                     <strong>{schoolClass.name}</strong>
                     <small>
-                      {schoolClass.teacherName ? `${schoolClass.teacherName} · ` : ""}
+                      {schoolClass.section === "evening" ? "Evening" : "Morning"} ·{" "}
+                      {schoolClass.teacherNames.length ? `${schoolClass.teacherNames.join(", ")} · ` : ""}
                       {schoolClass.students} {schoolClass.students === 1 ? "student" : "students"}
                     </small>
                   </span>

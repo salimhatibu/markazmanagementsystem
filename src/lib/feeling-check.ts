@@ -24,7 +24,7 @@ export const FEELING_PROMPTS = [
   "I'm still here with you, so how you holding up so far?",
   ];
 
-export type FeelingAnswer = "good" | "down" | "other";
+export type FeelingAnswer = "good" | "down";
 
 type AskState = {
   date: string;
@@ -127,32 +127,6 @@ export function nextVerse(mood: VerseMood): QuranVerse {
   const verse = unused[Math.floor(Math.random() * unused.length)];
   writeSeen(mood, [...seen, verse.id]);
   return verse;
-}
-
-export function classifyFeeling(raw: string): FeelingAnswer {
-  const text = raw.trim().toLowerCase().replace(/['’]/g, "'");
-  if (!text) return "other";
-
-  if (
-    /feeling down/.test(text) ||
-    /not (so |that )?(good|great|well|ok|okay|fine)/.test(text) ||
-    /i'?m not (ok|okay|fine|well)/.test(text) ||
-    /\b(sad|down|low|bad|awful|terrible|depressed|upset|hurt|lonely|hopeless|anxious|worried|grief|grieving)\b/.test(
-      text,
-    )
-  ) {
-    return "down";
-  }
-
-  if (
-    /\b(good|great|fine|well|ok|okay|alhamdulillah|happy|better|positive|grateful|content|peaceful|calm|strong|hopeful|blessed)\b/.test(
-      text,
-    )
-  ) {
-    return "good";
-  }
-
-  return "other";
 }
 
 export function moodForAnswer(answer: FeelingAnswer): VerseMood {

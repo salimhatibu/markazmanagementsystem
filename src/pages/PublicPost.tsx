@@ -1,11 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { formatEatLongDate } from "../../shared/format";
+import { CursorToast } from "../components/CursorToast";
 import { IconHeart, IconSave, IconShare } from "../components/ig-icons";
 import { PaperAlmanac } from "../components/PaperAlmanac";
 import { api } from "../lib/api";
 import { tagArabicRuns } from "../lib/arabic-runs";
 import { classifyBlogImages } from "../lib/blog-images";
+import { ensureFontLoaded, fontById, fontStack } from "../lib/blog-fonts";
 import {
   publicPostPath,
   publicPostUrl,
@@ -19,6 +21,7 @@ import { blogSessionId, trackBlog } from "../lib/blog-track";
 import { usePageMeta } from "../lib/page-meta";
 import { paperBrief } from "../lib/paper-almanac";
 import { usePostDwell } from "../lib/use-post-dwell";
+import { useCursorToast } from "../lib/use-cursor-toast";
 import type { BlogComment, BlogPost } from "../types";
 
 export function PublicPostPage() {
@@ -33,6 +36,7 @@ export function PublicPostPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const { toast, showToast } = useCursorToast();
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -89,6 +93,10 @@ export function PublicPostPage() {
     tagArabicRuns(bodyRef.current);
   }, [post?.bodyHtml]);
 
+  useEffect(() => {
+    if (post?.fontFamily) ensureFontLoaded(post.fontFamily);
+  }, [post?.fontFamily]);
+
   async function toggleLike() {
     if (!post) return;
     try {
@@ -116,14 +124,13 @@ export function PublicPostPage() {
     }
   }
 
-  async function share() {
+  async function share(event: { clientX: number; clientY: number }) {
     if (!post) return;
-    setNotice("");
     try {
       const result = await shareUrl(post.title, publicPostUrl(post.slug));
-      setNotice(result === "copied" ? "The link is on the clipboard." : "Ready to pass on.");
+      showToast(result === "copied" ? "The link is on the clipboard." : "Ready to pass on.", event);
     } catch {
-      setNotice("The link could not be shared just then.");
+      showToast("The link could not be shared just then.", event);
     }
   }
 
@@ -178,7 +185,10 @@ export function PublicPostPage() {
             {post.title}
           </h2>
           <p className="paper-byline">
-            {Number.isNaN(date.getTime()) ? "A public paper" : `${formatEatLongDate(date)} · A public paper`}
+            {(() => {
+              const kind = post.visibility === "private" ? "A private paper" : "A public paper";
+              return Number.isNaN(date.getTime()) ? kind : `${formatEatLongDate(date)} · ${kind}`;
+            })()}
           </p>
           <div className="blog-ig-bar">
             <div className="blog-ig-cluster">
@@ -191,7 +201,12 @@ export function PublicPostPage() {
               >
                 <IconHeart filled={liked} />
               </button>
-              <button type="button" className="blog-ig-btn" aria-label="Share" onClick={() => void share()}>
+              <button
+                type="button"
+                className="blog-ig-btn"
+                aria-label="Share"
+                onClick={(event) => void share(event)}
+              >
                 <IconShare />
               </button>
             </div>
@@ -211,10 +226,12 @@ export function PublicPostPage() {
             </p>
           ) : null}
           {notice ? <p className="status">{notice}</p> : null}
+          <CursorToast toast={toast} />
           {post.coverUrl ? <img src={post.coverUrl} alt="" className="blog-read-cover" /> : null}
           <div
             ref={bodyRef}
             className="blog-body paper-drop"
+            style={{ fontFamily: fontStack(fontById(post.fontFamily)) }}
             dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
           />
         </article>

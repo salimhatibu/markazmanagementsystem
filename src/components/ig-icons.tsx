@@ -8,8 +8,8 @@ export function IconHeart({ className, filled = false }: IconProps) {
     <svg
       className={className}
       viewBox="0 0 24 24"
-      width="28"
-      height="28"
+      width="26"
+      height="26"
       fill={filled ? "currentColor" : "none"}
       stroke="currentColor"
       strokeWidth="1.8"

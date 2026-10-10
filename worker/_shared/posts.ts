@@ -31,12 +31,14 @@ export function presentPost(row: Post, series?: SeriesLabel) {
     ...seriesFields(row, series),
     published: row.published,
     publishedAt: row.publishedAt ? asIso(row.publishedAt) : null,
+    visibility: row.visibility,
+    fontFamily: row.fontFamily ?? null,
     createdAt: asIso(row.createdAt),
     updatedAt: asIso(row.updatedAt),
   };
 }
 
-type PostCard = Omit<Post, "bodyHtml"> & { seriesSlug?: string | null; seriesTitle?: string | null };
+type PostCard = Omit<Post, "bodyHtml" | "fontFamily"> & { seriesSlug?: string | null; seriesTitle?: string | null };
 
 /** List card: skips the body entirely so index pages do not ship every post. */
 export function presentPostCard(row: PostCard) {
@@ -52,6 +54,7 @@ export function presentPostCard(row: PostCard) {
     seriesTitle: row.seriesTitle ?? null,
     published: row.published,
     publishedAt: row.publishedAt ? asIso(row.publishedAt) : null,
+    visibility: row.visibility,
     createdAt: asIso(row.createdAt),
     updatedAt: asIso(row.updatedAt),
   };

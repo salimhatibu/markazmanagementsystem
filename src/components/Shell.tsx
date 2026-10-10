@@ -264,6 +264,7 @@ export function Shell() {
                     key={link.to}
                     to={link.to}
                     end={link.end}
+                    data-guide={`nav-${link.to.replace(/^\//, "") || "home"}`}
                     className={({ isActive }) => (isActive ? "nav-pill active" : "nav-pill")}
                     onClick={() => setMenuOpen(false)}
                   >

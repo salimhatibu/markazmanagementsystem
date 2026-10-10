@@ -370,9 +370,9 @@ export function TripDetailPage() {
                     <tr>
                       <th>Date</th>
                       <th>Description</th>
-                      <th>Qty</th>
+                      <th className="num">Qty</th>
                       <th>Kind</th>
-                      <th>Amount</th>
+                      <th className="num">Amount</th>
                       <th>Notes</th>
                       <th></th>
                     </tr>

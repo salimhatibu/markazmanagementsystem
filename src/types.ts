@@ -41,8 +41,8 @@ export type Student = {
 export type Teacher = {
   id: number;
   name: string;
-  dateOfBirth: string;
-  age: number;
+  dateOfBirth: string | null;
+  age: number | null;
   gender: Gender;
   section: TeacherSection;
   phone: string | null;
@@ -52,7 +52,7 @@ export type Teacher = {
   expectedSalary: number;
   paid: number;
   balance: number;
-  expectedReleaseDate: string;
+  expectedReleaseDate: string | null;
   paidInAdvance: boolean;
   payments: Payment[];
 };
@@ -60,14 +60,15 @@ export type Teacher = {
 export type Class = {
   id: number;
   name: string;
+  section: StudentSection;
   students: number;
-  teacherId: number | null;
-  teacherName: string | null;
+  teacherIds: number[];
+  teacherNames: string[];
 };
 
 export type ClassAssignment = Student;
 
-export type ClassInput = Pick<Class, "name" | "teacherId">;
+export type ClassInput = Pick<Class, "name" | "section" | "teacherIds">;
 
 export type KharajahLeaver = {
   id: number;
@@ -201,6 +202,8 @@ export type FeedbackTicket = {
   createdAt: string;
 };
 
+export type BlogVisibility = "public" | "private";
+
 export type BlogPost = {
   id: number;
   slug: string;
@@ -214,6 +217,8 @@ export type BlogPost = {
   seriesTitle: string | null;
   published: boolean;
   publishedAt: string | null;
+  visibility: BlogVisibility;
+  fontFamily: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -233,11 +238,22 @@ export type BlogPostInput = {
   coverKey?: string | null;
   seriesId?: number | null;
   published?: boolean;
+  visibility?: BlogVisibility;
+  fontFamily?: string | null;
 };
 
 export type BlogComment = {
   id: number;
   body: string;
+  createdAt: string;
+};
+
+export type FeelingMood = "good" | "down";
+
+export type FeelingEntry = {
+  id: number;
+  mood: FeelingMood;
+  note: string;
   createdAt: string;
 };
 
@@ -346,7 +362,6 @@ export type StudentInput = {
 
 export type TeacherInput = {
   name: string;
-  dateOfBirth: string;
   gender: Gender;
   section: TeacherSection;
   phone: string;
@@ -354,7 +369,6 @@ export type TeacherInput = {
   mpesaName: string;
   mpesaNumber: string;
   expectedSalary: string;
-  expectedReleaseDate: string;
   paidInAdvance: boolean;
 };
 
@@ -379,7 +393,6 @@ export const emptyStudent = (): StudentInput => ({
 
 export const emptyTeacher = (): TeacherInput => ({
   name: "",
-  dateOfBirth: "",
   gender: "female",
   section: "morning",
   phone: "",
@@ -387,11 +400,10 @@ export const emptyTeacher = (): TeacherInput => ({
   mpesaName: "",
   mpesaNumber: "",
   expectedSalary: "",
-  expectedReleaseDate: "",
   paidInAdvance: false,
 });
 
-export const emptyClass = (): ClassInput => ({ name: "", teacherId: null });
+export const emptyClass = (): ClassInput => ({ name: "", section: "morning", teacherIds: [] });
 
 export function studentToInput(student: Student): StudentInput {
   return {
@@ -417,7 +429,6 @@ export function studentToInput(student: Student): StudentInput {
 export function teacherToInput(teacher: Teacher): TeacherInput {
   return {
     name: teacher.name,
-    dateOfBirth: teacher.dateOfBirth,
     gender: teacher.gender,
     section: teacher.section,
     phone: teacher.phone ?? "",
@@ -425,7 +436,6 @@ export function teacherToInput(teacher: Teacher): TeacherInput {
     mpesaName: teacher.mpesaName ?? "",
     mpesaNumber: teacher.mpesaNumber ?? "",
     expectedSalary: String(teacher.expectedSalary),
-    expectedReleaseDate: teacher.expectedReleaseDate,
     paidInAdvance: teacher.paidInAdvance,
   };
 }

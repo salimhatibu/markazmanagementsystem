@@ -109,6 +109,21 @@ export function StarIcon({ className }: IconProps) {
   );
 }
 
+export function EmptyTrayIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" aria-hidden="true">
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        d="M5 13 10 6h12l5 7M5 13v12a1.3 1.3 0 0 0 1.3 1.3h19.4A1.3 1.3 0 0 0 27 25V13M5 13h7.2v1.8a3.8 3.8 0 0 0 7.6 0V13H27"
+      />
+    </svg>
+  );
+}
+
 export function CloseIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 32 32" aria-hidden="true">

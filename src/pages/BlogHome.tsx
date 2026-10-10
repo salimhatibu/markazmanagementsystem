@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatEatLongDate } from "../../shared/format";
+import { CursorToast } from "../components/CursorToast";
 import { api } from "../lib/api";
 import { padCount } from "../lib/blog-stats";
 import { publicShelfUrl, shareUrl } from "../lib/blog-share";
 import { publicShelfHref } from "../lib/surface";
+import { useCursorToast } from "../lib/use-cursor-toast";
 import type { BlogPost } from "../types";
 
 export function BlogHomePage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [drafts, setDrafts] = useState(0);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const { toast, showToast } = useCursorToast();
 
   useEffect(() => {
     api<{ posts: BlogPost[] }>("/api/posts?all=1")
@@ -26,13 +28,12 @@ export function BlogHomePage() {
 
   const latest = posts[0];
 
-  async function copyPublic() {
-    setNotice("");
+  async function copyPublic(event: { clientX: number; clientY: number }) {
     try {
       const result = await shareUrl("The سلفية mindset", publicShelfUrl());
-      setNotice(result === "copied" ? "The public page link is on the clipboard." : "Ready to pass on.");
+      showToast(result === "copied" ? "The public page link is on the clipboard." : "Ready to pass on.", event);
     } catch {
-      setNotice("The public link could not be copied just then.");
+      showToast("The public link could not be copied just then.", event);
     }
   }
 
@@ -66,7 +67,7 @@ export function BlogHomePage() {
         </Link>
       </section>
       {error ? <p className="status">{error}</p> : null}
-      {notice ? <p className="status">{notice}</p> : null}
+      <CursorToast toast={toast} />
       <section className="choices" aria-labelledby="desk-title">
         <div className="choices-header">
           <div>
@@ -115,7 +116,7 @@ export function BlogHomePage() {
           <a className="random" href={publicShelfHref()} target="_blank" rel="noreferrer">
             Open the public page ↗
           </a>
-          <button type="button" className="random" onClick={() => void copyPublic()}>
+          <button type="button" className="random" onClick={(event) => void copyPublic(event)}>
             Copy the public link
           </button>
         </div>

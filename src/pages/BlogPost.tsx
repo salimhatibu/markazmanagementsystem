@@ -1,10 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { formatEatLongDate } from "../../shared/format";
+import { CursorToast } from "../components/CursorToast";
 import { api } from "../lib/api";
 import { classifyBlogImages } from "../lib/blog-images";
+import { ensureFontLoaded, fontById, fontStack } from "../lib/blog-fonts";
 import { publicPostUrl, shareUrl } from "../lib/blog-share";
 import { usePostDwell } from "../lib/use-post-dwell";
+import { useCursorToast } from "../lib/use-cursor-toast";
 import type { BlogPost } from "../types";
 
 export function BlogPostPage() {
@@ -12,7 +15,7 @@ export function BlogPostPage() {
   const navigate = useNavigate();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const { toast, showToast } = useCursorToast();
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,14 +33,17 @@ export function BlogPostPage() {
     classifyBlogImages(bodyRef.current);
   }, [post?.bodyHtml]);
 
-  async function copyPublic() {
+  useEffect(() => {
+    if (post?.fontFamily) ensureFontLoaded(post.fontFamily);
+  }, [post?.fontFamily]);
+
+  async function copyPublic(event: { clientX: number; clientY: number }) {
     if (!post) return;
-    setNotice("");
     try {
       const result = await shareUrl(post.title, publicPostUrl(post.slug));
-      setNotice(result === "copied" ? "The public link is on the clipboard." : "Ready to pass on.");
+      showToast(result === "copied" ? "The public link is on the clipboard." : "Ready to pass on.", event);
     } catch {
-      setNotice("The public link could not be copied just then.");
+      showToast("The public link could not be copied just then.", event);
     }
   }
 
@@ -66,7 +72,14 @@ export function BlogPostPage() {
 
   return (
     <article className="blog-read">
-      <span className="eyebrow">{Number.isNaN(date.getTime()) ? "" : formatEatLongDate(date)}</span>
+      <span className="eyebrow">
+        {Number.isNaN(date.getTime()) ? "" : formatEatLongDate(date)}
+        {!post.published
+          ? " · Draft"
+          : post.visibility === "private"
+            ? " · Private — not listed, visible only by direct link"
+            : ""}
+      </span>
       <h1>
         {post.title}
       </h1>
@@ -77,16 +90,21 @@ export function BlogPostPage() {
         <Link className="random" to={`/blog/write/${post.id}`}>
           Edit
         </Link>
-        <button type="button" className="random" onClick={() => void copyPublic()}>
+        <button type="button" className="random" onClick={(event) => void copyPublic(event)}>
           Copy public link
         </button>
         <button type="button" className="reset" onClick={() => void remove()}>
           Remove
         </button>
       </div>
-      {notice ? <p className="status">{notice}</p> : null}
+      <CursorToast toast={toast} />
       {post.coverUrl ? <img src={post.coverUrl} alt="" className="blog-read-cover" /> : null}
-      <div ref={bodyRef} className="blog-body" dangerouslySetInnerHTML={{ __html: post.bodyHtml }} />
+      <div
+        ref={bodyRef}
+        className="blog-body"
+        style={{ fontFamily: fontStack(fontById(post.fontFamily)) }}
+        dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
+      />
     </article>
   );
 }

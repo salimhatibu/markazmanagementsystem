@@ -38,16 +38,6 @@ export function TeacherForm({
             onChange={(event) => set("name", event.target.value)}
           />
         </Field>
-        <Field id="teacher-dob" label="Date of birth">
-          <input
-            id="teacher-dob"
-            type="date"
-            required
-            autoComplete="bday"
-            value={value.dateOfBirth}
-            onChange={(event) => set("dateOfBirth", event.target.value)}
-          />
-        </Field>
         <Field id="teacher-gender" label="Gender">
           <select
             id="teacher-gender"
@@ -117,16 +107,6 @@ export function TeacherForm({
             aria-describedby="expected-salary-hint"
             value={value.expectedSalary}
             onChange={(event) => set("expectedSalary", event.target.value)}
-          />
-        </Field>
-        <Field id="release-date" label="Expected last day" hint="When this term is meant to end.">
-          <input
-            id="release-date"
-            type="date"
-            required
-            aria-describedby="release-date-hint"
-            value={value.expectedReleaseDate}
-            onChange={(event) => set("expectedReleaseDate", event.target.value)}
           />
         </Field>
       </div>

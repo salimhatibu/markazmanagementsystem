@@ -6,6 +6,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ADMISSION = /^[A-Za-z0-9][A-Za-z0-9._\-\/]{0,63}$/;
 const CONTROL = /[\u0000-\u001F\u007F]/;
 const HEADER_BREAK = /[\r\n\0]/;
+const UNSAFE_CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 const MONEY_TEXT = /^-?\d+(\.\d{1,2})?$/;
 const CURRENCY = /^[A-Za-z$.\s]{1,16}$/;
 
@@ -29,6 +30,33 @@ export function optionalText(value: unknown, field: string, max: number): string
   if (value == null || value === "") return null;
   if (typeof value !== "string") throw new ValidationError(`${field} is invalid.`);
   const trimmed = rejectControl(value.trim(), field);
+  if (!trimmed) return null;
+  if (trimmed.length > max) throw new ValidationError(`${field} is too long.`);
+  return trimmed;
+}
+
+function rejectUnsafeControl(value: string, field: string): string {
+  if (UNSAFE_CONTROL.test(value)) {
+    throw new ValidationError(`${field} contains invalid characters.`);
+  }
+  return value;
+}
+
+/** Like requiredText, but for multi-line free text (messages, notes, reasons) -- allows newlines and tabs. */
+export function requiredMessage(value: unknown, field: string, max: number): string {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new ValidationError(`${field} is required.`);
+  }
+  const trimmed = rejectUnsafeControl(value.replace(/\r\n/g, "\n").trim(), field);
+  if (trimmed.length > max) throw new ValidationError(`${field} is too long.`);
+  return trimmed;
+}
+
+/** Like optionalText, but for multi-line free text (messages, notes, reasons) -- allows newlines and tabs. */
+export function optionalMessage(value: unknown, field: string, max: number): string | null {
+  if (value == null || value === "") return null;
+  if (typeof value !== "string") throw new ValidationError(`${field} is invalid.`);
+  const trimmed = rejectUnsafeControl(value.replace(/\r\n/g, "\n").trim(), field);
   if (!trimmed) return null;
   if (trimmed.length > max) throw new ValidationError(`${field} is too long.`);
   return trimmed;
@@ -215,8 +243,8 @@ export function kharajahLeaveFields(body: Record<string, unknown>) {
       return id;
     })(),
     leftOn: parseDate(body.leftOn, "Date of leaving"),
-    leaveReason: requiredText(body.leaveReason, "Reason for leaving", 2000),
-    notes: optionalText(body.notes, "Notes", 2000),
+    leaveReason: requiredMessage(body.leaveReason, "Reason for leaving", 2000),
+    notes: optionalMessage(body.notes, "Notes", 2000),
   };
 }
 
@@ -248,7 +276,7 @@ export function bookInventoryFields(body: Record<string, unknown>) {
       sortOrder: index,
     };
   });
-  const stationeriesNote = optionalText(body.stationeriesNote, "Stationeries", 2000);
+  const stationeriesNote = optionalMessage(body.stationeriesNote, "Stationeries", 2000);
   const stationeriesRaw = body.stationeriesCost;
   const stationeriesCost =
     stationeriesRaw == null || stationeriesRaw === ""
@@ -266,7 +294,7 @@ export function bookInventoryFields(body: Record<string, unknown>) {
 export function feedbackFields(body: Record<string, unknown>) {
   return {
     kind: oneOf(body.kind ?? "query", ["query", "suggestion"] as const, "Kind"),
-    body: requiredText(body.body, "Message", 4000),
+    body: requiredMessage(body.body, "Message", 4000),
   };
 }
 
@@ -274,7 +302,7 @@ export function expenseFields(body: Record<string, unknown>) {
   return {
     reason: requiredText(body.reason, "Reason", 255),
     amount: parseMoney(body.amount, "Amount", false),
-    details: optionalText(body.details, "Details", 2000),
+    details: optionalMessage(body.details, "Details", 2000),
     spentOn: parseDate(body.spentOn, "Date"),
   };
 }
@@ -282,7 +310,7 @@ export function expenseFields(body: Record<string, unknown>) {
 export function tripFields(body: Record<string, unknown>) {
   return {
     title: requiredText(body.title, "Trip title", 255),
-    notes: optionalText(body.notes, "Notes", 2000),
+    notes: optionalMessage(body.notes, "Notes", 2000),
   };
 }
 
@@ -293,22 +321,47 @@ export function tripEntryFields(body: Record<string, unknown>) {
     amount: parseMoney(body.amount, "Amount", false),
     kind: oneOf(body.kind ?? "in", ["in", "out"] as const, "Kind"),
     entryOn: parseDate(body.entryOn, "Date"),
-    notes: optionalText(body.notes, "Notes", 2000),
+    notes: optionalMessage(body.notes, "Notes", 2000),
   };
+}
+
+function optionalBirthDate(value: unknown, field: string): string | null {
+  if (value == null || value === "") return null;
+  return parseBirthDate(value, field);
+}
+
+function optionalDate(value: unknown, field: string): string | null {
+  if (value == null || value === "") return null;
+  return parseDate(value, field);
 }
 
 export function teacherFields(body: Record<string, unknown>) {
   return {
     name: requiredText(body.name, "Name", 255),
-    dateOfBirth: parseBirthDate(body.dateOfBirth, "Date of birth"),
+    dateOfBirth: optionalBirthDate(body.dateOfBirth, "Date of birth"),
     gender: oneOf(body.gender, ["male", "female"] as const, "Gender"),
     phone: optionalPhone(body.phone, "Phone"),
     nationalId: optionalText(body.nationalId, "ID number", 64),
     mpesaName: optionalText(body.mpesaName, "M-Pesa name", 255),
     mpesaNumber: optionalPhone(body.mpesaNumber, "M-Pesa number"),
     expectedSalary: parseMoney(body.expectedSalary, "Expected salary", true),
-    expectedReleaseDate: parseDate(body.expectedReleaseDate, "Expected release date"),
+    expectedReleaseDate: optionalDate(body.expectedReleaseDate, "Expected release date"),
     paidInAdvance: parseBoolean(body.paidInAdvance, "Paid in advance"),
     section: oneOf(body.section, ["morning", "evening", "both"] as const, "Section"),
   };
+}
+
+export function optionalTeacherIds(value: unknown): number[] {
+  if (value == null) return [];
+  if (!Array.isArray(value)) throw new ValidationError("Choose a valid list of teachers.");
+  const ids = value.map((item) => {
+    const id = typeof item === "number" ? item : Number(item);
+    if (!Number.isSafeInteger(id) || id <= 0) throw new ValidationError("Choose a valid teacher.");
+    return id;
+  });
+  return Array.from(new Set(ids));
+}
+
+export function classSectionField(body: Record<string, unknown>) {
+  return oneOf(body.section ?? "morning", ["morning", "evening"] as const, "Section");
 }

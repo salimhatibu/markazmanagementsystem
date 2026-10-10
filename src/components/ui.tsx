@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { EmptyTrayIcon } from "./Motifs";
 
 export function PageHeader({
   kicker,
@@ -60,7 +61,12 @@ export function Notice({ children, tone = "error" }: { children: ReactNode; tone
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="empty">{children}</p>;
+  return (
+    <div className="empty">
+      <EmptyTrayIcon className="empty-icon" />
+      <p>{children}</p>
+    </div>
+  );
 }
 
 export function Panel({

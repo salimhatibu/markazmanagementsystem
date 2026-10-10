@@ -269,7 +269,7 @@ export function StudentDetailPage() {
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Amount</th>
+                  <th className="num">Amount</th>
                   <th>M-Pesa ref</th>
                   <th></th>
                 </tr>

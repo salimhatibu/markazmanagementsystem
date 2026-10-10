@@ -69,13 +69,14 @@ export default async (req: Request, context: Context) => {
           seriesId: posts.seriesId,
           published: posts.published,
           publishedAt: posts.publishedAt,
+          visibility: posts.visibility,
           createdAt: posts.createdAt,
           updatedAt: posts.updatedAt,
         })
         .from(posts)
         .where(eq(posts.seriesId, row.id))
         .orderBy(desc(posts.publishedAt), desc(posts.createdAt));
-      const published = papers.filter((post) => post.published);
+      const published = papers.filter((post) => post.published && post.visibility === "public");
       return json({
         series: { id: row.id, slug: row.slug, title: row.title, blurb: row.blurb ?? "" },
         posts: published.map((post) =>

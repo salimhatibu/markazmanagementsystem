@@ -128,7 +128,7 @@ export function DashboardPage() {
           </article>
         </div>
       </section>
-      <section className="desk-section" aria-labelledby="roll-heading">
+      <section className="desk-section" aria-labelledby="roll-heading" data-guide="sections">
         <header className="desk-section-head">
           <h2 id="roll-heading">Teaching sections</h2>
           <p>Student and teacher totals</p>

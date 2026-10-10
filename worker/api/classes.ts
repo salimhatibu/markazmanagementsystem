@@ -1,22 +1,53 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/index";
-import { schoolClasses, students, teachers } from "../../db/schema";
+import { classTeachers, schoolClasses, students, teachers } from "../../db/schema";
 import { requireAdmin } from "../_shared/auth";
 import { listFeePayments, toStudent } from "../_shared/data";
 import { fail, handleError, json, parseId, readBody, ValidationError } from "../_shared/http";
-import { requiredText } from "../_shared/validate";
+import { classSectionField, optionalTeacherIds, requiredText } from "../_shared/validate";
 
-function optionalTeacherId(value: unknown): number | null {
-  if (value == null || value === "") return null;
-  const id = typeof value === "number" ? value : Number(value);
-  if (!Number.isSafeInteger(id) || id <= 0) throw new ValidationError("Choose a teacher.");
-  return id;
+async function teachersExist(ids: number[]) {
+  if (ids.length === 0) return true;
+  const rows = await db.select({ id: teachers.id }).from(teachers).where(inArray(teachers.id, ids));
+  return rows.length === ids.length;
 }
 
-async function teacherExists(id: number | null) {
-  if (id == null) return true;
-  const [teacher] = await db.select({ id: teachers.id }).from(teachers).where(eq(teachers.id, id)).limit(1);
-  return Boolean(teacher);
+async function setClassTeachers(classId: number, teacherIds: number[]) {
+  await db.delete(classTeachers).where(eq(classTeachers.classId, classId));
+  if (teacherIds.length === 0) return;
+  await db.insert(classTeachers).values(teacherIds.map((teacherId) => ({ classId, teacherId })));
+}
+
+async function teacherMapFor(classIds: number[]) {
+  if (classIds.length === 0) return new Map<number, { id: number; name: string }[]>();
+  const rows = await db
+    .select({ classId: classTeachers.classId, id: teachers.id, name: teachers.name })
+    .from(classTeachers)
+    .innerJoin(teachers, eq(classTeachers.teacherId, teachers.id))
+    .where(inArray(classTeachers.classId, classIds))
+    .orderBy(asc(teachers.name));
+  const map = new Map<number, { id: number; name: string }[]>();
+  for (const row of rows) {
+    const list = map.get(row.classId) ?? [];
+    list.push({ id: row.id, name: row.name });
+    map.set(row.classId, list);
+  }
+  return map;
+}
+
+function presentClass(
+  row: { id: number; name: string; section: "morning" | "evening" },
+  studentCount: number,
+  teacherList: { id: number; name: string }[],
+) {
+  return {
+    id: row.id,
+    name: row.name,
+    section: row.section,
+    students: studentCount,
+    teacherIds: teacherList.map((teacher) => teacher.id),
+    teacherNames: teacherList.map((teacher) => teacher.name),
+  };
 }
 
 export default async (req: Request, context: { params: Record<string, string> }) => {
@@ -28,24 +59,19 @@ export default async (req: Request, context: { params: Record<string, string> })
     const studentId = context.params.studentId ? parseId(context.params.studentId) : null;
 
     if (req.method === "GET" && !context.params.id) {
-      const [rows, counts, teacherRows] = await Promise.all([
+      const [rows, counts] = await Promise.all([
         db.select().from(schoolClasses).orderBy(asc(schoolClasses.name)),
         db
           .select({ classId: students.classId, total: sql<number>`count(*)` })
           .from(students)
           .groupBy(students.classId),
-        db.select({ id: teachers.id, name: teachers.name }).from(teachers),
       ]);
       const byClass = new Map(counts.map((row) => [row.classId, Number(row.total)]));
-      const teacherNames = new Map(teacherRows.map((row) => [row.id, row.name]));
+      const teacherMap = await teacherMapFor(rows.map((row) => row.id));
       return json({
-        classes: rows.map((row) => ({
-          id: row.id,
-          name: row.name,
-          students: byClass.get(row.id) ?? 0,
-          teacherId: row.teacherId,
-          teacherName: row.teacherId == null ? null : teacherNames.get(row.teacherId) ?? null,
-        })),
+        classes: rows.map((row) =>
+          presentClass(row, byClass.get(row.id) ?? 0, teacherMap.get(row.id) ?? []),
+        ),
       });
     }
 
@@ -53,19 +79,18 @@ export default async (req: Request, context: { params: Record<string, string> })
       const body = await readBody(req);
       if (!body) return fail("Request body must be an object.", 400);
       const name = requiredText(body.name, "Class name", 80);
-      const teacherId = optionalTeacherId(body.teacherId);
-      if (!(await teacherExists(teacherId))) return fail("That teacher was not found.", 400);
+      const section = classSectionField(body);
+      const teacherIds = optionalTeacherIds(body.teacherIds);
+      if (!(await teachersExist(teacherIds))) return fail("One of those teachers was not found.", 400);
       const [created] = await db
         .insert(schoolClasses)
-        .values({ name, teacherId, updatedAt: new Date().toISOString() })
+        .values({ name, section, updatedAt: new Date().toISOString() })
         .returning();
-      const teacherRows = teacherId == null
-        ? []
-        : await db.select({ name: teachers.name }).from(teachers).where(eq(teachers.id, teacherId)).limit(1);
-      const teacherName = teacherRows[0]?.name ?? null;
-      return json({
-        class: { id: created.id, name: created.name, students: 0, teacherId, teacherName },
-      }, 201);
+      await setClassTeachers(created.id, teacherIds);
+      const teacherList = teacherIds.length
+        ? await db.select({ id: teachers.id, name: teachers.name }).from(teachers).where(inArray(teachers.id, teacherIds))
+        : [];
+      return json({ class: presentClass(created, 0, teacherList) }, 201);
     }
 
     if (classId == null) return fail("Class not found.", 404);
@@ -73,14 +98,16 @@ export default async (req: Request, context: { params: Record<string, string> })
     if (!existing) return fail("Class not found.", 404);
 
     if (req.method === "GET") {
-      const [rows, payments, teacherRows] = await Promise.all([
+      const [rows, payments, teacherList] = await Promise.all([
         db.select().from(students).where(eq(students.classId, classId)).orderBy(asc(students.name)),
         listFeePayments(),
-        existing.teacherId == null
-          ? Promise.resolve([])
-          : db.select({ name: teachers.name }).from(teachers).where(eq(teachers.id, existing.teacherId)).limit(1),
+        db
+          .select({ id: teachers.id, name: teachers.name })
+          .from(classTeachers)
+          .innerJoin(teachers, eq(classTeachers.teacherId, teachers.id))
+          .where(eq(classTeachers.classId, classId))
+          .orderBy(asc(teachers.name)),
       ]);
-      const teacherName = teacherRows[0]?.name ?? null;
       const grouped = new Map<number, typeof payments>();
       for (const payment of payments) {
         if (!rows.some((row) => row.id === payment.studentId)) continue;
@@ -89,13 +116,7 @@ export default async (req: Request, context: { params: Record<string, string> })
         grouped.set(payment.studentId, list);
       }
       return json({
-        class: {
-          id: existing.id,
-          name: existing.name,
-          students: rows.length,
-          teacherId: existing.teacherId,
-          teacherName,
-        },
+        class: presentClass(existing, rows.length, teacherList),
         students: rows.map((row) => toStudent(row, grouped.get(row.id) ?? [], existing.name)),
       });
     }
@@ -104,30 +125,22 @@ export default async (req: Request, context: { params: Record<string, string> })
       const body = await readBody(req);
       if (!body) return fail("Request body must be an object.", 400);
       const name = requiredText(body.name, "Class name", 80);
-      const teacherId = optionalTeacherId(body.teacherId);
-      if (!(await teacherExists(teacherId))) return fail("That teacher was not found.", 400);
+      const section = classSectionField(body);
+      const teacherIds = optionalTeacherIds(body.teacherIds);
+      if (!(await teachersExist(teacherIds))) return fail("One of those teachers was not found.", 400);
       const [updated] = await db
         .update(schoolClasses)
-        .set({ name, teacherId, updatedAt: new Date().toISOString() })
+        .set({ name, section, updatedAt: new Date().toISOString() })
         .where(eq(schoolClasses.id, classId))
         .returning();
-      const teacherRows = teacherId == null
-        ? []
-        : await db.select({ name: teachers.name }).from(teachers).where(eq(teachers.id, teacherId)).limit(1);
-      const teacherName = teacherRows[0]?.name ?? null;
-      const [count] = await db
-        .select({ total: sql<number>`count(*)` })
-        .from(students)
-        .where(eq(students.classId, classId));
-      return json({
-        class: {
-          id: updated.id,
-          name: updated.name,
-          students: Number(count?.total ?? 0),
-          teacherId: updated.teacherId,
-          teacherName,
-        },
-      });
+      await setClassTeachers(classId, teacherIds);
+      const [count, teacherList] = await Promise.all([
+        db.select({ total: sql<number>`count(*)` }).from(students).where(eq(students.classId, classId)),
+        teacherIds.length
+          ? db.select({ id: teachers.id, name: teachers.name }).from(teachers).where(inArray(teachers.id, teacherIds))
+          : Promise.resolve([]),
+      ]);
+      return json({ class: presentClass(updated, Number(count[0]?.total ?? 0), teacherList) });
     }
 
     if (req.method === "DELETE" && studentId == null) {

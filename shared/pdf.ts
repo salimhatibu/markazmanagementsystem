@@ -55,7 +55,7 @@ export type ReportTeacher = {
   expectedCents: number;
   paidCents: number;
   balanceCents: number;
-  expectedReleaseDate: string;
+  expectedReleaseDate: string | null;
   paidInAdvance: boolean;
 };
 
@@ -99,6 +99,21 @@ const C = {
   accent: hex("#c76a8c"),
   pink: hex("#e7a3b8"),
   green: hex("#1f8a4c"),
+};
+
+/** Grayscale palette for the operations report (Reports page) — a plain,
+ * black-and-white statement rather than the colour treatment used on
+ * person records and rosters. */
+const BW = {
+  paper: hex("#ffffff"),
+  card: hex("#ffffff"),
+  ink: hex("#111111"),
+  text2: hex("#3f3f46"),
+  mute: hex("#6b7280"),
+  line: hex("#d4d4d8"),
+  headerFill: hex("#e4e4e7"),
+  zebra: hex("#f8f8f9"),
+  rule: hex("#111111"),
 };
 
 function hex(value: string): RGB {
@@ -218,10 +233,10 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
 
   section("Also this period");
   drawStats([
-    { label: "Salaries paid", value: money(report.salariesInPeriodCents, report.currencySymbol), tone: "green" },
-    { label: "Expenses", value: money(report.expensesInPeriodCents ?? 0, report.currencySymbol), tone: "pink" },
-    { label: "Still in the office", value: money(report.inHandCents, report.currencySymbol), tone: "green" },
-    { label: "Still owed", value: money(report.outstandingCents, report.currencySymbol), tone: "pink" },
+    { label: "Salaries paid", value: money(report.salariesInPeriodCents, report.currencySymbol) },
+    { label: "Expenses", value: money(report.expensesInPeriodCents ?? 0, report.currencySymbol) },
+    { label: "Still in the office", value: money(report.inHandCents, report.currencySymbol) },
+    { label: "Still owed", value: money(report.outstandingCents, report.currencySymbol) },
   ]);
 
   if (report.section !== "evening") {
@@ -246,7 +261,7 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
     report.teachers.map((teacher) => [
       teacher.name,
       label(teacher.section),
-      formatShortDate(teacher.expectedReleaseDate),
+      teacher.expectedReleaseDate ? formatShortDate(teacher.expectedReleaseDate) : "—",
       teacher.paidInAdvance ? "Paid in advance" : "Not in advance",
       figures(teacher.expectedCents),
       figures(teacher.paidCents),
@@ -283,7 +298,7 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
     ],
     report.teachers.map((teacher) => [
       teacher.name,
-      formatShortDate(teacher.expectedReleaseDate),
+      teacher.expectedReleaseDate ? formatShortDate(teacher.expectedReleaseDate) : "—",
       teacher.paidInAdvance ? "Paid in advance" : "Not in advance",
       figures(teacher.balanceCents),
     ]),
@@ -297,35 +312,30 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
 
   prose("Open running balances. Outstanding ignores overpayment.");
   ensure(40);
-  write(BLESSING, PAGE_WIDTH / 2, y - 14, 14, display, C.accent, undefined, "center");
+  write(BLESSING, PAGE_WIDTH / 2, y - 14, 14, display, BW.ink, undefined, "center");
 
   const pages = pdf.getPages();
   pages.forEach((item, index) => {
     const current = page;
     page = item;
-    write(`Markaz Imam ash-Shafi'i    ${index + 1} / ${pages.length}`, PAGE_WIDTH / 2, 18, 8, body, C.mute, undefined, "center");
+    write(`Markaz Imam ash-Shafi'i    ${index + 1} / ${pages.length}`, PAGE_WIDTH / 2, 18, 8, body, BW.mute, undefined, "center");
     page = current;
   });
 
   return pdf.save();
 
   function paint() {
-    page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT, color: C.paper });
-    page.drawRectangle({ x: 0, y: PAGE_HEIGHT - 8, width: PAGE_WIDTH, height: 8, color: C.accent });
-    page.drawRectangle({ x: 0, y: PAGE_HEIGHT - 11, width: PAGE_WIDTH, height: 3, color: C.green });
-    const cx = PAGE_WIDTH / 2;
-    const cy = PAGE_HEIGHT / 2 + 30;
-    page.drawCircle({ x: cx, y: cy, size: 78, borderColor: C.pink, borderWidth: 0.7, borderOpacity: 0.2, opacity: 0 });
-    page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: 36, color: C.wash });
-    page.drawRectangle({ x: 0, y: 36, width: PAGE_WIDTH, height: 2.2, color: C.pink });
+    page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT, color: BW.paper });
+    page.drawRectangle({ x: 0, y: FOOTER - 10, width: PAGE_WIDTH, height: 0.75, color: BW.line });
   }
 
   function newPage() {
     page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
     paint();
-    y = PAGE_HEIGHT - 26;
-    write(`${title}  ·  continued`, MARGIN, y - 10, 10, display, C.mute);
-    y -= 24;
+    y = PAGE_HEIGHT - 30;
+    write(`${title}  ·  continued`, MARGIN, y - 10, 9, body, BW.mute);
+    page.drawRectangle({ x: MARGIN, y: y - 16, width: CONTENT, height: 0.75, color: BW.line });
+    y -= 30;
   }
 
   function ensure(height: number) {
@@ -393,54 +403,58 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
     }
   }
 
-  function motif(cx: number, cy: number) {
-    page.drawCircle({ x: cx - 11, y: cy, size: 3.2, color: C.green });
-    page.drawCircle({ x: cx, y: cy, size: 5.4, color: C.accent });
-    page.drawCircle({ x: cx + 11, y: cy, size: 3.2, color: C.green });
-  }
-
   function drawCover() {
-    y = PAGE_HEIGHT - 36;
-    motif(PAGE_WIDTH / 2, y - 10);
-    y -= 32;
-    const nameSize = 11;
-    const lines = wrap(markaz.toUpperCase(), display, nameSize, CONTENT - 24);
+    y = PAGE_HEIGHT - 44;
+    const nameSize = 13;
+    const lines = wrap(markaz.toUpperCase(), bodyBold, nameSize, CONTENT);
     for (const line of lines) {
-      write(line, PAGE_WIDTH / 2, y - nameSize, nameSize, display, C.ink, undefined, "center");
+      write(line, PAGE_WIDTH / 2, y - nameSize, nameSize, bodyBold, BW.ink, undefined, "center");
       y -= nameSize + 4;
     }
     if (head?.address) {
-      write(head.address, PAGE_WIDTH / 2, y - 9, 9, body, C.mute, undefined, "center");
+      write(head.address, PAGE_WIDTH / 2, y - 9, 9, body, BW.mute, undefined, "center");
       y -= 18;
     }
-    y -= 8;
-    write(title, PAGE_WIDTH / 2, y - 26, 28, display, C.ink, undefined, "center");
-    y -= 38;
-    write(formatShortDate(report.rangeEnd), PAGE_WIDTH / 2, y - 10, 10, body, C.mute, undefined, "center");
-    y -= 16;
+    y -= 10;
+    write(title, PAGE_WIDTH / 2, y - 26, 26, display, BW.ink, undefined, "center");
+    y -= 36;
     write(
       `${formatShortDate(report.rangeStart)}  to  ${formatShortDate(report.rangeEnd)}`,
       PAGE_WIDTH / 2,
       y - 10,
       10,
       body,
-      C.text2,
+      BW.text2,
       undefined,
       "center",
     );
-    y -= 28;
+    y -= 14;
+    write(
+      `Prepared ${formatShortDate(report.rangeEnd)}`,
+      PAGE_WIDTH / 2,
+      y - 9,
+      8.5,
+      body,
+      BW.mute,
+      undefined,
+      "center",
+    );
+    y -= 20;
+    page.drawRectangle({ x: MARGIN, y, width: CONTENT, height: 1.5, color: BW.rule });
+    y -= 22;
   }
 
   function section(titleText: string, reserve = 0) {
     ensure(40 + reserve);
-    y -= 8;
-    page.drawRectangle({ x: MARGIN, y: y - 12, width: 16, height: 2.2, color: C.green });
-    write(titleText.toUpperCase(), MARGIN + 24, y - 15, 9, bodyBold, C.mute);
-    y -= 26;
+    y -= 6;
+    write(titleText.toUpperCase(), MARGIN, y - 10, 10.5, bodyBold, BW.ink);
+    y -= 15;
+    page.drawRectangle({ x: MARGIN, y, width: CONTENT, height: 1.25, color: BW.rule });
+    y -= 20;
   }
 
   function note(value: string) {
-    write(value, MARGIN, y - 9, 8, body, C.mute);
+    write(value, MARGIN, y - 9, 8, body, BW.mute);
     y -= 14;
   }
 
@@ -449,48 +463,41 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
     const lines = wrap(value, body, size, CONTENT);
     for (const line of lines) {
       ensure(size + 6);
-      write(line, MARGIN, y - size, size, body, C.text2);
+      write(line, MARGIN, y - size, size, body, BW.text2);
       y -= size + 5;
     }
     y -= 6;
   }
 
-  function card(x: number, top: number, width: number, height: number, tone: "green" | "pink" | "accent") {
-    page.drawRectangle({
-      x: x + 1.5,
-      y: top - height - 1.5,
-      width,
-      height,
-      color: C.wash,
-    });
+  function card(x: number, top: number, width: number, height: number) {
     page.drawRectangle({
       x,
       y: top - height,
       width,
       height,
-      color: C.card,
-      borderColor: C.pink,
-      borderWidth: 1.2,
+      color: BW.card,
+      borderColor: BW.line,
+      borderWidth: 1,
     });
     page.drawRectangle({
       x,
-      y: top - 3.2,
+      y: top - 2,
       width,
-      height: 3.2,
-      color: tone === "green" ? C.green : tone === "pink" ? C.pink : C.accent,
+      height: 2,
+      color: BW.rule,
     });
   }
 
   function totalCard(caption: string, amount: string) {
     const height = 54;
     ensure(height + 14);
-    card(MARGIN, y, CONTENT, height, "green");
-    write(caption, MARGIN + 18, y - 20, 9, body, C.mute);
-    write(amount, MARGIN + 18, y - 42, 18, nums, C.ink);
+    card(MARGIN, y, CONTENT, height);
+    write(caption.toUpperCase(), MARGIN + 18, y - 20, 8.5, bodyBold, BW.mute);
+    write(amount, MARGIN + 18, y - 42, 18, nums, BW.ink);
     y -= height + 16;
   }
 
-  function drawStats(items: { label: string; value: string; tone: "green" | "pink" }[]) {
+  function drawStats(items: { label: string; value: string }[]) {
     const gap = 12;
     const width = (CONTENT - gap) / 2;
     const height = 58;
@@ -498,9 +505,9 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
       ensure(height + 12);
       items.slice(i, i + 2).forEach((item, col) => {
         const x = MARGIN + col * (width + gap);
-        card(x, y, width, height, item.tone);
-        write(item.label, x + 14, y - 20, 9, body, C.mute, width - 28);
-        write(item.value, x + 14, y - 44, 14, nums, C.ink, width - 28);
+        card(x, y, width, height);
+        write(item.label.toUpperCase(), x + 14, y - 20, 8, bodyBold, BW.mute, width - 28);
+        write(item.value, x + 14, y - 44, 14, nums, BW.ink, width - 28);
       });
       y -= height + 12;
     }
@@ -510,12 +517,12 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
   function drawBank(letterhead: Letterhead) {
     const height = 126;
     ensure(height + 10);
-    card(MARGIN, y, CONTENT, height, "green");
-    write(PAYMENT_LEAD, MARGIN + 18, y - 24, 9, body, C.text2, CONTENT - 36);
-    write(letterhead.accountName, MARGIN + 18, y - 50, 13, display, C.ink, CONTENT - 36);
-    write(letterhead.bankName, MARGIN + 18, y - 70, 10, body, C.text2, CONTENT - 36);
-    write(`Paybill  ${letterhead.paybill}`, MARGIN + 18, y - 90, 11, nums, C.ink, CONTENT - 36);
-    write(`Account  ${letterhead.accountNumber}`, MARGIN + 18, y - 110, 11, nums, C.ink, CONTENT - 36);
+    card(MARGIN, y, CONTENT, height);
+    write(PAYMENT_LEAD, MARGIN + 18, y - 24, 9, body, BW.text2, CONTENT - 36);
+    write(letterhead.accountName, MARGIN + 18, y - 50, 13, display, BW.ink, CONTENT - 36);
+    write(letterhead.bankName, MARGIN + 18, y - 70, 10, body, BW.text2, CONTENT - 36);
+    write(`Paybill  ${letterhead.paybill}`, MARGIN + 18, y - 90, 11, nums, BW.ink, CONTENT - 36);
+    write(`Account  ${letterhead.accountNumber}`, MARGIN + 18, y - 110, 11, nums, BW.ink, CONTENT - 36);
     y -= height + 16;
   }
 
@@ -532,11 +539,11 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
 
     function header() {
       ensure(headerH + rowH + 4);
-      page.drawRectangle({ x: MARGIN, y: y - headerH, width: CONTENT, height: headerH, color: C.header });
-      page.drawRectangle({ x: MARGIN, y: y - headerH, width: CONTENT, height: 1, color: C.pink });
+      page.drawRectangle({ x: MARGIN, y: y - headerH, width: CONTENT, height: headerH, color: BW.headerFill });
+      page.drawRectangle({ x: MARGIN, y: y - headerH, width: CONTENT, height: 1.25, color: BW.rule });
       let x = MARGIN;
       cols.forEach((col, index) => {
-        write(col.label, x + inset, y - 15, 8, bodyBold, C.ink, widths[index] - inset * 2, col.align ?? "left");
+        write(col.label, x + inset, y - 15, 8, bodyBold, BW.ink, widths[index] - inset * 2, col.align ?? "left");
         x += widths[index];
       });
       y -= headerH;
@@ -545,8 +552,16 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
     header();
     if (rows.length === 0) {
       ensure(30);
-      page.drawRectangle({ x: MARGIN, y: y - 28, width: CONTENT, height: 28, color: C.card });
-      write(empty, MARGIN + inset, y - 18, 9, body, C.mute, CONTENT - inset * 2);
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - 28,
+        width: CONTENT,
+        height: 28,
+        color: BW.card,
+        borderColor: BW.line,
+        borderWidth: 1,
+      });
+      write(empty, MARGIN + inset, y - 18, 9, body, BW.mute, CONTENT - inset * 2);
       y -= 40;
       return;
     }
@@ -561,17 +576,18 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
         y: y - rowH,
         width: CONTENT,
         height: rowH,
-        color: rowIndex % 2 === 0 ? C.card : C.blush,
+        color: rowIndex % 2 === 0 ? BW.card : BW.zebra,
       });
       let x = MARGIN;
       row.forEach((cell, index) => {
         const col = cols[index];
-        write(cell, x + inset, y - 13, 9.2, fontFor(col.font), C.ink, widths[index] - inset * 2, col.align ?? "left");
+        write(cell, x + inset, y - 13, 9.2, fontFor(col.font), BW.ink, widths[index] - inset * 2, col.align ?? "left");
         x += widths[index];
       });
+      page.drawRectangle({ x: MARGIN, y: y - rowH, width: CONTENT, height: 0.5, color: BW.line });
       y -= rowH;
     });
-    page.drawRectangle({ x: MARGIN, y, width: CONTENT, height: 1, color: C.wash });
+    page.drawRectangle({ x: MARGIN, y, width: CONTENT, height: 1.25, color: BW.rule });
     y -= 14;
   }
 

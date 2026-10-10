@@ -166,6 +166,7 @@ export function FeedbackDesk() {
       <button
         type="button"
         className="feedback-fab"
+        data-guide="feedback"
         aria-expanded={open}
         aria-label={open ? "Close feedback" : "Open queries and suggestions"}
         onClick={() => setOpen((value) => !value)}

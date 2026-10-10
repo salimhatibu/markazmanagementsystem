@@ -63,7 +63,13 @@ export function TripsPage() {
         title="Trips"
         lead="Keep a ledger for each trip or transport fund — money in, things bought, and the running total."
       >
-        <button type="button" className="ghost" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+        <button
+          type="button"
+          className="ghost"
+          data-guide="trips-add"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+        >
           {open ? "Close form" : "New trip ledger"}
         </button>
       </PageHeader>
@@ -129,10 +135,10 @@ export function TripsPage() {
             <thead>
               <tr>
                 <th>Title</th>
-                <th>Lines</th>
-                <th>Received</th>
-                <th>Spent</th>
-                <th>Balance</th>
+                <th className="num">Lines</th>
+                <th className="num">Received</th>
+                <th className="num">Spent</th>
+                <th className="num">Balance</th>
                 <th></th>
               </tr>
             </thead>

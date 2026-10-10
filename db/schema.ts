@@ -18,14 +18,34 @@ const updatedAt = () =>
     .notNull()
     .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`);
 
-/** Teaching groups, separate from the morning/evening sitting. */
+/** Teaching groups, each sitting in either the morning or evening section. */
 export const schoolClasses = sqliteTable("school_classes", {
   id: integer().primaryKey({ autoIncrement: true }),
   name: text().notNull().unique(),
-  teacherId: integer("teacher_id").references(() => teachers.id, { onDelete: "set null" }),
+  section: text({ enum: ["morning", "evening"] }).notNull().default("morning"),
   createdAt: createdAt(),
   updatedAt: text("updated_at").notNull().default(""),
 });
+
+/** A class can have more than one teacher; a teacher can teach more than one class. */
+export const classTeachers = sqliteTable(
+  "class_teachers",
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    classId: integer("class_id")
+      .notNull()
+      .references(() => schoolClasses.id, { onDelete: "cascade" }),
+    teacherId: integer("teacher_id")
+      .notNull()
+      .references(() => teachers.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    unique("class_teachers_class_teacher_uid").on(table.classId, table.teacherId),
+    index("class_teachers_class_idx").on(table.classId),
+    index("class_teachers_teacher_idx").on(table.teacherId),
+  ],
+);
 
 export const students = sqliteTable("students", {
   id: integer().primaryKey({ autoIncrement: true }),
@@ -97,14 +117,14 @@ export const kharajah = sqliteTable(
 export const teachers = sqliteTable("teachers", {
   id: integer().primaryKey({ autoIncrement: true }),
   name: text().notNull(),
-  dateOfBirth: text("date_of_birth").notNull(),
+  dateOfBirth: text("date_of_birth"),
   gender: text({ enum: ["male", "female"] }).notNull(),
   phone: text(),
   nationalId: text("national_id"),
   mpesaName: text("mpesa_name"),
   mpesaNumber: text("mpesa_number"),
   expectedSalary: money("expected_salary"),
-  expectedReleaseDate: text("expected_release_date").notNull(),
+  expectedReleaseDate: text("expected_release_date"),
   paidInAdvance: integer("paid_in_advance", { mode: "boolean" }).notNull().default(false),
   section: text({ enum: ["morning", "evening", "both"] }).notNull(),
   createdAt: createdAt(),
@@ -292,6 +312,8 @@ export const posts = sqliteTable(
     seriesId: integer("series_id").references(() => series.id, { onDelete: "set null" }),
     published: integer({ mode: "boolean" }).notNull().default(false),
     publishedAt: text("published_at"),
+    visibility: text({ enum: ["public", "private"] }).notNull().default("public"),
+    fontFamily: text("font_family"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -377,9 +399,24 @@ export const adminPresence = sqliteTable(
   (table) => [index("admin_presence_last_seen_idx").on(table.lastSeenAt)],
 );
 
+/** A keeper's own answers to the "how are you feeling" check-in, kept per-email. */
+export const feelingEntries = sqliteTable(
+  "feeling_entries",
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    email: text().notNull(),
+    mood: text({ enum: ["good", "down"] }).notNull(),
+    note: text().notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [index("feeling_entries_email_idx").on(table.email, table.createdAt)],
+);
+
 export type Student = typeof students.$inferSelect;
 export type SchoolClass = typeof schoolClasses.$inferSelect;
+export type ClassTeacher = typeof classTeachers.$inferSelect;
 export type AdminPresence = typeof adminPresence.$inferSelect;
+export type FeelingEntry = typeof feelingEntries.$inferSelect;
 export type KharajahRow = typeof kharajah.$inferSelect;
 export type Teacher = typeof teachers.$inferSelect;
 export type FeePayment = typeof feePayments.$inferSelect;

@@ -211,7 +211,7 @@ export function ExpensesPage() {
                 <th>Date</th>
                 <th>Reason</th>
                 <th>Details</th>
-                <th>Amount</th>
+                <th className="num">Amount</th>
                 <th></th>
               </tr>
             </thead>
