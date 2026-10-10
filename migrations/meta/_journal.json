@@ -99,6 +99,13 @@
       "when": 1728120000000,
       "tag": "0014_feeling_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1728130000000,
+      "tag": "0015_panic_alerts",
+      "breakpoints": true
     }
   ]
 }

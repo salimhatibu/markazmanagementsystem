@@ -260,6 +260,16 @@ export function HelpIcon({ className }: IconProps) {
   );
 }
 
+export function PanicIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <path d="M12 3.8 L21 19.4 H3 Z" />
+      <path d="M12 10 V14.2" />
+      <path d="M12 16.9 V17" />
+    </StrokeIcon>
+  );
+}
+
 export function MenuIcon({ className }: IconProps) {
   return (
     <StrokeIcon className={className}>

@@ -257,6 +257,14 @@ export type FeelingEntry = {
   createdAt: string;
 };
 
+export type PanicAlert = {
+  id: number;
+  email: string;
+  level: number;
+  note: string;
+  createdAt: string;
+};
+
 export type BlogPostStat = {
   id: number;
   slug: string;

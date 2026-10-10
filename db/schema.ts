@@ -412,11 +412,25 @@ export const feelingEntries = sqliteTable(
   (table) => [index("feeling_entries_email_idx").on(table.email, table.createdAt)],
 );
 
+/** Emergencies raised from the panic button, with how urgent the keeper judged it to be. */
+export const panicAlerts = sqliteTable(
+  "panic_alerts",
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    email: text().notNull(),
+    level: integer().notNull(),
+    note: text().notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [index("panic_alerts_created_idx").on(table.createdAt)],
+);
+
 export type Student = typeof students.$inferSelect;
 export type SchoolClass = typeof schoolClasses.$inferSelect;
 export type ClassTeacher = typeof classTeachers.$inferSelect;
 export type AdminPresence = typeof adminPresence.$inferSelect;
 export type FeelingEntry = typeof feelingEntries.$inferSelect;
+export type PanicAlert = typeof panicAlerts.$inferSelect;
 export type KharajahRow = typeof kharajah.$inferSelect;
 export type Teacher = typeof teachers.$inferSelect;
 export type FeePayment = typeof feePayments.$inferSelect;

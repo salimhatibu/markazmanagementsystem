@@ -298,6 +298,18 @@ export function feedbackFields(body: Record<string, unknown>) {
   };
 }
 
+export function panicAlertFields(body: Record<string, unknown>) {
+  const raw = body.level;
+  const level = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isInteger(level) || level < 1 || level > 5) {
+    throw new ValidationError("Choose how urgent this is, from 1 to 5.");
+  }
+  return {
+    level,
+    note: requiredMessage(body.note, "Emergency", 4000),
+  };
+}
+
 export function expenseFields(body: Record<string, unknown>) {
   return {
     reason: requiredText(body.reason, "Reason", 255),

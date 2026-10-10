@@ -37,8 +37,10 @@ import {
   NavKharajahIcon,
   NavPeopleIcon,
   NavTripsIcon,
+  PanicIcon,
 } from "./Motifs";
 import { PageSlide } from "./PageSlide";
+import { PanicDialog } from "./PanicDialog";
 import { PresenceIsland } from "./PresenceIsland";
 
 export type WorkspaceContext = {
@@ -94,6 +96,7 @@ export function Shell() {
   const [guideStep, setGuideStep] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [feelingPrompt, setFeelingPrompt] = useState<string | null>(null);
+  const [panicOpen, setPanicOpen] = useState(false);
   const [keepers, setKeepers] = useState<PresenceKeeper[]>([]);
 
   useEffect(() => {
@@ -230,7 +233,7 @@ export function Shell() {
   const brand = displayName(settings.markazName);
 
   return (
-    <div className={`app${guideOpen ? " is-guided" : ""}`}>
+    <div className={`app${guideOpen ? " is-guided" : ""}${panicOpen ? " is-panicked" : ""}`}>
       <a className="skip" href="#content">
         Skip to content
       </a>
@@ -282,6 +285,19 @@ export function Shell() {
             </div>
           ))}
         </nav>
+        <button
+          type="button"
+          className="panic-button"
+          data-guide="panic"
+          title="Panic"
+          onClick={() => {
+            setMenuOpen(false);
+            setPanicOpen(true);
+          }}
+        >
+          <PanicIcon />
+          <span className="sr-only">Panic</span>
+        </button>
       </aside>
       <div className="workspace">
         <header className="topbar">
@@ -339,6 +355,7 @@ export function Shell() {
         <FeelingCheckDialog prompt={feelingPrompt} onClose={() => setFeelingPrompt(null)} />
       ) : null}
       <FeedbackDesk />
+      {panicOpen ? <PanicDialog onClose={() => setPanicOpen(false)} /> : null}
     </div>
   );
 }

@@ -35,6 +35,7 @@ import mail from "./api/mail";
 import session from "./api/session";
 import presence from "./api/presence";
 import feelingEntries from "./api/feeling-entries";
+import panicAlerts from "./api/panic-alerts";
 import posts from "./api/posts";
 import series from "./api/series";
 import blogMedia from "./api/blog-media";
@@ -96,6 +97,7 @@ const routes: Route[] = [
   { pattern: /^\/api\/session\/?$/, handler: session },
   { pattern: /^\/api\/presence\/?$/, handler: presence },
   { pattern: /^\/api\/feeling-entries\/?$/, handler: feelingEntries },
+  { pattern: /^\/api\/panic-alerts\/?$/, handler: panicAlerts },
   { pattern: /^\/api\/posts(?:\/(\d+))?\/?$/, handler: posts, params: ["id"] },
   { pattern: /^\/api\/series(?:\/([^/]+))?\/?$/, handler: series, params: ["key"] },
   { pattern: /^\/api\/blog-media\/blog\/([^/]+)\/?$/, handler: blogMedia, params: ["key"] },
