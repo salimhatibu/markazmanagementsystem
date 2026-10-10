@@ -70,6 +70,7 @@ const sections = [
       { to: "/trips", label: "Trips", end: false, icon: NavTripsIcon },
       { to: "/expenses", label: "Expenses", end: false, icon: NavChartIcon },
       { to: "/reports", label: "Reports", end: false, icon: NavFileIcon },
+      { to: "/panic-alerts", label: "Panic Log", end: false, icon: PanicIcon },
     ],
   },
   { label: "Papers", links: [{ to: "/blog", label: "Blog", end: false, icon: NavBlogIcon }] },
@@ -90,6 +91,8 @@ export function Shell() {
   });
   const [settings, setSettings] = useState<Settings>(fallbackSettings);
   const [unread, setUnread] = useState(0);
+  const [unreadReports, setUnreadReports] = useState(0);
+  const [unreadComments, setUnreadComments] = useState(0);
   const [daily, setDaily] = useState<DailyHadith | null>(null);
   const [showHadith, setShowHadith] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -155,8 +158,12 @@ export function Shell() {
   }, []);
 
   const refreshAlerts = useCallback(async () => {
-    const body = await api<{ unread: number }>("/api/notifications");
+    const body = await api<{ unread: number; unreadReports: number; unreadComments: number }>(
+      "/api/notifications",
+    );
     setUnread(body.unread);
+    setUnreadReports(body.unreadReports);
+    setUnreadComments(body.unreadComments);
   }, []);
 
   useEffect(() => {
@@ -313,9 +320,14 @@ export function Shell() {
           </button>
           <PresenceIsland keepers={keepers} />
           <div className="top-actions">
-            {unread > 0 ? (
+            {unreadReports > 0 ? (
               <NavLink to="/reports" className="alert-pill">
-                Report ready{unread > 1 ? ` · ${unread}` : ""}
+                Report ready{unreadReports > 1 ? ` · ${unreadReports}` : ""}
+              </NavLink>
+            ) : null}
+            {unreadComments > 0 ? (
+              <NavLink to="/blog/notes" className="alert-pill is-note">
+                New note{unreadComments > 1 ? ` · ${unreadComments}` : ""}
               </NavLink>
             ) : null}
             <button

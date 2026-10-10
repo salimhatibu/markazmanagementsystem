@@ -160,15 +160,23 @@ export const reports = sqliteTable(
   (table) => [uniqueIndex("reports_period_range_section_uid").on(table.period, table.rangeStart, table.rangeEnd, table.section)],
 );
 
-export const notifications = sqliteTable("notifications", {
-  id: integer().primaryKey({ autoIncrement: true }),
-  title: text().notNull(),
-  reportId: integer("report_id")
-    .notNull()
-    .references(() => reports.id, { onDelete: "cascade" }),
-  readAt: text("read_at"),
-  createdAt: createdAt(),
-});
+export const notifications = sqliteTable(
+  "notifications",
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    kind: text({ enum: ["report", "comment"] })
+      .notNull()
+      .default("report"),
+    title: text().notNull(),
+    /** What the reader wrote, kept so a note can be read without opening the post. */
+    body: text(),
+    reportId: integer("report_id").references(() => reports.id, { onDelete: "cascade" }),
+    postId: integer("post_id").references(() => posts.id, { onDelete: "cascade" }),
+    readAt: text("read_at"),
+    createdAt: createdAt(),
+  },
+  (table) => [index("notifications_kind_idx").on(table.kind, table.readAt)],
+);
 
 export const settings = sqliteTable("settings", {
   id: integer().primaryKey({ autoIncrement: true }),

@@ -30,12 +30,14 @@ const TripsPage = page(() => import("./pages/Trips"), "TripsPage");
 const TripDetailPage = page(() => import("./pages/TripDetail"), "TripDetailPage");
 const ExpensesPage = page(() => import("./pages/Expenses"), "ExpensesPage");
 const ReportsPage = page(() => import("./pages/Reports"), "ReportsPage");
+const PanicAlertsPage = page(() => import("./pages/PanicAlerts"), "PanicAlertsPage");
 const SettingsPage = page(() => import("./pages/Settings"), "SettingsPage");
 const BlogHomePage = page(() => import("./pages/BlogHome"), "BlogHomePage");
 const BlogPostsPage = page(() => import("./pages/BlogPosts"), "BlogPostsPage");
 const BlogWritePage = page(() => import("./pages/BlogWrite"), "BlogWritePage");
 const BlogAnalyticsPage = page(() => import("./pages/BlogAnalytics"), "BlogAnalyticsPage");
 const BlogSeriesPage = page(() => import("./pages/BlogSeries"), "BlogSeriesPage");
+const BlogNotesPage = page(() => import("./pages/BlogNotes"), "BlogNotesPage");
 const BlogPostPage = page(() => import("./pages/BlogPost"), "BlogPostPage");
 
 function ExternalPapersRedirect() {
@@ -64,6 +66,7 @@ const deskTree = (
         <Route path="/trips/:id" element={<TripDetailPage />} />
         <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/panic-alerts" element={<PanicAlertsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route element={<BlogLayout />}>
@@ -73,6 +76,7 @@ const deskTree = (
         <Route path="/blog/write/:id" element={<BlogWritePage />} />
         <Route path="/blog/analytics" element={<BlogAnalyticsPage />} />
         <Route path="/blog/series" element={<BlogSeriesPage />} />
+        <Route path="/blog/notes" element={<BlogNotesPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
       </Route>
     </Route>

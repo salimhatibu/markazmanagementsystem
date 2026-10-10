@@ -3393,6 +3393,12 @@ legend { padding: 0 8px; color: var(--mute); }
   filter: blur(8px) saturate(0.25) brightness(0.42) contrast(1.15);
   pointer-events: none;
   user-select: none;
+  overflow: hidden;
+}
+
+html:has(.app.is-panicked),
+body:has(.app.is-panicked) {
+  overflow: hidden;
 }
 
 :root[data-panic="on"] {
@@ -3505,18 +3511,22 @@ legend { padding: 0 8px; color: var(--mute); }
   );
 }
 
-/* A scanner sweeping down the console face. */
+/* A scanner sweeping down the console face. Pinned to the padding box and moved
+   by background-position, so it can never add scroll height to the panel. */
 .panic-modal::after {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 110px;
+  inset: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, transparent, rgba(88, 229, 255, 0.09), transparent);
+  background-image: linear-gradient(180deg, transparent, rgba(88, 229, 255, 0.09), transparent);
+  background-size: 100% 110px;
+  background-repeat: no-repeat;
   animation: panic-sweep 4.5s ease-in-out infinite;
 }
+
+/* The console keeps its own scroll, without an OS scrollbar breaking the frame. */
+.panic-modal { scrollbar-width: none; }
+.panic-modal::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
 .panic-modal > * { position: relative; z-index: 1; }
 
@@ -3820,10 +3830,10 @@ legend { padding: 0 8px; color: var(--mute); }
 }
 
 @keyframes panic-sweep {
-  0% { transform: translateY(-110px); opacity: 0; }
+  0% { background-position: 0 -110px; opacity: 0; }
   12% { opacity: 1; }
   60% { opacity: 1; }
-  100% { transform: translateY(560px); opacity: 0; }
+  100% { background-position: 0 100%; opacity: 0; }
 }
 
 @keyframes panic-beacon {
@@ -3859,4 +3869,304 @@ legend { padding: 0 8px; color: var(--mute); }
   .panic-modal { padding: 26px 20px 22px; }
   .panic-level { gap: 10px; padding: 9px 11px; }
   .panic-level-meter { display: none; }
+}
+
+
+/* ---------- Panic log page ---------- */
+
+/* The log puts the whole desk into the same cold emergency mode as the console,
+   so the page never reads as a dark panel dropped onto the light desk. */
+:root[data-panic-log="on"] {
+  color-scheme: dark;
+  --bg: #04060a;
+  --bg-2: #080c13;
+  --text: #dff1fb;
+  --text-2: #9dbed2;
+  --mute: #6a8ba3;
+  --mute-2: #4f6b80;
+  --card: #080d14;
+  --card-soft: #0b131c;
+  --line: rgba(110, 200, 240, 0.12);
+  --line-2: rgba(255, 60, 76, 0.26);
+  --accent: #ff3b47;
+  --ink: #dff1fb;
+  --paper: #04060a;
+  --green: #ff3b47;
+  --pink: #ff6b73;
+  --wash: rgba(255, 59, 71, 0.16);
+  --glass: rgba(8, 13, 20, 0.72);
+  --glass-edge: rgba(255, 255, 255, 0.06);
+  --glass-shadow: rgba(0, 0, 0, 0.6);
+  --hud: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --hud-display: "Barlow Condensed", "Inter", sans-serif;
+  --cyan: #58e5ff;
+}
+
+:root[data-panic-log="on"] body {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% -10%, rgba(255, 59, 71, 0.2), transparent 62%),
+    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(40, 180, 230, 0.08), transparent 55%),
+    linear-gradient(180deg, #05080d 0%, #03050a 100%);
+}
+
+:root[data-panic-log="on"] .side {
+  background: linear-gradient(180deg, rgba(9, 14, 21, 0.96) 0%, rgba(5, 9, 14, 0.97) 100%);
+  border-right-color: rgba(255, 60, 76, 0.16);
+}
+
+:root[data-panic-log="on"] .wave-glow {
+  background: radial-gradient(closest-side, rgba(255, 59, 71, 0.22), transparent 70%);
+}
+
+:root[data-panic-log="on"] .wave-glow.b {
+  background: radial-gradient(closest-side, rgba(88, 229, 255, 0.12), transparent 70%);
+}
+
+:root[data-panic-log="on"] .bg-text text { stroke: rgba(255, 90, 100, 0.07); }
+
+:root[data-panic-log="on"] .nav-pill:hover {
+  background: rgba(255, 59, 71, 0.12);
+}
+
+/* A faint containment grid behind the archive. */
+:root[data-panic-log="on"] .bg-wash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 59, 71, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 59, 71, 0.05) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(ellipse 95% 85% at 50% 40%, #000 10%, transparent 82%);
+}
+
+.panic-log {
+  max-width: 68rem;
+  overflow-x: hidden;
+}
+
+.panic-log-head {
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 60, 76, 0.22);
+}
+
+.panic-log-kicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 8px;
+  font-family: var(--hud);
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #ff5460;
+  text-shadow: 0 0 14px rgba(255, 60, 76, 0.5);
+}
+
+.panic-log-kicker::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff3b47;
+  box-shadow: 0 0 10px 2px rgba(255, 59, 71, 0.75);
+}
+
+.panic-log h1 {
+  margin: 0 0 8px;
+  font-family: var(--hud-display);
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  color: #f2fbff;
+  text-shadow: 0 0 26px rgba(255, 60, 76, 0.3), 0 0 50px rgba(88, 229, 255, 0.12);
+}
+
+.panic-log-blurb {
+  margin: 0 0 18px;
+  max-width: 44rem;
+  font-family: var(--hud);
+  font-size: 12.5px;
+  line-height: 1.7;
+  letter-spacing: 0.03em;
+  color: var(--text-2);
+}
+
+.panic-log-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+}
+
+.panic-log-readout > div {
+  flex: 1 1 10rem;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(88, 229, 255, 0.16);
+  border-left: 2px solid rgba(255, 60, 76, 0.5);
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(88, 229, 255, 0.05), rgba(88, 229, 255, 0.01));
+}
+
+.panic-log-readout dt {
+  font-family: var(--hud);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.panic-log-readout dd {
+  margin: 3px 0 0;
+  font-family: var(--hud-display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #eaf7ff;
+}
+
+.panic-log-readout dd.is-hot {
+  color: #ff5460;
+  text-shadow: 0 0 14px rgba(255, 60, 76, 0.5);
+}
+
+.panic-log-state {
+  margin: 0;
+  padding: 26px 18px;
+  border: 1px dashed rgba(88, 229, 255, 0.2);
+  border-radius: 3px;
+  text-align: center;
+  font-family: var(--hud);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  color: var(--mute);
+}
+
+.panic-log-state.is-error { color: #ff6b73; border-color: rgba(255, 60, 76, 0.4); }
+
+.panic-log-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panic-log-row {
+  padding: 13px 16px;
+  border: 1px solid rgba(88, 229, 255, 0.14);
+  border-left: 3px solid var(--tier, #ff3b47);
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(88, 229, 255, 0.05), rgba(88, 229, 255, 0.012));
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.panic-log-row:hover {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tier) 14%, transparent), rgba(88, 229, 255, 0.03));
+  border-color: color-mix(in srgb, var(--tier) 45%, transparent);
+  box-shadow: 0 0 22px -8px color-mix(in srgb, var(--tier) 70%, transparent);
+}
+
+.panic-log-row-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+
+.panic-log-level {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--tier) 65%, transparent);
+  background: color-mix(in srgb, var(--tier) 14%, transparent);
+  color: var(--tier);
+  font-family: var(--hud);
+  font-size: 13px;
+  clip-path: polygon(22% 0, 100% 0, 100% 78%, 78% 100%, 0 100%, 0 22%);
+}
+
+.panic-log-label {
+  font-family: var(--hud-display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tier);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--tier) 45%, transparent);
+}
+
+.panic-log-meter { display: flex; gap: 3px; flex-shrink: 0; }
+
+.panic-log-meter i {
+  width: 3px;
+  height: 13px;
+  background: rgba(130, 190, 220, 0.16);
+}
+
+.panic-log-meter i.on {
+  background: var(--tier);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--tier) 70%, transparent);
+}
+
+.panic-log-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-left: auto;
+  min-width: 0;
+  font-family: var(--hud);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+.panic-log-who {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panic-log-meta time { color: var(--text-2); }
+
+.panic-log-note {
+  margin: 0;
+  padding-left: 40px;
+  font-family: var(--hud);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .panic-log-row-head { flex-wrap: wrap; gap: 9px; }
+  .panic-log-meter { display: none; }
+  .panic-log-meta {
+    flex-basis: 100%;
+    margin-left: 0;
+    gap: 10px;
+    white-space: normal;
+  }
+  .panic-log-note { padding-left: 0; }
+}
+
+/* The log is a steady record, not a reveal — no entrance motion on this page. */
+:root[data-panic-log="on"] .page-slide,
+:root[data-panic-log="on"] .page-slide * {
+  animation: none;
+}
+
+/* A reader's note is an invitation, not an errand — it reads warmer than a report. */
+.alert-pill.is-note {
+  background: #7a1f2b;
+  color: #fdf6f3;
 }

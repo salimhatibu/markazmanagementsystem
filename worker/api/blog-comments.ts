@@ -1,13 +1,13 @@
 import { and, asc, count, eq } from "drizzle-orm";
 import { db } from "../../db/index";
-import { blogComments, posts } from "../../db/schema";
+import { blogComments, notifications, posts } from "../../db/schema";
 import { asIso } from "../../shared/format";
 import { commentSessionId, sanitizeComment } from "../../shared/comment";
 import { fail, handleError, json, parseId, readBody, ValidationError } from "../_shared/http";
 
 async function publishedPost(id: number) {
   const [row] = await db
-    .select({ id: posts.id, published: posts.published })
+    .select({ id: posts.id, title: posts.title, published: posts.published })
     .from(posts)
     .where(eq(posts.id, id))
     .limit(1);
@@ -56,6 +56,17 @@ export default async (req: Request, context: Context) => {
         .insert(blogComments)
         .values({ postId, sessionId, body: text })
         .returning();
+      // The reader's note should never fail to post because the desk alert did.
+      try {
+        await db.insert(notifications).values({
+          kind: "comment",
+          title: `New note on “${post.title}”`,
+          body: text,
+          postId,
+        });
+      } catch {
+        /* the note is saved; the alert is best effort */
+      }
       return json({ comment: present(created) }, 201);
     }
 

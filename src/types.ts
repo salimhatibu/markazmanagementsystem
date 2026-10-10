@@ -447,3 +447,15 @@ export function teacherToInput(teacher: Teacher): TeacherInput {
     paidInAdvance: teacher.paidInAdvance,
   };
 }
+
+export type DeskNotification = {
+  id: number;
+  kind: "report" | "comment";
+  title: string;
+  body: string | null;
+  reportId: number | null;
+  postId: number | null;
+  postSlug: string | null;
+  readAt: string | null;
+  createdAt: string;
+};

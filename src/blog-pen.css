@@ -2007,3 +2007,88 @@ html[data-surface="blog"] body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Reader notes ---------- */
+
+.note-list {
+  display: grid;
+  gap: 0;
+  margin: 0 0 32px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--ink);
+}
+
+.note-row {
+  padding: 16px 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* Anything unseen carries a rule in the masthead red. */
+.note-row.is-new {
+  padding-left: 14px;
+  border-left: 3px solid var(--orange);
+  margin-left: -17px;
+  padding-right: 3px;
+}
+
+.note-row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.note-post {
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.note-row-top time {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.note-body {
+  margin: 0 0 10px;
+  max-width: 48rem;
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note-link {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--navy);
+}
+
+.note-state {
+  margin: 0 0 32px;
+  padding: 28px 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.note-state.is-error { color: var(--orange); }
+
+@media (max-width: 620px) {
+  .note-row-top { flex-direction: column; gap: 4px; }
+  .note-row.is-new { margin-left: 0; padding-left: 11px; }
+}

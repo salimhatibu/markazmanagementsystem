@@ -43,7 +43,7 @@ export function ReportsPage() {
     let cancel = false;
     (async () => {
       try {
-        await api("/api/notifications/read", { method: "POST" });
+        await api("/api/notifications/read", { method: "POST", body: JSON.stringify({ kind: "report" }) });
         await refreshAlerts();
         await Promise.all([loadList(), loadPreview(scope)]);
         if (!cancel) setReady(true);
@@ -87,7 +87,7 @@ export function ReportsPage() {
         method: "POST",
         body: JSON.stringify({ period, scope, section: period === "monthly" ? section : "all" }),
       });
-      await api("/api/notifications/read", { method: "POST" });
+      await api("/api/notifications/read", { method: "POST", body: JSON.stringify({ kind: "report" }) });
       await refreshAlerts();
       await loadList();
       setInfo(
@@ -107,7 +107,7 @@ export function ReportsPage() {
     setInfo("");
     try {
       await api(`/api/reports/${id}`, { method: "DELETE" });
-      await api("/api/notifications/read", { method: "POST" });
+      await api("/api/notifications/read", { method: "POST", body: JSON.stringify({ kind: "report" }) });
       await refreshAlerts();
       await loadList();
       setRemoving(null);
