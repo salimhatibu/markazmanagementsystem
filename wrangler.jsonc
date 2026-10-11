@@ -5,6 +5,11 @@
   "compatibility_date": "2026-10-03",
   "compatibility_flags": ["nodejs_compat"],
   "account_id": "87f42add36c73d8668f7aaf00ffb8d70",
+  // The desk and the papers are served only from their custom domains, where
+  // Access guards the desk. The workers.dev and versioned preview URLs would
+  // sit outside that guard, so they stay switched off.
+  "workers_dev": false,
+  "preview_urls": false,
   "assets": {
     "directory": "./dist/client",
     "binding": "ASSETS",
@@ -39,7 +44,7 @@
   "vars": {
     "DEV_OPEN_DESK": "0",
     "PUBLIC_HOST": "thesalafimindset.com",
-    "ADMIN_HOST": "admin.mysalafimindset.com",
+    "ADMIN_HOST": "admin.thesalafimindset.com",
     "SITE_URL": "https://thesalafimindset.com"
   },
   "previews": {

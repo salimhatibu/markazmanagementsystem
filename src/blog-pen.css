@@ -2112,3 +2112,157 @@ html[data-surface="blog"] body {
 .blog-pen > main > .paper-colophon {
   margin-top: auto;
 }
+
+/* ---------- Public landing: more press, less air ---------- */
+
+/* The front picture, framed like a plate in a printed page. */
+.blog-pen--public .paper-lead-figure {
+  display: block;
+  margin: 0 0 18px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 10px 0;
+  background: transparent;
+}
+
+.blog-pen--public .paper-lead-main .paper-lead-figure .blog-read-cover {
+  margin: 0;
+  width: 100%;
+  max-height: min(26rem, 40vh);
+  object-fit: cover;
+  filter: saturate(0.9) contrast(1.04);
+}
+
+/* A standing tag for the series a piece belongs to. */
+.blog-pen--public .paper-series-tag {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 7px;
+  border: 1px solid var(--orange);
+  color: var(--orange);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* ---------- The issue column ---------- */
+
+.blog-pen--public .paper-briefs {
+  column-gap: clamp(18px, 2.2vw, 30px);
+  row-gap: clamp(22px, 2.6vw, 34px);
+}
+
+.blog-pen--public .paper-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom-width: 2px;
+}
+
+/* Hairlines between the columns, the way a broadsheet separates its stories.
+   The column count is fixed per breakpoint rather than auto-fit, so the first
+   story on each row can drop its rule instead of leaving one floating. */
+@media (min-width: 960px) {
+  .blog-pen--public .paper-briefs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .blog-pen--public .paper-brief {
+    padding-left: clamp(18px, 2.2vw, 30px);
+    border-left: 1px solid var(--line);
+  }
+
+  .blog-pen--public .paper-brief:nth-child(2n + 2) {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+@media (min-width: 1200px) {
+  .blog-pen--public .paper-briefs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  .blog-pen--public .paper-brief {
+    padding-left: clamp(18px, 2.2vw, 30px);
+    border-left: 1px solid var(--line);
+  }
+
+  /* The section heading is child 1, so each row starts on 3n + 2. */
+  .blog-pen--public .paper-brief:nth-child(2n + 2) {
+    padding-left: clamp(18px, 2.2vw, 30px);
+    border-left: 1px solid var(--line);
+  }
+
+  .blog-pen--public .paper-brief:nth-child(3n + 2) {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+.blog-pen--public .paper-brief .paper-section-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+/* The tag already carries its own leading space in the lead kicker. */
+.blog-pen--public .paper-brief .paper-series-tag { margin-left: 0; }
+
+.blog-pen--public .paper-brief-no {
+  font: 700 0.95rem / 1 var(--display);
+  letter-spacing: 0.02em;
+  color: var(--orange);
+  border-bottom: 2px solid var(--orange);
+  padding-bottom: 2px;
+}
+
+.blog-pen--public .paper-brief-figure {
+  display: block;
+  margin: 0 0 12px;
+  overflow: hidden;
+}
+
+.blog-pen--public .paper-brief-figure img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  filter: saturate(0.85) contrast(1.05);
+  transition: filter 220ms ease, transform 320ms ease;
+}
+
+.blog-pen--public .paper-brief-figure:hover img {
+  filter: saturate(1) contrast(1.02);
+  transform: scale(1.02);
+}
+
+.blog-pen--public .paper-brief h3 {
+  font-size: clamp(1.15rem, 0.5vw + 1rem, 1.35rem);
+  line-height: 1.2;
+  margin-bottom: 7px;
+}
+
+.blog-pen--public .paper-brief p {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.blog-pen--public .paper-brief-actions { margin-top: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .blog-pen--public .paper-brief-figure img { transition: none; }
+  .blog-pen--public .paper-brief-figure:hover img { transform: none; }
+}
+
+@media (max-width: 959px) {
+  /* Stacked: a rule above each story reads better than one down the side. */
+  .blog-pen--public .paper-brief {
+    padding-left: 0;
+    border-left: 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .blog-pen--public .paper-brief:first-of-type { padding-top: 0; border-top: 0; }
+  .blog-pen--public .paper-brief-figure img { aspect-ratio: 2 / 1; }
+}

@@ -18,7 +18,7 @@ export type WorkerEnv = {
   SITE_URL?: string;
   /** Public papers hostname (no scheme), e.g. thesalafimindset.com */
   PUBLIC_HOST?: string;
-  /** Admin desk hostname (no scheme), e.g. admin.mysalafimindset.com */
+  /** Admin desk hostname (no scheme), e.g. admin.thesalafimindset.com */
   ADMIN_HOST?: string;
 };
 

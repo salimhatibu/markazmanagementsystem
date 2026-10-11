@@ -67,6 +67,7 @@ export function PublicPostsPage() {
           <article className="paper-lead-main">
             <p className="paper-section-kicker">
               Front · <span lang="ar" dir="rtl">صدر</span>
+              {lead.seriesTitle ? <span className="paper-series-tag">{lead.seriesTitle}</span> : null}
             </p>
             <h2 className="paper-headline">
               <Link to={publicPostPath(lead.slug)} onClick={() => trackBlog("click", lead.id)}>
@@ -74,6 +75,17 @@ export function PublicPostsPage() {
               </Link>
             </h2>
             <p className="paper-byline">{postedOn(lead) ? `${postedOn(lead)} · A public paper` : "A public paper"}</p>
+            {lead.coverUrl ? (
+              <Link
+                className="paper-lead-figure"
+                to={publicPostPath(lead.slug)}
+                onClick={() => trackBlog("click", lead.id)}
+                tabIndex={-1}
+                aria-hidden="true"
+              >
+                <img className="blog-read-cover" src={lead.coverUrl} alt="" loading="eager" />
+              </Link>
+            ) : null}
             {lead.excerpt ? (
               <div className="paper-drop paper-drop--excerpt">
                 <p>{lead.excerpt}</p>
@@ -110,9 +122,27 @@ export function PublicPostsPage() {
           <h2 id="briefs-title" className="paper-section-head">
             In this issue
           </h2>
-          {briefs.map((post) => (
+          {briefs.map((post, index) => (
             <article key={post.id} className="paper-brief">
-              <p className="paper-section-kicker">Paper · صحيفة</p>
+              <p className="paper-section-kicker">
+                <span className="paper-brief-no">{String(index + 1).padStart(2, "0")}</span>
+                {post.seriesTitle ? (
+                  <span className="paper-series-tag">{post.seriesTitle}</span>
+                ) : (
+                  <span>Paper · صحيفة</span>
+                )}
+              </p>
+              {post.coverUrl ? (
+                <Link
+                  className="paper-brief-figure"
+                  to={publicPostPath(post.slug)}
+                  onClick={() => trackBlog("click", post.id)}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                >
+                  <img src={post.coverUrl} alt="" loading="lazy" />
+                </Link>
+              ) : null}
               <h3>
                 <Link to={publicPostPath(post.slug)} onClick={() => trackBlog("click", post.id)}>
                   {post.title}

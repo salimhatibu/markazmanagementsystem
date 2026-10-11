@@ -59,7 +59,7 @@ export type WorkspaceContext = {
  * Typed as boolean so the hidden branch stays live code rather than being
  * narrowed away as unreachable.
  */
-const SHOW_PRESENCE_ISLAND: boolean = false;
+const SHOW_PRESENCE_ISLAND: boolean = true;
 
 const PANIC_TAPS = 3;
 const PANIC_TAP_WINDOW_MS = 1600;

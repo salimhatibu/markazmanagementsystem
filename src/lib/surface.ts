@@ -1,5 +1,5 @@
 const DEFAULT_PUBLIC_HOST = "thesalafimindset.com";
-const DEFAULT_ADMIN_HOST = "admin.mysalafimindset.com";
+const DEFAULT_ADMIN_HOST = "admin.thesalafimindset.com";
 
 function stripWww(host: string): string {
   return host.replace(/^www\./i, "");
