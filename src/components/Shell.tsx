@@ -52,6 +52,15 @@ export type WorkspaceContext = {
   keepers: PresenceKeeper[];
 };
 
+/**
+ * The presence island is parked, not retired. Flip this to true to bring it
+ * back: the component, its styles, the polling in lib/presence and the
+ * /api/presence route are all still in place and need no other change.
+ * Typed as boolean so the hidden branch stays live code rather than being
+ * narrowed away as unreachable.
+ */
+const SHOW_PRESENCE_ISLAND: boolean = false;
+
 const PANIC_TAPS = 3;
 const PANIC_TAP_WINDOW_MS = 1600;
 
@@ -114,6 +123,7 @@ export function Shell() {
   }, []);
 
   useEffect(() => {
+    if (!SHOW_PRESENCE_ISLAND) return;
     if (!auth.isAdmin) return;
     let cancel = false;
     let timer: number | undefined;
@@ -379,7 +389,7 @@ export function Shell() {
           >
             {menuOpen ? <CloseIcon /> : <MenuIcon />}
           </button>
-          <PresenceIsland keepers={keepers} />
+          {SHOW_PRESENCE_ISLAND ? <PresenceIsland keepers={keepers} /> : null}
           <div className="top-actions">
             {unreadReports > 0 ? (
               <NavLink to="/reports" className="alert-pill">
