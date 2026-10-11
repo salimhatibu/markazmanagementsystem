@@ -2092,3 +2092,23 @@ html[data-surface="blog"] body {
   .note-row-top { flex-direction: column; gap: 4px; }
   .note-row.is-new { margin-left: 0; padding-left: 11px; }
 }
+
+/* ---------- Footer sits on the bottom edge ---------- */
+
+/* The sheet is at least a screen tall; making it a column lets the colophon
+   claim the leftover space instead of hanging under a short article. */
+.blog-pen {
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-pen > main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-pen > main > footer,
+.blog-pen > main > .paper-colophon {
+  margin-top: auto;
+}

@@ -8,7 +8,13 @@ import { CloseIcon } from "./Motifs";
 
 type Step = "level" | "note" | "verse";
 
-export function PanicDialog({ onClose }: { onClose: () => void }) {
+export function PanicDialog({
+  onClose,
+  onLogged,
+}: {
+  onClose: () => void;
+  onLogged?: () => void;
+}) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const [step, setStep] = useState<Step>("level");
@@ -54,6 +60,7 @@ export function PanicDialog({ onClose }: { onClose: () => void }) {
         method: "POST",
         body: JSON.stringify({ level, note: note.trim() }),
       });
+      onLogged?.();
       setVerse(panicVerse());
       setStep("verse");
     } catch (caught) {

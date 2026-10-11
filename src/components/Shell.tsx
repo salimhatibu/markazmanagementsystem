@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CURRENCY, displayName, MARKAZ_NAME } from "../../shared/format";
 import { ACCOUNT_NAME, ACCOUNT_NUMBER, BANK_NAME, OFFICIAL_ADDRESS, PAYBILL } from "../../shared/letterhead";
@@ -52,6 +52,9 @@ export type WorkspaceContext = {
   keepers: PresenceKeeper[];
 };
 
+const PANIC_TAPS = 3;
+const PANIC_TAP_WINDOW_MS = 1600;
+
 const sections = [
   { label: "Desk", links: [{ to: "/", label: "Home", end: true, icon: NavHomeIcon }] },
   {
@@ -100,6 +103,10 @@ export function Shell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [feelingPrompt, setFeelingPrompt] = useState<string | null>(null);
   const [panicOpen, setPanicOpen] = useState(false);
+  const [panicTaps, setPanicTaps] = useState(0);
+  const [panicLocked, setPanicLocked] = useState(false);
+  const panicTapTimer = useRef<number>();
+  const panicTapCount = useRef(0);
   const [keepers, setKeepers] = useState<PresenceKeeper[]>([]);
 
   useEffect(() => {
@@ -203,6 +210,46 @@ export function Shell() {
     return () => window.removeEventListener(GUIDE_START, open);
   }, []);
 
+  // The desk needs to know whether today's call has already been made, so the
+  // button can read as spent before anyone taps it.
+  useEffect(() => {
+    if (!auth.isAdmin) return;
+    let cancel = false;
+    api<{ usedToday: boolean }>("/api/panic-alerts")
+      .then((body) => {
+        if (!cancel) setPanicLocked(body.usedToday);
+      })
+      .catch(() => {
+        /* the server still refuses a second call if this check never lands */
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [auth.isAdmin]);
+
+  useEffect(() => () => window.clearTimeout(panicTapTimer.current), []);
+
+  /** Three deliberate taps, so the console never opens by accident. The count
+      lives in a ref as well, since taps can land faster than React re-renders. */
+  function tapPanic() {
+    if (panicLocked) return;
+    window.clearTimeout(panicTapTimer.current);
+    const next = panicTapCount.current + 1;
+    if (next >= PANIC_TAPS) {
+      panicTapCount.current = 0;
+      setPanicTaps(0);
+      setMenuOpen(false);
+      setPanicOpen(true);
+      return;
+    }
+    panicTapCount.current = next;
+    setPanicTaps(next);
+    panicTapTimer.current = window.setTimeout(() => {
+      panicTapCount.current = 0;
+      setPanicTaps(0);
+    }, PANIC_TAP_WINDOW_MS);
+  }
+
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
@@ -294,16 +341,30 @@ export function Shell() {
         </nav>
         <button
           type="button"
-          className="panic-button"
+          className={`panic-button${panicLocked ? " is-spent" : ""}${panicTaps > 0 ? " is-arming" : ""}`}
           data-guide="panic"
-          title="Panic"
-          onClick={() => {
-            setMenuOpen(false);
-            setPanicOpen(true);
-          }}
+          data-taps={panicTaps}
+          disabled={panicLocked}
+          title={
+            panicLocked
+              ? "Already raised today. The button opens again tomorrow."
+              : "Panic — tap three times to open"
+          }
+          onClick={tapPanic}
         >
           <PanicIcon />
-          <span className="sr-only">Panic</span>
+          <span className="sr-only">
+            {panicLocked
+              ? "Panic button already used today"
+              : `Panic. Tap three times to open. ${PANIC_TAPS - panicTaps} ${
+                  PANIC_TAPS - panicTaps === 1 ? "tap" : "taps"
+                } left.`}
+          </span>
+          {panicTaps > 0 ? (
+            <span className="panic-tap-count" aria-hidden="true">
+              {PANIC_TAPS - panicTaps}
+            </span>
+          ) : null}
         </button>
       </aside>
       <div className="workspace">
@@ -367,7 +428,9 @@ export function Shell() {
         <FeelingCheckDialog prompt={feelingPrompt} onClose={() => setFeelingPrompt(null)} />
       ) : null}
       <FeedbackDesk />
-      {panicOpen ? <PanicDialog onClose={() => setPanicOpen(false)} /> : null}
+      {panicOpen ? (
+        <PanicDialog onClose={() => setPanicOpen(false)} onLogged={() => setPanicLocked(true)} />
+      ) : null}
     </div>
   );
 }

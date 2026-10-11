@@ -1,29 +1,41 @@
 const credits = [
-  { label: "Design by", value: "Abu Ruhayn" },
+  { label: "Design", value: "Abu Ruhayn" },
   { label: "Owner", value: "Meemy" },
-  { label: "Institute", value: "Markaz Imam ash-Shafi'i" },
-  { label: "Location", value: "Mombasa, Kenya" },
 ];
 
 export function Footer() {
+  const year = new Date().getFullYear();
+
   return (
     <footer className="footer">
-      <dl className="footer-grid">
-        <div>
-          <dt className="kicker">Sponsored by</dt>
-          <dd>
-            <a href="https://maktabahruhayn.com" target="_blank" rel="noreferrer noopener">
-              maktabahruhayn.com
-            </a>
-          </dd>
+      <div className="footer-body">
+        <div className="footer-mark">
+          <p className="footer-name">Markaz Imam ash-Shafi&rsquo;i</p>
+          <p className="footer-place">Mombasa, Kenya &middot; East Africa Time</p>
         </div>
-        {credits.map((credit) => (
-          <div key={credit.label}>
-            <dt className="kicker">{credit.label}</dt>
-            <dd>{credit.value}</dd>
+
+        <dl className="footer-credits">
+          <div className="footer-credit">
+            <dt>Sponsored by</dt>
+            <dd>
+              <a href="https://maktabahruhayn.com" target="_blank" rel="noreferrer noopener">
+                maktabahruhayn.com
+              </a>
+            </dd>
           </div>
-        ))}
-      </dl>
+          {credits.map((credit) => (
+            <div className="footer-credit" key={credit.label}>
+              <dt>{credit.label}</dt>
+              <dd>{credit.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+
+      <p className="footer-fine">
+        <span>&copy; {year} Markaz Imam ash-Shafi&rsquo;i</span>
+        <span>All records kept on this desk</span>
+      </p>
     </footer>
   );
 }
