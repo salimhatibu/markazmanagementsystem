@@ -24,7 +24,6 @@ export function FeedbackDesk() {
 
   useEffect(() => {
     load().catch(() => {
-      /* badge stays quiet until the panel is opened */
     });
   }, []);
 

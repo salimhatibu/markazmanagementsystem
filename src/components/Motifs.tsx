@@ -260,6 +260,15 @@ export function HelpIcon({ className }: IconProps) {
   );
 }
 
+export function BellIcon({ className }: IconProps) {
+  return (
+    <StrokeIcon className={className}>
+      <path d="M12 4.2 C8.9 4.2 7 6.4 7 9.1 C7 12.6 5.8 14 5.2 15 C4.9 15.5 5.2 16.1 5.8 16.1 H18.2 C18.8 16.1 19.1 15.5 18.8 15 C18.2 14 17 12.6 17 9.1 C17 6.4 15.1 4.2 12 4.2 Z" />
+      <path d="M10.1 19 C10.5 19.8 11.2 20.2 12 20.2 C12.8 20.2 13.5 19.8 13.9 19" />
+    </StrokeIcon>
+  );
+}
+
 export function PanicIcon({ className }: IconProps) {
   return (
     <StrokeIcon className={className}>

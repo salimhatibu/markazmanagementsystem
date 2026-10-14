@@ -180,7 +180,7 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
   note("Amounts in KES");
   drawTable(
     [
-      { label: "#", width: 24 },
+      { label: "#", width: 22 },
       { label: "Student", width: 140 },
       { label: "Section", width: 64 },
       { label: "M-Pesa ref", width: 100 },
@@ -210,13 +210,14 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
   note("Amounts in KES");
   drawTable(
     [
-      { label: "#", width: 24 },
-      { label: "Name", width: 118 },
-      { label: "Phone", width: 78 },
-      { label: "ID number", width: 70 },
-      { label: "M-Pesa ref", width: 88 },
-      { label: "Date", width: 50, align: "right" },
-      { label: "Salary", width: 70, align: "right", font: "nums" },
+      { label: "#", width: 22 },
+      // Names are the longest thing on the row; the M-Pesa ref is usually a dash.
+      { label: "Name", width: 152 },
+      { label: "Phone", width: 86 },
+      { label: "ID number", width: 66 },
+      { label: "M-Pesa ref", width: 56 },
+      { label: "Date", width: 48, align: "right" },
+      { label: "Salary", width: 62, align: "right", font: "nums" },
     ],
     (report.salaryLines ?? []).map((line, index) => [
       String(index + 1),
@@ -533,7 +534,8 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
   ) {
     const headerH = 24;
     const rowH = 20;
-    const inset = 8;
+    // 8pt each side cost 16pt of every column; the narrow ones had no room left.
+    const inset = 5;
     const total = cols.reduce((sum, col) => sum + col.width, 0);
     const widths = cols.map((col) => (col.width / total) * CONTENT);
 
@@ -566,26 +568,55 @@ export async function buildOperationsPdf(report: OperationsReport): Promise<Uint
       return;
     }
 
-    rows.forEach((row, rowIndex) => {
-      if (y - rowH < FOOTER) {
+    // One size for the whole table. A long name runs onto a second line rather
+    // than being set smaller than its neighbours, so a column reads evenly.
+    const cellSize = 9.2;
+    const lineStep = 10.5;
+    const maxLines = 2;
+
+    const laidOut = rows.map((row) =>
+      row.map((cell, index) => {
+        const usable = widths[index] - inset * 2;
+        const lines = wrap(cell, fontFor(cols[index].font), cellSize, usable);
+        if (lines.length <= maxLines) return lines;
+        // Still too long even wrapped: keep the first line and clip the second.
+        return [lines[0], fit(lines.slice(1).join(" "), fontFor(cols[index].font), cellSize, usable).join(" ")];
+      }),
+    );
+
+    laidOut.forEach((cells, rowIndex) => {
+      const lineCount = Math.max(1, ...cells.map((lines) => lines.length));
+      const height = rowH + (lineCount - 1) * lineStep;
+      if (y - height < FOOTER) {
         newPage();
         header();
       }
       page.drawRectangle({
         x: MARGIN,
-        y: y - rowH,
+        y: y - height,
         width: CONTENT,
-        height: rowH,
+        height,
         color: rowIndex % 2 === 0 ? BW.card : BW.zebra,
       });
       let x = MARGIN;
-      row.forEach((cell, index) => {
+      cells.forEach((lines, index) => {
         const col = cols[index];
-        write(cell, x + inset, y - 13, 9.2, fontFor(col.font), BW.ink, widths[index] - inset * 2, col.align ?? "left");
+        lines.forEach((line, lineIndex) => {
+          write(
+            line,
+            x + inset,
+            y - 13 - lineIndex * lineStep,
+            cellSize,
+            fontFor(col.font),
+            BW.ink,
+            widths[index] - inset * 2,
+            col.align ?? "left",
+          );
+        });
         x += widths[index];
       });
-      page.drawRectangle({ x: MARGIN, y: y - rowH, width: CONTENT, height: 0.5, color: BW.line });
-      y -= rowH;
+      page.drawRectangle({ x: MARGIN, y: y - height, width: CONTENT, height: 0.5, color: BW.line });
+      y -= height;
     });
     page.drawRectangle({ x: MARGIN, y, width: CONTENT, height: 1.25, color: BW.rule });
     y -= 14;

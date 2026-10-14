@@ -16,6 +16,23 @@ export function BlogPostsPage() {
   const [drafts, setDrafts] = useState<BlogPost[]>([]);
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
+  const [confirming, setConfirming] = useState<number | null>(null);
+  const [removing, setRemoving] = useState<number | null>(null);
+
+  async function remove(post: BlogPost) {
+    setRemoving(post.id);
+    setError("");
+    try {
+      await api(`/api/posts/${post.id}`, { method: "DELETE" });
+      setPosts((rows) => rows.filter((row) => row.id !== post.id));
+      setDrafts((rows) => rows.filter((row) => row.id !== post.id));
+      setConfirming(null);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "That post could not be removed.");
+    } finally {
+      setRemoving(null);
+    }
+  }
 
   useEffect(() => {
     api<{ posts: BlogPost[] }>("/api/posts?all=1")
@@ -55,9 +72,23 @@ export function BlogPostsPage() {
           </div>
           <ul className="log">
             {drafts.map((post) => (
-              <li key={post.id}>
+              <li key={post.id} className="blog-draft-row">
                 <time>{postedOn(post)}</time>
                 <Link to={`/blog/write/${post.id}`}>{post.title || "Untitled"}</Link>
+                {confirming === post.id ? (
+                  <span className="blog-del-confirm">
+                    <button type="button" className="blog-del is-yes" disabled={removing === post.id} onClick={() => void remove(post)}>
+                      {removing === post.id ? "Removing…" : "Delete for good"}
+                    </button>
+                    <button type="button" className="blog-del is-no" onClick={() => setConfirming(null)}>
+                      Keep
+                    </button>
+                  </span>
+                ) : (
+                  <button type="button" className="blog-del" onClick={() => setConfirming(post.id)}>
+                    Delete
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -80,9 +111,28 @@ export function BlogPostsPage() {
               {post.visibility === "private" ? <span className="blog-private-tag">Private</span> : null}
             </h2>
             {post.excerpt ? <p className="excuse">{post.excerpt}</p> : null}
-            <Link className="quest-read" to={`/blog/${post.slug}`} onClick={() => trackBlog("click", post.id)}>
-              Read ↗
-            </Link>
+            <div className="blog-issue-actions">
+              <Link className="quest-read" to={`/blog/${post.slug}`} onClick={() => trackBlog("click", post.id)}>
+                Read ↗
+              </Link>
+              <Link className="quest-read" to={`/blog/write/${post.id}`}>
+                Edit
+              </Link>
+              {confirming === post.id ? (
+                <span className="blog-del-confirm">
+                  <button type="button" className="blog-del is-yes" disabled={removing === post.id} onClick={() => void remove(post)}>
+                    {removing === post.id ? "Removing…" : "Delete for good"}
+                  </button>
+                  <button type="button" className="blog-del is-no" onClick={() => setConfirming(null)}>
+                    Keep
+                  </button>
+                </span>
+              ) : (
+                <button type="button" className="blog-del" onClick={() => setConfirming(post.id)}>
+                  Delete
+                </button>
+              )}
+            </div>
           </article>
         ))}
       </div>

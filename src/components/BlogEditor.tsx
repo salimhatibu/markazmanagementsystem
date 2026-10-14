@@ -258,7 +258,11 @@ export function BlogEditor({
           });
         }}
       />
-      <EditorContent editor={editor} className="blog-canvas" style={fontFamily ? { fontFamily } : undefined} />
+      <EditorContent
+        editor={editor}
+        className="blog-canvas"
+        style={fontFamily ? ({ fontFamily, ["--post-font"]: fontFamily } as React.CSSProperties) : undefined}
+      />
       <p className="blog-paste-hint">Paste a picture from the clipboard into the copy, or use the picture tool.</p>
     </div>
   );

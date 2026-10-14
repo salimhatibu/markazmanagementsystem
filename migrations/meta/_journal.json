@@ -113,6 +113,34 @@
       "when": 1728140000000,
       "tag": "0016_comment_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1728150000000,
+      "tag": "0017_reader_presence",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1728160000000,
+      "tag": "0018_hadith_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1728170000000,
+      "tag": "0019_daily_expenses",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1728180000000,
+      "tag": "0020_notification_reads",
+      "breakpoints": true
     }
   ]
 }

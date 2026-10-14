@@ -15,6 +15,32 @@ import { api } from "../lib/api";
 import { startGuide } from "../lib/guide";
 
 export function SettingsPage() {
+  const [noticeTitle, setNoticeTitle] = useState("");
+  const [noticeBody, setNoticeBody] = useState("");
+  const [noticeBusy, setNoticeBusy] = useState(false);
+  const [noticeSent, setNoticeSent] = useState(false);
+  const [noticeError, setNoticeError] = useState("");
+
+  async function sendNotice(event: FormEvent) {
+    event.preventDefault();
+    if (!noticeTitle.trim() || noticeBusy) return;
+    setNoticeBusy(true);
+    setNoticeError("");
+    setNoticeSent(false);
+    try {
+      await api("/api/notifications", {
+        method: "POST",
+        body: JSON.stringify({ title: noticeTitle.trim(), body: noticeBody.trim() || undefined }),
+      });
+      setNoticeTitle("");
+      setNoticeBody("");
+      setNoticeSent(true);
+    } catch (caught) {
+      setNoticeError(caught instanceof Error ? caught.message : "That notice could not be sent.");
+    } finally {
+      setNoticeBusy(false);
+    }
+  }
   const { settings, refreshSettings } = useOutletContext<WorkspaceContext>();
   const [markazName, setMarkazName] = useState(settings.markazName ?? MARKAZ_NAME);
   const [currencySymbol, setCurrencySymbol] = useState(settings.currencySymbol ?? CURRENCY);
@@ -140,6 +166,42 @@ export function SettingsPage() {
           <button className="solid" type="submit" disabled={busy}>
             {busy ? "Saving…" : "Save settings"}
           </button>
+        </form>
+      </Panel>
+      <Panel tone="light" className="notice-writer">
+        <p className="panel-title">Tell the other keepers</p>
+        <p className="notice-writer-lead">
+          A short word about anything new on the desk. It appears in every keeper&rsquo;s notification bell, and
+          each of them clears it for themselves.
+        </p>
+        <form className="form-grid" onSubmit={(event) => void sendNotice(event)}>
+          <Field id="notice-title" label="Headline">
+            <input
+              id="notice-title"
+              required
+              maxLength={200}
+              placeholder="Daily expenses tab is now open"
+              value={noticeTitle}
+              onChange={(event) => setNoticeTitle(event.target.value)}
+            />
+          </Field>
+          <Field id="notice-body" label="What changed (optional)">
+            <textarea
+              id="notice-body"
+              rows={3}
+              maxLength={4000}
+              placeholder="Open Expenses and pick the Daily tab to enter a whole day at once."
+              value={noticeBody}
+              onChange={(event) => setNoticeBody(event.target.value)}
+            />
+          </Field>
+          <div className="actions notice-writer-actions">
+            <button type="submit" className="solid" disabled={!noticeTitle.trim() || noticeBusy}>
+              {noticeBusy ? "Sending…" : "Send to the keepers"}
+            </button>
+            {noticeSent ? <p className="field-hint">Sent. It is in their bell now.</p> : null}
+            {noticeError ? <p className="status">{noticeError}</p> : null}
+          </div>
         </form>
       </Panel>
       <Panel tone="light">

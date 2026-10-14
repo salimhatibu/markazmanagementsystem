@@ -231,7 +231,10 @@ export function PublicPostPage() {
           <div
             ref={bodyRef}
             className="blog-body paper-drop"
-            style={{ fontFamily: fontStack(fontById(post.fontFamily)) }}
+            style={{
+              fontFamily: fontStack(fontById(post.fontFamily)),
+              ["--post-font" as string]: fontStack(fontById(post.fontFamily)),
+            } as React.CSSProperties}
             dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
           />
         </article>

@@ -18,7 +18,7 @@ import {
   pickFeelingPrompt,
   wasFeelingAskedToday,
 } from "../lib/feeling-check";
-import { FeedbackDesk } from "./FeedbackDesk";
+//import { FeedbackDesk } from "./FeedbackDesk";
 import { FeelingCheckDialog } from "./FeelingCheckDialog";
 import { Footer } from "./Footer";
 import { GuideTour } from "./GuideTour";
@@ -39,6 +39,7 @@ import {
   NavTripsIcon,
   PanicIcon,
 } from "./Motifs";
+import { NotificationBell } from "./NotificationBell";
 import { PageSlide } from "./PageSlide";
 import { PanicDialog } from "./PanicDialog";
 import { PresenceIsland } from "./PresenceIsland";
@@ -103,8 +104,6 @@ export function Shell() {
   });
   const [settings, setSettings] = useState<Settings>(fallbackSettings);
   const [unread, setUnread] = useState(0);
-  const [unreadReports, setUnreadReports] = useState(0);
-  const [unreadComments, setUnreadComments] = useState(0);
   const [daily, setDaily] = useState<DailyHadith | null>(null);
   const [showHadith, setShowHadith] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -175,12 +174,8 @@ export function Shell() {
   }, []);
 
   const refreshAlerts = useCallback(async () => {
-    const body = await api<{ unread: number; unreadReports: number; unreadComments: number }>(
-      "/api/notifications",
-    );
+    const body = await api<{ unread: number }>("/api/notifications");
     setUnread(body.unread);
-    setUnreadReports(body.unreadReports);
-    setUnreadComments(body.unreadComments);
   }, []);
 
   useEffect(() => {
@@ -391,16 +386,7 @@ export function Shell() {
           </button>
           {SHOW_PRESENCE_ISLAND ? <PresenceIsland keepers={keepers} /> : null}
           <div className="top-actions">
-            {unreadReports > 0 ? (
-              <NavLink to="/reports" className="alert-pill">
-                Report ready{unreadReports > 1 ? ` · ${unreadReports}` : ""}
-              </NavLink>
-            ) : null}
-            {unreadComments > 0 ? (
-              <NavLink to="/blog/notes" className="alert-pill is-note">
-                New note{unreadComments > 1 ? ` · ${unreadComments}` : ""}
-              </NavLink>
-            ) : null}
+            <NotificationBell unread={unread} onRead={refreshAlerts} />
             <button
               type="button"
               className="help-toggle"
@@ -437,7 +423,7 @@ export function Shell() {
       {feelingPrompt && !showHadith ? (
         <FeelingCheckDialog prompt={feelingPrompt} onClose={() => setFeelingPrompt(null)} />
       ) : null}
-      <FeedbackDesk />
+      {/*<FeedbackDesk/>*/}
       {panicOpen ? (
         <PanicDialog onClose={() => setPanicOpen(false)} onLogged={() => setPanicLocked(true)} />
       ) : null}

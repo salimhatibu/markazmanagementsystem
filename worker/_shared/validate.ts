@@ -298,6 +298,29 @@ export function feedbackFields(body: Record<string, unknown>) {
   };
 }
 
+export function dailyExpenseFields(body: Record<string, unknown>) {
+  const spentOn = parseDate(body.spentOn, "Date");
+  const note = optionalMessage(body.note, "Note", 2000);
+  const rawItems = body.items;
+  if (!Array.isArray(rawItems) || rawItems.length === 0) {
+    throw new ValidationError("Add at least one item for that day.");
+  }
+  if (rawItems.length > 200) throw new ValidationError("That is too many items for one day.");
+  const items = rawItems.map((entry, index) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      throw new ValidationError(`Item ${index + 1} is invalid.`);
+    }
+    const row = entry as Record<string, unknown>;
+    return {
+      item: requiredText(row.item, `Item ${index + 1} name`, 255),
+      cost: parseMoney(row.cost, `Item ${index + 1} cost`, false),
+      details: optionalMessage(row.details, `Item ${index + 1} details`, 2000),
+      sortOrder: index,
+    };
+  });
+  return { spentOn, note, items };
+}
+
 export function panicAlertFields(body: Record<string, unknown>) {
   const raw = body.level;
   const level = typeof raw === "number" ? raw : Number(raw);

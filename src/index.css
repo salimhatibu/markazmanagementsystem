@@ -4303,3 +4303,307 @@ body:has(.app.is-panicked) {
 
 .panic-button.is-spent::after { display: none; }
 .panic-button.is-spent:hover { transform: none; filter: none; }
+
+/* ---------- Daily expenses ---------- */
+
+.expense-tabs { margin: 0 0 16px; }
+
+.daily-lead {
+  margin: -4px 0 18px;
+  max-width: 44rem;
+  color: var(--text-2);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.daily-head { margin-bottom: 14px; }
+
+.daily-rows table { width: 100%; }
+.daily-rows th { white-space: nowrap; }
+
+.daily-rows td input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+
+.daily-rows td input:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.daily-drop {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--card-soft);
+  color: var(--mute);
+}
+
+.daily-drop:hover { color: #a3372f; border-color: color-mix(in srgb, #a3372f 45%, transparent); }
+.daily-drop svg { width: 16px; height: 16px; }
+
+.daily-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-2);
+}
+
+/* The running total is the point of the tab, so it sits between the two actions. */
+.daily-total {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 auto;
+}
+
+.daily-total span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.daily-total strong {
+  font-family: var(--nums);
+  font-size: clamp(1.3rem, 2vw, 1.7rem);
+  color: var(--text);
+}
+
+.daily-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+
+.daily-day {
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  background: var(--card-soft);
+  overflow: hidden;
+}
+
+.daily-day-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: 0;
+  text-align: left;
+  flex-wrap: wrap;
+}
+
+.daily-day-head:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+.daily-day-date { font-weight: 600; }
+
+.daily-day-count,
+.daily-day-note {
+  font-size: 12.5px;
+  color: var(--mute);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.daily-day-total { margin-left: auto; font-family: var(--nums); }
+
+.daily-day-body { padding: 0 16px 14px; }
+
+.daily-day-items { display: grid; gap: 6px; margin: 0 0 12px; padding: 0; list-style: none; }
+
+.daily-day-items li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.daily-item-detail { color: var(--mute); font-size: 13px; min-width: 0; }
+.daily-item-cost { margin-left: auto; font-family: var(--nums); white-space: nowrap; }
+
+.daily-confirm { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13.5px; }
+
+@media (max-width: 700px) {
+  .daily-actions { flex-direction: column; align-items: stretch; }
+  .daily-total { margin: 0; justify-content: space-between; }
+  .daily-day-head { gap: 8px; }
+  .daily-day-note { flex-basis: 100%; white-space: normal; }
+}
+
+/* ---------- Notification bell and bar ---------- */
+
+.bell-wrap { position: relative; display: inline-flex; }
+
+.bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--text-2);
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.bell svg { width: 19px; height: 19px; }
+
+.bell:hover,
+.bell.is-open {
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent);
+}
+
+.bell.has-unread { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 36%, transparent); }
+
+.bell-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #a3372f;
+  color: #fff;
+  font-family: var(--nums);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--bg);
+}
+
+.bell-bar {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  width: min(23rem, calc(100vw - 28px));
+  max-height: min(26rem, 70vh);
+  overflow-y: auto;
+  padding: 14px 16px 10px;
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px -24px var(--glass-shadow);
+}
+
+.bell-bar-title {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.bell-bar-state { margin: 8px 0 10px; font-size: 13.5px; color: var(--mute); line-height: 1.5; }
+.bell-bar-state.is-error { color: #a3372f; }
+
+.bell-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+
+.bell-row > button {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 10px 10px 11px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  text-align: left;
+}
+
+.bell-row > button:hover { background: var(--card-soft); }
+
+/* Anything unread carries a mark down its edge. */
+.bell-row.is-new > button {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  box-shadow: inset 2px 0 0 0 var(--accent);
+}
+
+.bell-kind {
+  justify-self: start;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.bell-kind.is-report { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.bell-kind.is-comment { background: rgba(122, 31, 43, 0.12); color: #7a1f2b; }
+
+.bell-row-title { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.35; }
+
+.bell-row-body {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bell-row time { font-size: 11px; color: var(--mute); }
+
+/* On a phone the bar spans the screen under the topbar, well clear of the
+   presence island that used to sit over the old pop-up. */
+@media (max-width: 560px) {
+  .bell-bar {
+    position: fixed;
+    top: 64px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: calc(100dvh - 92px);
+  }
+}
+
+/* A desk notice is an announcement, not an errand — no hover affordance. */
+.bell-kind.is-notice { background: rgba(37, 99, 160, 0.14); color: #1b365d; }
+.bell-row > button.is-static { cursor: default; }
+.bell-row > button.is-static:hover { background: none; }
+.bell-row.is-new > button.is-static:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+.notice-writer-lead {
+  margin: -4px 0 16px;
+  max-width: 44rem;
+  color: var(--text-2);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.notice-writer .form-grid textarea {
+  width: 100%;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  padding: 11px 12px;
+  resize: vertical;
+}
+
+.notice-writer-actions { align-items: center; gap: 12px; flex-wrap: wrap; }

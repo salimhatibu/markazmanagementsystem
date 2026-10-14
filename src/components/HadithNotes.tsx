@@ -5,7 +5,7 @@ import {
   loadHadithNotes,
   noteDayLabel,
   noteTimeLabel,
-  saveHadithNotes,
+  saveHadithNote,
   type HadithNote,
 } from "../lib/hadith-notes";
 import { FeatherIcon, PlusIcon, TrashIcon } from "./Motifs";
@@ -17,10 +17,26 @@ export function HadithNotes() {
   const pressTimer = useRef<number | null>(null);
   const skipClick = useRef(false);
   const [open, setOpen] = useState(false);
-  const [notes, setNotes] = useState<HadithNote[]>(loadHadithNotes);
+  const [notes, setNotes] = useState<HadithNote[]>([]);
   const [draft, setDraft] = useState<HadithNote>(createDraft);
   const [saved, setSaved] = useState(false);
-  const [armedId, setArmedId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [armedId, setArmedId] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancel = false;
+    loadHadithNotes()
+      .then((rows) => {
+        if (!cancel) setNotes(rows);
+      })
+      .catch((caught: unknown) => {
+        if (!cancel) setError(caught instanceof Error ? caught.message : "Your notes could not be opened.");
+      });
+    return () => {
+      cancel = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -51,7 +67,7 @@ export function HadithNotes() {
     }
   }
 
-  function arm(id: string) {
+  function arm(id: number) {
     skipClick.current = true;
     setArmedId(id);
   }
@@ -63,27 +79,38 @@ export function HadithNotes() {
     setOpen(true);
   }
 
-  function save() {
-    const next = {
-      ...draft,
-      body: draft.body.trim(),
-      savedAt: new Date().toISOString(),
-    };
-    if (!next.body) return;
-    const others = notes.filter((note) => note.id !== next.id);
-    const stored = saveHadithNotes([next, ...others]);
-    setNotes(stored);
-    setDraft(next);
-    setSaved(true);
+  async function save() {
+    if (!draft.body.trim() || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      const stored = await saveHadithNote(draft);
+      setNotes((rows) => {
+        const others = rows.filter((note) => note.id !== stored.id);
+        return [stored, ...others].sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+      });
+      setDraft(stored);
+      setSaved(true);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "That note could not be saved.");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function remove(id: string) {
-    const stored = deleteHadithNote(id);
-    setNotes(stored);
-    setArmedId(null);
-    if (draft.id === id) {
-      setDraft(stored[0] ?? createDraft());
-      setSaved(false);
+  async function remove(id: number) {
+    setError("");
+    try {
+      await deleteHadithNote(id);
+      const left = notes.filter((note) => note.id !== id);
+      setNotes(left);
+      setArmedId(null);
+      if (draft.id === id) {
+        setDraft(left[0] ?? createDraft());
+        setSaved(false);
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "That note could not be removed.");
     }
   }
 
@@ -105,7 +132,7 @@ export function HadithNotes() {
           <p className="kicker">Reflections</p>
           <ul className="hadith-note-days">
             {notes.map((note) => (
-              <li key={note.id} className={armedId === note.id ? "is-armed" : undefined}>
+              <li key={note.id ?? "draft"} className={armedId === note.id ? "is-armed" : undefined}>
                 <button
                   type="button"
                   className={`hadith-note-open${note.id === draft.id ? " is-active" : ""}`}
@@ -122,12 +149,12 @@ export function HadithNotes() {
                   }}
                   onContextMenu={(event) => {
                     event.preventDefault();
-                    arm(note.id);
+                    arm(note.id!);
                   }}
                   onPointerDown={(event) => {
                     if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
                     clearPress();
-                    pressTimer.current = window.setTimeout(() => arm(note.id), LONG_PRESS_MS);
+                    pressTimer.current = window.setTimeout(() => arm(note.id!), LONG_PRESS_MS);
                   }}
                   onPointerUp={clearPress}
                   onPointerCancel={clearPress}
@@ -141,7 +168,7 @@ export function HadithNotes() {
                     type="button"
                     className="hadith-note-delete"
                     aria-label="Delete note"
-                    onClick={() => remove(note.id)}
+                    onClick={() => void remove(note.id!)}
                   >
                     <TrashIcon />
                   </button>
@@ -170,10 +197,16 @@ export function HadithNotes() {
             }}
           />
           <div className="hadith-note-actions">
-            <button type="button" className="solid" onClick={save} disabled={!draft.body.trim()}>
-              Save note
+            <button
+              type="button"
+              className="solid"
+              onClick={() => void save()}
+              disabled={!draft.body.trim() || saving}
+            >
+              {saving ? "Saving…" : "Save note"}
             </button>
             {saved ? <p className="field-hint">Kept for later.</p> : null}
+            {error ? <p className="status">{error}</p> : null}
           </div>
         </div>
       ) : null}

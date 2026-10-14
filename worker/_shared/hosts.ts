@@ -82,6 +82,10 @@ export function isPublicApiAllowed(pathname: string, method: string, search: str
   if (/^\/api\/blog-comments\/\d+\/?$/.test(pathname)) return m === "GET" || m === "POST";
   if (/^\/api\/blog-likes\/\d+\/?$/.test(pathname)) return m === "GET" || m === "POST";
   if (/^\/api\/blog-saves\/\d+\/?$/.test(pathname)) return m === "GET" || m === "POST";
+  // The readership tally is anonymous and belongs to the papers host.
+  if (pathname === "/api/reader-presence" || pathname === "/api/reader-presence/") {
+    return m === "GET" || m === "POST";
+  }
   if (pathname === "/api/reader-saves" || pathname === "/api/reader-saves/") {
     return m === "GET" || m === "POST" || m === "DELETE";
   }

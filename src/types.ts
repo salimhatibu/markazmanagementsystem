@@ -450,12 +450,31 @@ export function teacherToInput(teacher: Teacher): TeacherInput {
 
 export type DeskNotification = {
   id: number;
-  kind: "report" | "comment";
+  kind: "report" | "comment" | "notice";
   title: string;
   body: string | null;
   reportId: number | null;
   postId: number | null;
   postSlug: string | null;
+  author?: string | null;
   readAt: string | null;
+  createdAt: string;
+};
+
+export type DailyExpenseItem = {
+  id: number;
+  item: string;
+  cost: number;
+  details: string | null;
+  sortOrder: number;
+};
+
+export type DailyExpenseDay = {
+  id: number;
+  spentOn: string;
+  note: string | null;
+  expenseId: number | null;
+  items: DailyExpenseItem[];
+  total: number;
   createdAt: string;
 };

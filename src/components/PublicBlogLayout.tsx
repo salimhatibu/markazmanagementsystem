@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useParams } from "react-router-dom"
 import { formatEatLongDate, hijriDate } from "../../shared/format";
 import { NewsletterPrompt, newsletterPromptDue } from "./NewsletterPrompt";
 import { BlogBrandMark } from "../lib/blog-brand";
+import { ReaderIsland } from "./ReaderIsland";
 import { publicSavedPath, publicSeriesPath, publicShelfPath } from "../lib/blog-share";
 import { paperIssueNumber } from "../lib/paper-almanac";
 import { api } from "../lib/api";
@@ -77,6 +78,7 @@ export function PublicBlogLayout() {
   return (
     <PaperIssueContext.Provider value={issue}>
       <div className="blog-pen blog-pen--public" lang="en-GB">
+        <ReaderIsland />
         <main className="paper-sheet">
           <header className="paper-masthead">
             <div className="paper-kicker-row">

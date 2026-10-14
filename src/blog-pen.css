@@ -784,7 +784,11 @@ html[data-surface="blog"] body {
   min-height: min(52vh, 420px);
   padding: clamp(14px, 2vw, 22px) clamp(14px, 2.4vw, 28px) 32px;
   outline: none;
-  font: 1.05rem/1.7 var(--body);
+  /* Size and leading only. A `font` shorthand here would also set the family
+     and so beat the chosen face inherited from the canvas. */
+  font-size: 1.05rem;
+  line-height: 1.7;
+  font-family: inherit;
   text-align: justify;
   hyphens: auto;
   overflow: hidden;
@@ -835,7 +839,9 @@ html[data-surface="blog"] body {
 .blog-pen .blog-body h3,
 .blog-pen .blog-canvas .tiptap h2,
 .blog-pen .blog-canvas .tiptap h3 {
-  font-family: var(--display);
+  /* Headings follow the writer's chosen face, and fall back to the paper's
+     own display serif when the post is left on "Default". */
+  font-family: var(--post-font, var(--display));
   text-transform: uppercase;
   color: var(--ink);
   margin: 1.2em 0 0.45em;
@@ -2266,3 +2272,153 @@ html[data-surface="blog"] body {
   .blog-pen--public .paper-brief:first-of-type { padding-top: 0; border-top: 0; }
   .blog-pen--public .paper-brief-figure img { aspect-ratio: 2 / 1; }
 }
+
+/* ---------- Readership island ---------- */
+
+/* A standing press plate rather than a glossy pill: paper stock, ink rule,
+   monospaced figures, and a red lamp that ticks like a running press. */
+.blog-pen--public .reader-island-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 30;
+  pointer-events: none;
+}
+
+.blog-pen--public .reader-island {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 15px;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow:
+    3px 3px 0 0 var(--ink),
+    0 10px 26px -14px rgba(28, 25, 20, 0.7);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.blog-pen--public .reader-island:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    4px 4px 0 0 var(--ink),
+    0 14px 30px -14px rgba(28, 25, 20, 0.75);
+}
+
+.blog-pen--public .reader-island:active {
+  transform: translateY(1px);
+  box-shadow: 2px 2px 0 0 var(--ink);
+}
+
+/* The lamp: steady ink when alone, a live red tick when others are here. */
+.blog-pen--public .reader-island-press {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--orange) 18%, transparent);
+  animation: reader-press 2.4s ease-in-out infinite;
+}
+
+.blog-pen--public .reader-island-body {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.blog-pen--public .reader-island-count {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.blog-pen--public .reader-island-label { color: var(--muted); }
+
+.blog-pen--public .reader-island-long {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+}
+
+/* A short rule that only shows when the paper is shared with someone. */
+.blog-pen--public .reader-island-rule {
+  width: 18px;
+  height: 1px;
+  background: var(--line);
+}
+
+@keyframes reader-press {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blog-pen--public .reader-island-press { animation: none; }
+  .blog-pen--public .reader-island:hover { transform: none; }
+}
+
+@media (max-width: 520px) {
+  .blog-pen--public .reader-island {
+    padding: 7px 12px;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+  .blog-pen--public .reader-island-count { font-size: 15px; }
+}
+
+/* ---------- Removing a post ---------- */
+
+.blog-pen .blog-draft-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.blog-pen .blog-draft-row > a { margin-right: auto; }
+
+.blog-pen .blog-issue-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.blog-pen .blog-del {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid transparent;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.blog-pen .blog-del:hover { color: var(--orange); border-bottom-color: var(--orange); }
+
+.blog-pen .blog-del-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The irreversible half is the one that carries the masthead red. */
+.blog-pen .blog-del.is-yes { color: var(--orange); border-bottom-color: var(--orange); }
+.blog-pen .blog-del.is-no { color: var(--muted); }

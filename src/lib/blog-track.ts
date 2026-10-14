@@ -1,3 +1,5 @@
+import { isPublicSurface } from "./surface";
+
 const SESSION_KEY = "markaz_blog_session";
 
 export function blogSessionId(): string {
@@ -18,6 +20,9 @@ export function trackBlog(
   postId: number,
   extra: { dwellMs?: number } = {},
 ) {
+  // Readership figures should only ever count readers. The desk previews the
+  // very same pages, so keeping the guard here covers every call site at once.
+  if (!isPublicSurface()) return;
   const payload = JSON.stringify({
     kind,
     postId,

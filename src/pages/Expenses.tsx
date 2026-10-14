@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { eatDate, formatMoney } from "../../shared/format";
 import type { WorkspaceContext } from "../components/Shell";
+import { DailyExpenseDesk } from "../components/DailyExpenseDesk";
 import { Empty, Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api } from "../lib/api";
 import type { Expense } from "../types";
@@ -23,6 +24,7 @@ export function ExpensesPage() {
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
   const [removing, setRemoving] = useState<number | null>(null);
+  const [tab, setTab] = useState<"all" | "daily">("all");
 
   async function load() {
     const body = await api<{ expenses: Expense[] }>("/api/expenses");
@@ -96,16 +98,30 @@ export function ExpensesPage() {
         title="Expenses"
         lead="Books, repairs, and other office costs come out of the funds held at the markaz."
       >
-        <button
-          type="button"
-          className="ghost"
-          data-guide="add-expense"
-          aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
-        >
-          {open ? "Close form" : "Add an expense"}
-        </button>
+        {tab === "all" ? (
+          <button
+            type="button"
+            className="ghost"
+            data-guide="add-expense"
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {open ? "Close form" : "Add an expense"}
+          </button>
+        ) : null}
       </PageHeader>
+      <div className="segmented expense-tabs" role="group" aria-label="Expense view">
+        <button type="button" aria-pressed={tab === "all"} onClick={() => setTab("all")}>
+          All expenses
+        </button>
+        <button type="button" aria-pressed={tab === "daily"} onClick={() => setTab("daily")}>
+          Daily expenses
+        </button>
+      </div>
+      {tab === "daily" ? (
+        <DailyExpenseDesk symbol={symbol} onSaved={() => void load()} />
+      ) : (
+      <>
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
       {open ? (
@@ -244,6 +260,8 @@ export function ExpensesPage() {
             </tbody>
           </table>
         </div>
+      )}
+      </>
       )}
     </>
   );

@@ -20,6 +20,7 @@ import teachers from "./api/teachers";
 import teacher from "./api/teacher";
 import salaryPayments from "./api/salary-payments";
 import expenses from "./api/expenses";
+import dailyExpenses from "./api/daily-expenses";
 import books from "./api/books";
 import kharajah from "./api/kharajah";
 import trips from "./api/trips";
@@ -34,7 +35,9 @@ import settings from "./api/settings";
 import mail from "./api/mail";
 import session from "./api/session";
 import presence from "./api/presence";
+import readerPresence from "./api/reader-presence";
 import feelingEntries from "./api/feeling-entries";
+import hadithNotes from "./api/hadith-notes";
 import panicAlerts from "./api/panic-alerts";
 import posts from "./api/posts";
 import series from "./api/series";
@@ -81,6 +84,7 @@ const routes: Route[] = [
   { pattern: /^\/api\/teachers\/(\d+)\/file\/?$/, handler: teacherFile, params: ["id"] },
   { pattern: /^\/api\/teachers\/(\d+)\/?$/, handler: teacher, params: ["id"] },
   { pattern: /^\/api\/salary-payments\/(\d+)\/?$/, handler: salaryPayments, params: ["id"] },
+  { pattern: /^\/api\/daily-expenses(?:\/(\d+))?\/?$/, handler: dailyExpenses, params: ["id"] },
   { pattern: /^\/api\/expenses(?:\/(\d+))?\/?$/, handler: expenses, params: ["id"] },
   { pattern: /^\/api\/books(?:\/(\d+))?\/?$/, handler: books, params: ["id"] },
   { pattern: /^\/api\/trips\/(\d+)\/entries\/?$/, handler: tripEntries, params: ["tripId"] },
@@ -96,7 +100,9 @@ const routes: Route[] = [
   { pattern: /^\/api\/mail\/?$/, handler: mail },
   { pattern: /^\/api\/session\/?$/, handler: session },
   { pattern: /^\/api\/presence\/?$/, handler: presence },
+  { pattern: /^\/api\/reader-presence\/?$/, handler: readerPresence },
   { pattern: /^\/api\/feeling-entries\/?$/, handler: feelingEntries },
+  { pattern: /^\/api\/hadith-notes(?:\/(\d+))?\/?$/, handler: hadithNotes, params: ["id"] },
   { pattern: /^\/api\/panic-alerts\/?$/, handler: panicAlerts },
   { pattern: /^\/api\/posts(?:\/(\d+))?\/?$/, handler: posts, params: ["id"] },
   { pattern: /^\/api\/series(?:\/([^/]+))?\/?$/, handler: series, params: ["key"] },

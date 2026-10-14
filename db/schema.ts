@@ -164,18 +164,45 @@ export const notifications = sqliteTable(
   "notifications",
   {
     id: integer().primaryKey({ autoIncrement: true }),
-    kind: text({ enum: ["report", "comment"] })
+    kind: text({ enum: ["report", "comment", "notice"] })
       .notNull()
       .default("report"),
     title: text().notNull(),
-    /** What the reader wrote, kept so a note can be read without opening the post. */
+    /** What the reader wrote, or the body of a notice to the other keepers. */
     body: text(),
     reportId: integer("report_id").references(() => reports.id, { onDelete: "cascade" }),
     postId: integer("post_id").references(() => posts.id, { onDelete: "cascade" }),
+    /** Who wrote the notice. Null for anything the system raised itself. */
+    author: text(),
+    /**
+     * Legacy: before reads were tracked per keeper this single column meant
+     * "read", for everyone at once. It is still honoured so old notifications
+     * do not resurface, but nothing writes to it any more.
+     */
     readAt: text("read_at"),
     createdAt: createdAt(),
   },
   (table) => [index("notifications_kind_idx").on(table.kind, table.readAt)],
+);
+
+/** One row per keeper per notification, so reading it is personal. */
+export const notificationReads = sqliteTable(
+  "notification_reads",
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    notificationId: integer("notification_id")
+      .notNull()
+      .references(() => notifications.id, { onDelete: "cascade" }),
+    email: text().notNull(),
+    // Explicit: the createdAt() helper names its column "created_at".
+    readAt: text("read_at")
+      .notNull()
+      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+  },
+  (table) => [
+    uniqueIndex("notification_reads_unique_idx").on(table.notificationId, table.email),
+    index("notification_reads_email_idx").on(table.email),
+  ],
 );
 
 export const settings = sqliteTable("settings", {
@@ -418,6 +445,59 @@ export const feelingEntries = sqliteTable(
     createdAt: createdAt(),
   },
   (table) => [index("feeling_entries_email_idx").on(table.email, table.createdAt)],
+);
+
+/** A single day's spending, entered as line items and rolled into one expense. */
+export const dailyExpenses = sqliteTable(
+  "daily_expenses",
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    spentOn: text("spent_on").notNull(),
+    note: text(),
+    expenseId: integer("expense_id").references(() => expenses.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (table) => [index("daily_expenses_spent_on_idx").on(table.spentOn)],
+);
+
+export const dailyExpenseItems = sqliteTable(
+  "daily_expense_items",
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    dailyId: integer("daily_id")
+      .notNull()
+      .references(() => dailyExpenses.id, { onDelete: "cascade" }),
+    item: text().notNull(),
+    cost: money("cost"),
+    details: text(),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (table) => [index("daily_expense_items_daily_id_idx").on(table.dailyId)],
+);
+
+/** A keeper's written reflections on the daily hadith, kept per-email. */
+export const hadithNotes = sqliteTable(
+  "hadith_notes",
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    email: text().notNull(),
+    /** The reading day the note belongs to, as an East Africa calendar date. */
+    noteDate: text("note_date").notNull(),
+    body: text().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [index("hadith_notes_email_idx").on(table.email, table.createdAt)],
+);
+
+/** Anonymous readers presently on the papers, keyed by their browser session. */
+export const readerPresence = sqliteTable(
+  "reader_presence",
+  {
+    sessionId: text("session_id").primaryKey(),
+    lastSeenAt: text("last_seen_at").notNull(),
+  },
+  (table) => [index("reader_presence_last_seen_idx").on(table.lastSeenAt)],
 );
 
 /** Emergencies raised from the panic button, with how urgent the keeper judged it to be. */
