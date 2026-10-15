@@ -1545,7 +1545,9 @@ html[data-surface="blog"] body {
   break-inside: avoid;
 }
 
-.blog-pen--public .paper-drop p:first-of-type::first-letter {
+/* Direct child only: without the ">" this also matched the paragraph inside
+   every <li>, giving each bullet its own drop cap. */
+.blog-pen--public .paper-drop > p:first-of-type::first-letter {
   float: left;
   font-family: var(--display);
   font-weight: 900;
@@ -1830,7 +1832,7 @@ html[data-surface="blog"] body {
     row-gap: 6px;
   }
 
-  .blog-pen--public .paper-drop p:first-of-type::first-letter {
+  .blog-pen--public .paper-drop > p:first-of-type::first-letter {
     font-size: 2.6rem;
   }
 }
