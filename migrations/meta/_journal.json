@@ -141,6 +141,20 @@
       "when": 1728180000000,
       "tag": "0020_notification_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1728190000000,
+      "tag": "0021_private_access_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1728200000000,
+      "tag": "0022_newsletter_letters",
+      "breakpoints": true
     }
   ]
 }

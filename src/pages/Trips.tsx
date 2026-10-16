@@ -66,7 +66,6 @@ export function TripsPage() {
         <button
           type="button"
           className="ghost"
-          data-guide="trips-add"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >

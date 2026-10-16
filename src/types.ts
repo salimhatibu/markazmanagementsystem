@@ -218,6 +218,7 @@ export type BlogPost = {
   published: boolean;
   publishedAt: string | null;
   visibility: BlogVisibility;
+  accessCode?: string | null;
   fontFamily: string | null;
   createdAt: string;
   updatedAt: string;

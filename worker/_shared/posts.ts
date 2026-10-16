@@ -32,13 +32,15 @@ export function presentPost(row: Post, series?: SeriesLabel) {
     published: row.published,
     publishedAt: row.publishedAt ? asIso(row.publishedAt) : null,
     visibility: row.visibility,
+    accessCode: row.accessCode ?? null,
     fontFamily: row.fontFamily ?? null,
     createdAt: asIso(row.createdAt),
     updatedAt: asIso(row.updatedAt),
   };
 }
 
-type PostCard = Omit<Post, "bodyHtml" | "fontFamily"> & { seriesSlug?: string | null; seriesTitle?: string | null };
+// Listing cards never carry the access code: index pages are public.
+type PostCard = Omit<Post, "bodyHtml" | "fontFamily" | "accessCode"> & { seriesSlug?: string | null; seriesTitle?: string | null };
 
 /** List card: skips the body entirely so index pages do not ship every post. */
 export function presentPostCard(row: PostCard) {

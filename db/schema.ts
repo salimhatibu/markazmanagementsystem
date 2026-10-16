@@ -335,6 +335,24 @@ export const newsletterSubscribers = sqliteTable("newsletter_subscribers", {
   createdAt: createdAt(),
 });
 
+/** Letters the keepers write out to everyone who left an email. */
+export const newsletterLetters = sqliteTable(
+  "newsletter_letters",
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    subject: text().notNull(),
+    body: text().notNull(),
+    author: text(),
+    /** How many addresses it actually reached. */
+    sentCount: integer("sent_count").notNull().default(0),
+    failedCount: integer("failed_count").notNull().default(0),
+    /** Null while the mailbox is not configured, so it reads as unsent. */
+    sentAt: text("sent_at"),
+    createdAt: createdAt(),
+  },
+  (table) => [index("newsletter_letters_created_idx").on(table.createdAt)],
+);
+
 export const posts = sqliteTable(
   "posts",
   {
@@ -348,6 +366,8 @@ export const posts = sqliteTable(
     published: integer({ mode: "boolean" }).notNull().default(false),
     publishedAt: text("published_at"),
     visibility: text({ enum: ["public", "private"] }).notNull().default("public"),
+    /** Six-character key a reader must supply to open a private paper. */
+    accessCode: text("access_code"),
     fontFamily: text("font_family"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

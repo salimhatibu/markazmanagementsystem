@@ -2424,3 +2424,279 @@ html[data-surface="blog"] body {
 /* The irreversible half is the one that carries the masthead red. */
 .blog-pen .blog-del.is-yes { color: var(--orange); border-bottom-color: var(--orange); }
 .blog-pen .blog-del.is-no { color: var(--muted); }
+
+/* ---------- Private paper: the code gate ---------- */
+
+.blog-pen--public .paper-locked {
+  max-width: 34rem;
+  margin: clamp(28px, 6vw, 64px) auto;
+  padding: clamp(24px, 4vw, 36px);
+  border: 1px solid var(--ink);
+  border-top: 4px double var(--rule);
+  background: var(--paper);
+  text-align: center;
+}
+
+.blog-pen--public .paper-locked h2 {
+  margin: 10px 0 8px;
+  font: 700 clamp(1.5rem, 4vw, 2rem) / 1.1 var(--display);
+  text-transform: none;
+}
+
+.blog-pen--public .paper-locked-lead {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.blog-pen--public .paper-locked-form {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.blog-pen--public .paper-locked-form .field-label {
+  display: block;
+  margin-bottom: 5px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: left;
+}
+
+.blog-pen--public .paper-locked-form input {
+  width: 9rem;
+  padding: 10px 12px;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 19px;
+  letter-spacing: 0.26em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.blog-pen--public .paper-locked-form button { white-space: nowrap; }
+
+.blog-pen--public .paper-locked-error {
+  margin: 0 0 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--orange);
+}
+
+/* ---------- The code, on the writing desk ---------- */
+
+.blog-pen .blog-code {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--orange);
+  background: rgba(122, 31, 43, 0.04);
+}
+
+.blog-pen .blog-code-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.blog-pen .blog-code-value {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: var(--ink);
+}
+
+.blog-pen .blog-code-copy {
+  border: 1px solid var(--ink);
+  background: transparent;
+  padding: 4px 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.blog-pen .blog-code-copy:hover { background: var(--ink); color: var(--paper); }
+
+.blog-pen .blog-code-note {
+  flex-basis: 100%;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* ---------- Letters to the readers ---------- */
+
+.blog-pen .letters-notice,
+.blog-pen .letters-mailbox {
+  margin: 0 0 18px;
+  padding: 11px 15px;
+  border-left: 3px solid var(--navy);
+  background: rgba(27, 54, 93, 0.05);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.blog-pen .letters-mailbox { border-left-color: var(--orange); background: rgba(122, 31, 43, 0.05); }
+
+.blog-pen .letters-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 36px);
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--ink);
+}
+
+@media (min-width: 900px) {
+  .blog-pen .letters-grid { grid-template-columns: minmax(0, 1.6fr) minmax(14rem, 0.9fr); }
+  .blog-pen .letters-people { border-left: 1px solid var(--line); padding-left: clamp(20px, 2.4vw, 32px); }
+}
+
+.blog-pen .letters-head {
+  margin: 0 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--ink);
+  font: 700 0.95rem / 1.2 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.blog-pen .letters-label {
+  display: block;
+  margin: 14px 0 5px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.blog-pen .letters-compose input,
+.blog-pen .letters-compose textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.blog-pen .letters-compose input:focus-visible,
+.blog-pen .letters-compose textarea:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.blog-pen .letters-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.blog-pen .letters-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.blog-pen .letters-list { margin: 0; padding: 0; list-style: none; }
+
+.blog-pen .letters-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13.5px;
+}
+
+.blog-pen .letters-email { overflow: hidden; text-overflow: ellipsis; }
+
+.blog-pen .letters-list time {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.blog-pen .letters-sent { padding: 28px 0 8px; }
+
+.blog-pen .letters-archive { margin: 0; padding: 0; list-style: none; }
+
+.blog-pen .letter-row { border-bottom: 1px solid var(--line); }
+
+.blog-pen .letter-row > button {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  flex-wrap: wrap;
+}
+
+.blog-pen .letter-row > button:hover .letter-subject { color: var(--orange); }
+
+.blog-pen .letter-subject {
+  font: 700 1.05rem / 1.25 var(--display);
+  min-width: 0;
+}
+
+.blog-pen .letter-meta,
+.blog-pen .letter-row time {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.blog-pen .letter-row time { margin-left: auto; }
+
+/* A letter still waiting on the mailbox carries the masthead red. */
+.blog-pen .letter-row.is-held .letter-meta { color: var(--orange); }
+
+.blog-pen .letter-body {
+  margin: 0 0 16px;
+  padding-left: 14px;
+  border-left: 2px solid var(--line);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}

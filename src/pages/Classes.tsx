@@ -372,7 +372,7 @@ export function ClassesPage() {
         </>
       ) : (
         <>
-          <Panel tone="light" className="class-create-panel" data-guide="classes-create">
+          <Panel tone="light" className="class-create-panel">
             <p className="panel-title">Create a class</p>
             <form className="class-create-form" onSubmit={(event) => void create(event)}>
               <Field id="class-name" label="Class name">

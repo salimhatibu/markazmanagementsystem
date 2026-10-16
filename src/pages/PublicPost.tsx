@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { formatEatLongDate } from "../../shared/format";
 import { CursorToast } from "../components/CursorToast";
@@ -34,19 +34,68 @@ export function PublicPostPage() {
   const [saved, setSaved] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [locked, setLocked] = useState<null | "needed" | "wrong">(null);
+  const [code, setCode] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const { toast, showToast } = useCursorToast();
   const bodyRef = useRef<HTMLDivElement>(null);
 
+  // A private paper is only handed over with its code, so the reply is either
+  // the paper or a bare "locked" with nothing else in it.
+  const openPaper = useCallback(
+    async (supplied?: string) => {
+      if (!slug) return;
+      const query = supplied ? `&code=${encodeURIComponent(supplied.trim().toUpperCase())}` : "";
+      const body = await api<{ post?: BlogPost; locked?: boolean; reason?: "needed" | "wrong" }>(
+        `/api/posts?slug=${encodeURIComponent(slug)}${query}`,
+      );
+      if (body.locked) {
+        setLocked(body.reason ?? "needed");
+        setPost(null);
+        return;
+      }
+      if (body.post) {
+        setLocked(null);
+        setPost(body.post);
+      }
+    },
+    [slug],
+  );
+
   useEffect(() => {
     if (!slug) return;
-    api<{ post: BlogPost }>(`/api/posts?slug=${encodeURIComponent(slug)}`)
-      .then((body) => setPost(body.post))
-      .catch((caught: unknown) => {
-        setError(caught instanceof Error ? caught.message : "That post could not be opened.");
-      });
-  }, [slug]);
+    const remembered = (() => {
+      try {
+        return sessionStorage.getItem(`markaz_paper_code_${slug}`) ?? undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+    openPaper(remembered).catch((caught: unknown) => {
+      setError(caught instanceof Error ? caught.message : "That post could not be opened.");
+    });
+  }, [slug, openPaper]);
+
+  async function unlock(event: FormEvent) {
+    event.preventDefault();
+    if (!code.trim() || unlocking) return;
+    setUnlocking(true);
+    try {
+      await openPaper(code);
+      // Remembered for this tab only, so a reload does not ask again.
+      try {
+        sessionStorage.setItem(`markaz_paper_code_${slug}`, code.trim().toUpperCase());
+      } catch {
+        /* private mode */
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "That code could not be checked.");
+    } finally {
+      setUnlocking(false);
+    }
+  }
 
   useEffect(() => {
     if (!post) return;
@@ -156,6 +205,46 @@ export function PublicPostPage() {
     return (
       <section className="paper-status">
         <p className="status">{error}</p>
+        <Link className="paper-rail-link" to={publicShelfPath()}>
+          Back to the papers
+        </Link>
+      </section>
+    );
+  }
+
+  if (locked) {
+    return (
+      <section className="paper-locked">
+        <p className="paper-section-kicker">
+          Private &middot; <span lang="ar" dir="rtl">خاص</span>
+        </p>
+        <h2>This paper is kept private.</h2>
+        <p className="paper-locked-lead">
+          Whoever shared the link will have the six-character code that opens it.
+        </p>
+        <form className="paper-locked-form" onSubmit={(event) => void unlock(event)}>
+          <label className="field-label" htmlFor="paper-code">
+            Code
+          </label>
+          <input
+            id="paper-code"
+            value={code}
+            onChange={(event) => setCode(event.target.value.toUpperCase())}
+            maxLength={6}
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="ABC234"
+            aria-describedby={locked === "wrong" ? "paper-code-error" : undefined}
+          />
+          <button type="submit" className="paper-rail-link" disabled={!code.trim() || unlocking}>
+            {unlocking ? "Checking…" : "Open the paper"}
+          </button>
+        </form>
+        {locked === "wrong" ? (
+          <p className="paper-locked-error" id="paper-code-error">
+            That code does not open this paper.
+          </p>
+        ) : null}
         <Link className="paper-rail-link" to={publicShelfPath()}>
           Back to the papers
         </Link>

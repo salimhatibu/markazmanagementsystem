@@ -122,8 +122,6 @@ body::before {
   z-index: 1;
 }
 
-.app.is-guided .content { padding-bottom: 18rem; }
-
 .bg-wash {
   position: fixed;
   inset: 0;
@@ -2621,119 +2619,6 @@ legend { padding: 0 8px; color: var(--mute); }
   .hijri-line { font-size: clamp(1.7rem, 8.5vw, 2.4rem); }
 }
 
-.guide-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 24;
-  pointer-events: none;
-}
-
-.guide-hole {
-  position: fixed;
-  border-radius: 18px;
-  box-shadow: 0 0 0 9999px rgba(10, 10, 12, 0.42);
-  outline: 2px solid var(--accent);
-  outline-offset: 0;
-  pointer-events: none;
-  animation: guide-pulse 1.6s ease-in-out infinite;
-}
-
-@keyframes guide-pulse {
-  0%, 100% { outline-color: var(--accent); }
-  50% { outline-color: var(--green); }
-}
-
-.guide-arrow {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-  z-index: 25;
-}
-
-.guide-arrow line {
-  stroke: var(--accent);
-  stroke-width: 2.4;
-  stroke-linecap: round;
-}
-
-.guide-arrow circle {
-  fill: var(--green);
-  stroke: var(--card);
-  stroke-width: 2;
-}
-
-.guide-card {
-  pointer-events: auto;
-  position: fixed;
-  z-index: 26;
-  width: min(24rem, calc(100vw - 24px));
-  padding: 18px 48px 18px 18px;
-  background: var(--card);
-  border: 1px solid var(--line-2);
-  border-radius: 22px;
-  box-shadow:
-    inset 0 3px 0 var(--green),
-    0 16px 40px rgba(80, 30, 50, 0.16);
-}
-
-.guide-card h2 {
-  font-size: clamp(1.35rem, 4vw, 1.85rem);
-  margin: 8px 0 10px;
-}
-
-.guide-body {
-  margin: 0 0 16px;
-  max-width: 36rem;
-  font-size: 15.5px;
-  line-height: 1.55;
-  color: var(--text-2);
-}
-
-.guide-dots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 16px;
-}
-
-.guide-dots span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--line-2);
-}
-
-.guide-dots span.is-done { background: var(--pink); }
-.guide-dots span.is-on { background: var(--green); width: 16px; border-radius: 99px; }
-
-.guide-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.guide-actions .solid { margin-inline-start: auto; }
-
-.help-toggle {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 1px solid var(--line-2);
-  background: var(--card);
-  color: var(--text);
-}
-
-.help-toggle svg { width: 18px; height: 18px; }
-
-.guide-replay { margin-top: 8px; }
-
 .blog-feed {
   display: grid;
   gap: 18px;
@@ -3957,7 +3842,6 @@ body:has(.app.is-panicked) {
   .panic-level { gap: 10px; padding: 9px 11px; }
   .panic-level-meter { display: none; }
 }
-
 
 /* ---------- Panic log page ---------- */
 

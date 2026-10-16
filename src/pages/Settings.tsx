@@ -12,7 +12,6 @@ import {
 import type { WorkspaceContext } from "../components/Shell";
 import { Field, Notice, PageHeader, Panel } from "../components/ui";
 import { api } from "../lib/api";
-import { startGuide } from "../lib/guide";
 
 export function SettingsPage() {
   const [noticeTitle, setNoticeTitle] = useState("");
@@ -107,7 +106,7 @@ export function SettingsPage() {
       {error ? <Notice>{error}</Notice> : null}
       {info ? <Notice tone="ok">{info}</Notice> : null}
       <Panel tone="light" className="settings-letterhead">
-        <form onSubmit={(event) => void save(event)} className="form-grid" data-guide="settings">
+        <form onSubmit={(event) => void save(event)} className="form-grid">
           <Field id="markaz-name" label="Short name" hint="Shown at the top of the pages.">
             <input
               id="markaz-name"
@@ -210,9 +209,6 @@ export function SettingsPage() {
           A short walkthrough of home, students, fees, teachers, salaries, expenses, reports, and these settings. It
           is meant for someone opening the books on a new phone.
         </p>
-        <button type="button" className="ghost guide-replay" onClick={() => startGuide()}>
-          Walk me through the site
-        </button>
       </Panel>
       <Panel tone="dark">
         <p className="panel-title">Fee reminders</p>

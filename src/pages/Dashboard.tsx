@@ -99,7 +99,7 @@ export function DashboardPage() {
           <p>{books}</p>
         </header>
         <div className="board" aria-busy={!totals && !error} aria-live="polite">
-          <article className="stat stat-lead" data-guide="figures">
+          <article className="stat stat-lead">
             <p className="kicker kicker-icon">
               <PenIcon /> In the office
             </p>
@@ -128,7 +128,7 @@ export function DashboardPage() {
           </article>
         </div>
       </section>
-      <section className="desk-section" aria-labelledby="roll-heading" data-guide="sections">
+      <section className="desk-section" aria-labelledby="roll-heading">
         <header className="desk-section-head">
           <h2 id="roll-heading">Teaching sections</h2>
           <p>Student and teacher totals</p>
@@ -164,7 +164,7 @@ export function DashboardPage() {
           </article>
         </div>
       </section>
-      <section className="panel panel-light hadith" data-guide="hadith" aria-labelledby="hadith-of-the-day">
+      <section className="panel panel-light hadith" aria-labelledby="hadith-of-the-day">
         <HadithBackdrop />
         <button
           type="button"

@@ -49,6 +49,7 @@ import blogLikes from "./api/blog-likes";
 import blogSaves from "./api/blog-saves";
 import readerSaves from "./api/reader-saves";
 import newsletter from "./api/newsletter";
+import newsletterLetters from "./api/newsletter-letters";
 import feeds from "./api/feeds";
 import studentFile from "./api/student-file";
 import studentsListFile from "./api/students-list-file";
@@ -114,6 +115,7 @@ const routes: Route[] = [
   { pattern: /^\/api\/blog-likes\/(\d+)\/?$/, handler: blogLikes, params: ["postId"] },
   { pattern: /^\/api\/blog-saves\/(\d+)\/?$/, handler: blogSaves, params: ["postId"] },
   { pattern: /^\/api\/reader-saves\/?$/, handler: readerSaves },
+  { pattern: /^\/api\/newsletter\/letters\/?$/, handler: newsletterLetters },
   { pattern: /^\/api\/newsletter(?:\/leave)?\/?$/, handler: newsletter },
   { pattern: /^\/(?:sitemap|rss)\.xml$/, handler: feeds },
 ];

@@ -5,7 +5,6 @@ import { ACCOUNT_NAME, ACCOUNT_NUMBER, BANK_NAME, OFFICIAL_ADDRESS, PAYBILL } fr
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { loadDashboard } from "../lib/dashboard";
-import { GUIDE_START, hasFinishedGuide } from "../lib/guide";
 import { claimFirstVisit, loadDailyHadith, type DailyHadith } from "../lib/hadith";
 import { PRESENCE_POLL_MS, refreshPresence, type PresenceKeeper } from "../lib/presence";
 import { applyTheme } from "../lib/theme";
@@ -14,18 +13,16 @@ import {
   claimFeelingAsk,
   ensureSessionStart,
   feelingCheckDue,
-  msUntilFeelingCheck,
   pickFeelingPrompt,
+  recordWork,
   wasFeelingAskedToday,
 } from "../lib/feeling-check";
 //import { FeedbackDesk } from "./FeedbackDesk";
 import { FeelingCheckDialog } from "./FeelingCheckDialog";
 import { Footer } from "./Footer";
-import { GuideTour } from "./GuideTour";
 import { HadithDialog } from "./HadithDialog";
 import {
   CloseIcon,
-  HelpIcon,
   MenuIcon,
   NavBlogIcon,
   NavBooksIcon,
@@ -61,6 +58,8 @@ export type WorkspaceContext = {
  * narrowed away as unreachable.
  */
 const SHOW_PRESENCE_ISLAND: boolean = true;
+
+const WORK_TICK_MS = 30 * 1000;
 
 const PANIC_TAPS = 3;
 const PANIC_TAP_WINDOW_MS = 1600;
@@ -106,8 +105,6 @@ export function Shell() {
   const [unread, setUnread] = useState(0);
   const [daily, setDaily] = useState<DailyHadith | null>(null);
   const [showHadith, setShowHadith] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
-  const [guideStep, setGuideStep] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [feelingPrompt, setFeelingPrompt] = useState<string | null>(null);
   const [panicOpen, setPanicOpen] = useState(false);
@@ -201,20 +198,6 @@ export function Shell() {
     setShowHadith(claimFirstVisit(daily.date));
   }, [daily]);
 
-  useEffect(() => {
-    if (showHadith) return;
-    if (!hasFinishedGuide()) setGuideOpen(true);
-  }, [showHadith]);
-
-  useEffect(() => {
-    function open() {
-      setGuideStep(0);
-      setGuideOpen(true);
-    }
-    window.addEventListener(GUIDE_START, open);
-    return () => window.removeEventListener(GUIDE_START, open);
-  }, []);
-
   // The desk needs to know whether today's call has already been made, so the
   // button can read as spent before anyone taps it.
   useEffect(() => {
@@ -268,31 +251,35 @@ export function Shell() {
     return () => document.removeEventListener("keydown", onKey);
   }, [menuOpen]);
 
+  // The checkup is earned by time actually worked, so the clock only runs while
+  // the desk is on screen and is polled rather than scheduled once.
   useEffect(() => {
     ensureSessionStart();
     if (wasFeelingAskedToday()) return;
 
-    let timer: number | undefined;
-    const tryOpen = () => {
-      if (showHadith || guideOpen || feelingPrompt) return;
+    const tick = () => {
+      if (document.visibilityState !== "visible") return;
+      recordWork();
+      if (showHadith || feelingPrompt) return;
       if (!feelingCheckDue() || wasFeelingAskedToday()) return;
       if (!claimFeelingAsk()) return;
       setFeelingPrompt(pickFeelingPrompt());
     };
 
-    const delay = msUntilFeelingCheck();
-    if (!Number.isFinite(delay)) return;
-    timer = window.setTimeout(tryOpen, delay === 0 ? 400 : delay);
+    tick();
+    const timer = window.setInterval(tick, WORK_TICK_MS);
+    document.addEventListener("visibilitychange", tick);
     return () => {
-      if (timer != null) window.clearTimeout(timer);
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
     };
-  }, [showHadith, guideOpen, feelingPrompt]);
+  }, [showHadith, feelingPrompt]);
 
   const context: WorkspaceContext = { settings, refreshSettings, unread, refreshAlerts, daily, keepers };
   const brand = displayName(settings.markazName);
 
   return (
-    <div className={`app${guideOpen ? " is-guided" : ""}${panicOpen ? " is-panicked" : ""}`}>
+    <div className={`app${panicOpen ? " is-panicked" : ""}`}>
       <a className="skip" href="#content">
         Skip to content
       </a>
@@ -308,8 +295,8 @@ export function Shell() {
       {menuOpen ? (
         <button type="button" className="side-scrim" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
       ) : null}
-      <aside className={`side${menuOpen ? " is-open" : ""}`} data-guide="nav">
-        <NavLink to="/" className="brand" end data-guide="brand">
+      <aside className={`side${menuOpen ? " is-open" : ""}`}>
+        <NavLink to="/" className="brand" end>
           <span className="logo-text">
             <span className="a">{brand}</span>
             <span className="b">Imam ash-Shafi&rsquo;i</span>
@@ -326,7 +313,6 @@ export function Shell() {
                     key={link.to}
                     to={link.to}
                     end={link.end}
-                    data-guide={`nav-${link.to.replace(/^\//, "") || "home"}`}
                     className={({ isActive }) => (isActive ? "nav-pill active" : "nav-pill")}
                     onClick={() => setMenuOpen(false)}
                   >
@@ -347,7 +333,6 @@ export function Shell() {
         <button
           type="button"
           className={`panic-button${panicLocked ? " is-spent" : ""}${panicTaps > 0 ? " is-arming" : ""}`}
-          data-guide="panic"
           data-taps={panicTaps}
           disabled={panicLocked}
           title={
@@ -387,19 +372,6 @@ export function Shell() {
           {SHOW_PRESENCE_ISLAND ? <PresenceIsland keepers={keepers} /> : null}
           <div className="top-actions">
             <NotificationBell unread={unread} onRead={refreshAlerts} />
-            <button
-              type="button"
-              className="help-toggle"
-              data-guide="help"
-              aria-label="How to use this site"
-              aria-pressed={guideOpen}
-              onClick={() => {
-                setGuideStep(0);
-                setGuideOpen(true);
-              }}
-            >
-              <HelpIcon />
-            </button>
             {auth.accessOn ? (
               <button type="button" className="sign-out" onClick={() => auth.signOut()}>
                 Sign out
@@ -416,9 +388,6 @@ export function Shell() {
       </div>
       {showHadith && daily ? (
         <HadithDialog daily={daily} onClose={() => setShowHadith(false)} />
-      ) : null}
-      {guideOpen && !showHadith && !feelingPrompt ? (
-        <GuideTour step={guideStep} onStep={setGuideStep} onClose={() => setGuideOpen(false)} />
       ) : null}
       {feelingPrompt && !showHadith ? (
         <FeelingCheckDialog prompt={feelingPrompt} onClose={() => setFeelingPrompt(null)} />

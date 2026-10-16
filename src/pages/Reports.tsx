@@ -144,7 +144,7 @@ export function ReportsPage() {
           <Panel tone="light" className="report-toolbar">
             <div className="report-toolbar-controls">
               <span className="report-toolbar-label">Period</span>
-              <div className="segmented" role="group" aria-label="Report period" data-guide="report-views">
+              <div className="segmented" role="group" aria-label="Report period">
                 {VIEWS.map((view) => (
                   <button
                     key={view.scope}
@@ -181,7 +181,6 @@ export function ReportsPage() {
             <button
               type="button"
               className="solid report-save-btn"
-              data-guide="save-report"
               disabled={busy !== null || !preview}
               onClick={() => void generate()}
             >

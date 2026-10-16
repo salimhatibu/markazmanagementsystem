@@ -81,7 +81,6 @@ export function KharajahPage() {
         <button
           type="button"
           className="solid"
-          data-guide="kharajah-record"
           disabled={busy || students.length === 0}
           onClick={() => {
             setRecording(true);

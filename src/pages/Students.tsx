@@ -124,7 +124,6 @@ export function StudentsPage() {
         <button
           type="button"
           className="ghost"
-          data-guide="add-student"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
@@ -194,7 +193,7 @@ export function StudentsPage() {
                 : "Nothing matches that search. Try a name, admission number, class, or teacher."}
         </Empty>
       ) : (
-        <div className="student-class-groups" data-guide="student-list">
+        <div className="student-class-groups">
           {groups.map((group) => (
             <section className="student-class-group" key={group.id} aria-labelledby={`student-class-${group.id}`}>
               <header className="student-class-heading">

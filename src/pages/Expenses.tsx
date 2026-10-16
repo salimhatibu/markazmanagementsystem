@@ -102,7 +102,6 @@ export function ExpensesPage() {
           <button
             type="button"
             className="ghost"
-            data-guide="add-expense"
             aria-expanded={open}
             onClick={() => setOpen((value) => !value)}
           >

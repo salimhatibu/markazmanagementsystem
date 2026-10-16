@@ -9,6 +9,25 @@ import { requireAdmin } from "../_shared/auth";
 import { fail, handleError, isUniqueViolation, json, parseId, readBody, ValidationError } from "../_shared/http";
 import { presentPost, presentPostCard } from "../_shared/posts";
 
+/** Unambiguous alphabet: no O/0 or I/1 to mis-read when a code is passed on. */
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const CODE_LENGTH = 6;
+
+function makeAccessCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(CODE_LENGTH));
+  return Array.from(bytes, (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join("");
+}
+
+/** Length-independent compare, so a wrong code gives nothing away by timing. */
+function codeMatches(supplied: string, actual: string): boolean {
+  const a = supplied.trim().toUpperCase();
+  const b = actual.trim().toUpperCase();
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 const POST_BODY_MAX = 400_000;
 const POST_LIST_MAX = 200;
 
@@ -112,6 +131,17 @@ export default async (req: Request, context: Context) => {
       if (slug) {
         const [row] = await db.select().from(posts).where(eq(posts.slug, slug)).limit(1);
         if (!row || !row.published) return fail("Post not found.", 404);
+        // `all=1` has already been through requireAdmin above, so the desk
+        // reads its own private paper outright; everyone else needs the code.
+        if (row.visibility === "private" && !includeDrafts) {
+          const supplied = url.searchParams.get("code")?.trim() ?? "";
+          const actual = row.accessCode ?? "";
+          if (!actual || !supplied || !codeMatches(supplied, actual)) {
+            // Nothing about the paper leaks until the code is right: no title,
+            // no excerpt, no cover.
+            return json({ locked: true, reason: supplied ? "wrong" : "needed" }, 200);
+          }
+        }
         return json({ post: presentPost(row, await seriesLabel(row.seriesId)) });
       }
       // Card columns only. `bodyHtml` can be 400 KB a row, and the index
@@ -146,6 +176,7 @@ export default async (req: Request, context: Context) => {
           published: input.published,
           publishedAt: input.published ? now : null,
           visibility: input.visibility,
+          accessCode: input.visibility === "private" ? makeAccessCode() : null,
           fontFamily: input.fontFamily,
         })
         .returning();
@@ -185,6 +216,10 @@ export default async (req: Request, context: Context) => {
           published: input.published,
           publishedAt: input.published ? existing.publishedAt ?? isoNow() : null,
           visibility: input.visibility,
+          // A paper keeps its code across edits so links already shared keep
+          // working; turning it public throws the code away.
+          accessCode:
+            input.visibility === "private" ? existing.accessCode ?? makeAccessCode() : null,
           fontFamily: input.fontFamily,
           updatedAt: isoNow(),
         })

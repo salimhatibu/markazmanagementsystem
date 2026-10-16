@@ -38,6 +38,7 @@ const BlogWritePage = page(() => import("./pages/BlogWrite"), "BlogWritePage");
 const BlogAnalyticsPage = page(() => import("./pages/BlogAnalytics"), "BlogAnalyticsPage");
 const BlogSeriesPage = page(() => import("./pages/BlogSeries"), "BlogSeriesPage");
 const BlogNotesPage = page(() => import("./pages/BlogNotes"), "BlogNotesPage");
+const BlogLettersPage = page(() => import("./pages/BlogLetters"), "BlogLettersPage");
 const BlogPostPage = page(() => import("./pages/BlogPost"), "BlogPostPage");
 
 function ExternalPapersRedirect() {
@@ -77,6 +78,7 @@ const deskTree = (
         <Route path="/blog/analytics" element={<BlogAnalyticsPage />} />
         <Route path="/blog/series" element={<BlogSeriesPage />} />
         <Route path="/blog/notes" element={<BlogNotesPage />} />
+        <Route path="/blog/letters" element={<BlogLettersPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
       </Route>
     </Route>

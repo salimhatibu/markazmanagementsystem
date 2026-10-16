@@ -35,6 +35,8 @@ export function BlogWritePage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(!editing);
+  const [accessCode, setAccessCode] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
   const coverInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -45,6 +47,7 @@ export function BlogWritePage() {
         setBodyHtml(body.post.bodyHtml);
         setCoverUrl(body.post.coverUrl);
         setCoverKey(body.post.coverKey);
+        setAccessCode(body.post.accessCode ?? null);
         setStatus(statusOf(body.post));
         setFontFamily(body.post.fontFamily ?? "default");
         setSeriesId(body.post.seriesId ? String(body.post.seriesId) : "");
@@ -184,6 +187,31 @@ export function BlogWritePage() {
             </label>
           </div>
           <p className="field-hint blog-visibility-hint">{STATUS_HINTS[status]}</p>
+          {status === "private" ? (
+            accessCode ? (
+              <div className="blog-code">
+                <span className="blog-code-label">Code to open it</span>
+                <code className="blog-code-value">{accessCode}</code>
+                <button
+                  type="button"
+                  className="blog-code-copy"
+                  onClick={() => {
+                    void navigator.clipboard
+                      .writeText(accessCode)
+                      .then(() => setCodeCopied(true))
+                      .catch(() => setCodeCopied(false));
+                  }}
+                >
+                  {codeCopied ? "Copied" : "Copy"}
+                </button>
+                <span className="blog-code-note">
+                  Send this with the link. The paper will not open without it.
+                </span>
+              </div>
+            ) : (
+              <p className="field-hint">A code will be made for this paper when you save it.</p>
+            )
+          ) : null}
           <div
             className="blog-field"
             onPaste={(event) => {

@@ -20,7 +20,7 @@ export function BlogPostPage() {
 
   useEffect(() => {
     if (!slug) return;
-    api<{ post: BlogPost }>(`/api/posts?slug=${encodeURIComponent(slug)}`)
+    api<{ post: BlogPost }>(`/api/posts?slug=${encodeURIComponent(slug)}&all=1`)
       .then((body) => setPost(body.post))
       .catch((caught: unknown) => {
         setError(caught instanceof Error ? caught.message : "That post could not be opened.");

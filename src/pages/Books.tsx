@@ -156,7 +156,6 @@ export function BooksPage() {
         <button
           type="button"
           className="ghost"
-          data-guide="books-add"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >

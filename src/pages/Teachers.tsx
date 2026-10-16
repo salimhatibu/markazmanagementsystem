@@ -84,7 +84,6 @@ export function TeachersPage() {
         <button
           type="button"
           className="ghost"
-          data-guide="add-teacher"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
@@ -129,7 +128,7 @@ export function TeachersPage() {
             : "Nothing matches that search. Try a name or morning / evening."}
         </Empty>
       ) : (
-        <div className="table-wrap" data-guide="teacher-list">
+        <div className="table-wrap">
           <table>
             <caption className="table-caption">Teacher salaries</caption>
             <thead>
