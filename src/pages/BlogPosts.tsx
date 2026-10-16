@@ -18,6 +18,7 @@ export function BlogPostsPage() {
   const [ready, setReady] = useState(false);
   const [confirming, setConfirming] = useState<number | null>(null);
   const [removing, setRemoving] = useState<number | null>(null);
+  const [copiedCode, setCopiedCode] = useState<number | null>(null);
 
   async function remove(post: BlogPost) {
     setRemoving(post.id);
@@ -110,6 +111,23 @@ export function BlogPostsPage() {
               </Link>
               {post.visibility === "private" ? <span className="blog-private-tag">Private</span> : null}
             </h2>
+            {post.visibility === "private" && post.accessCode ? (
+              <p className="blog-issue-code">
+                <span className="blog-issue-code-label">Code</span>
+                <code>{post.accessCode}</code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigator.clipboard
+                      .writeText(post.accessCode ?? "")
+                      .then(() => setCopiedCode(post.id))
+                      .catch(() => setCopiedCode(null));
+                  }}
+                >
+                  {copiedCode === post.id ? "Copied" : "Copy"}
+                </button>
+              </p>
+            ) : null}
             {post.excerpt ? <p className="excuse">{post.excerpt}</p> : null}
             <div className="blog-issue-actions">
               <Link className="quest-read" to={`/blog/${post.slug}`} onClick={() => trackBlog("click", post.id)}>

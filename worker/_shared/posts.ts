@@ -61,3 +61,13 @@ export function presentPostCard(row: PostCard) {
     updatedAt: asIso(row.updatedAt),
   };
 }
+
+/**
+ * The same card plus the private paper's code. Only for the desk's own
+ * listing, which sits behind requireAdmin — deliberately a separate function
+ * rather than a flag, since `rows.map(presentPostCard)` would otherwise hand
+ * the array index in as the flag and leak codes.
+ */
+export function presentDeskCard(row: PostCard & { accessCode?: string | null }) {
+  return { ...presentPostCard(row), accessCode: row.accessCode ?? null };
+}

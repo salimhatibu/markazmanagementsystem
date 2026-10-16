@@ -7,7 +7,7 @@ import { slugFromTitle } from "../../shared/slug";
 import { BLOG_FONT_IDS } from "../../shared/blog-fonts";
 import { requireAdmin } from "../_shared/auth";
 import { fail, handleError, isUniqueViolation, json, parseId, readBody, ValidationError } from "../_shared/http";
-import { presentPost, presentPostCard } from "../_shared/posts";
+import { presentDeskCard, presentPost, presentPostCard } from "../_shared/posts";
 
 /** Unambiguous alphabet: no O/0 or I/1 to mis-read when a code is passed on. */
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -104,6 +104,7 @@ const cardColumns = {
   published: posts.published,
   publishedAt: posts.publishedAt,
   visibility: posts.visibility,
+  accessCode: posts.accessCode,
   createdAt: posts.createdAt,
   updatedAt: posts.updatedAt,
 };
@@ -154,7 +155,9 @@ export default async (req: Request, context: Context) => {
             .where(and(eq(posts.published, true), eq(posts.visibility, "public")))
             .orderBy(desc(posts.publishedAt), desc(posts.createdAt))
             .limit(POST_LIST_MAX);
-      return json({ posts: rows.map(presentPostCard) });
+      return json({
+        posts: rows.map((row) => (includeDrafts ? presentDeskCard(row) : presentPostCard(row))),
+      });
     }
 
     if (req.method === "POST") {

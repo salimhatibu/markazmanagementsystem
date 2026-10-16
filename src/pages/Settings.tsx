@@ -48,7 +48,6 @@ export function SettingsPage() {
   const [bankName, setBankName] = useState(settings.bankName ?? BANK_NAME);
   const [paybill, setPaybill] = useState(settings.paybill ?? PAYBILL);
   const [accountNumber, setAccountNumber] = useState(settings.accountNumber ?? ACCOUNT_NUMBER);
-  const [mailConfigured, setMailConfigured] = useState<boolean | null>(null);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
@@ -62,12 +61,6 @@ export function SettingsPage() {
     setPaybill(settings.paybill ?? PAYBILL);
     setAccountNumber(settings.accountNumber ?? ACCOUNT_NUMBER);
   }, [settings]);
-
-  useEffect(() => {
-    api<{ configured: boolean }>("/api/mail")
-      .then((body) => setMailConfigured(body.configured))
-      .catch(() => setMailConfigured(false));
-  }, []);
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -202,26 +195,6 @@ export function SettingsPage() {
             {noticeError ? <p className="status">{noticeError}</p> : null}
           </div>
         </form>
-      </Panel>
-      <Panel tone="light">
-        <p className="panel-title">How to use this site</p>
-        <p>
-          A short walkthrough of home, students, fees, teachers, salaries, expenses, reports, and these settings. It
-          is meant for someone opening the books on a new phone.
-        </p>
-      </Panel>
-      <Panel tone="dark">
-        <p className="panel-title">Fee reminders</p>
-        {mailConfigured === null ? (
-          <p>Checking whether email is ready…</p>
-        ) : mailConfigured ? (
-          <p>You can send a balance reminder from a student&rsquo;s record.</p>
-        ) : (
-          <p>
-            Reminders stay off until the office mailbox is connected on the hosting site. The app will never pretend a
-            message was sent.
-          </p>
-        )}
       </Panel>
     </>
   );
