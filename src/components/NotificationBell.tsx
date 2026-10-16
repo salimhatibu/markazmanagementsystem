@@ -9,6 +9,8 @@ import { BellIcon } from "./Motifs";
 function destinationFor(note: DeskNotification): string | null {
   if (note.kind === "comment") return "/blog/notes";
   if (note.kind === "report") return "/reports";
+  // A like points at the paper it was left on, when the slug is still there.
+  if (note.kind === "like") return note.postSlug ? `/blog/${note.postSlug}` : null;
   // A notice is the whole message; there is nowhere further to go.
   return null;
 }
@@ -16,6 +18,7 @@ function destinationFor(note: DeskNotification): string | null {
 function labelFor(kind: DeskNotification["kind"]): string {
   if (kind === "comment") return "Note";
   if (kind === "notice") return "Desk";
+  if (kind === "like") return "Like";
   return "Report";
 }
 
@@ -103,7 +106,9 @@ export function NotificationBell({
           {loading ? <p className="bell-bar-state">Opening…</p> : null}
           {error ? <p className="bell-bar-state is-error">{error}</p> : null}
           {!loading && !error && notes.length === 0 ? (
-            <p className="bell-bar-state">Nothing yet. Reports and readers&rsquo; notes arrive here.</p>
+            <p className="bell-bar-state">
+              Nothing yet. Reports, notices and readers&rsquo; notes and likes arrive here.
+            </p>
           ) : null}
           {notes.length > 0 ? (
             <ul className="bell-list">
@@ -114,7 +119,10 @@ export function NotificationBell({
                     onClick={() => go(note)}
                     className={destinationFor(note) ? undefined : "is-static"}
                   >
-                    <span className={`bell-kind is-${note.kind}`}>{labelFor(note.kind)}</span>
+                    <span className="bell-row-head">
+                      <span className={`bell-kind is-${note.kind}`}>{labelFor(note.kind)}</span>
+                      {note.readAt == null ? <span className="bell-dot" aria-label="Unread" /> : null}
+                    </span>
                     <span className="bell-row-title">{note.title}</span>
                     {note.body ? <span className="bell-row-body">{note.body}</span> : null}
                     <time dateTime={note.createdAt}>{formatEat(note.createdAt)}</time>

@@ -6,7 +6,7 @@ import { readAccessIdentity, requireAdmin } from "../_shared/auth";
 import { fail, handleError, json, readBody } from "../_shared/http";
 import { oneOf, optionalMessage, requiredText } from "../_shared/validate";
 
-const KINDS = ["report", "comment", "notice"] as const;
+const KINDS = ["report", "comment", "notice", "like"] as const;
 
 export default async (req: Request) => {
   const denied = await requireAdmin();

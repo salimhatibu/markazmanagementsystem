@@ -164,7 +164,7 @@ export const notifications = sqliteTable(
   "notifications",
   {
     id: integer().primaryKey({ autoIncrement: true }),
-    kind: text({ enum: ["report", "comment", "notice"] })
+    kind: text({ enum: ["report", "comment", "notice", "like"] })
       .notNull()
       .default("report"),
     title: text().notNull(),
