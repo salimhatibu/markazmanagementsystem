@@ -12,10 +12,10 @@ const ACTIVE_KEY = "markaz_feeling_active_ms";
 const TICK_KEY = "markaz_feeling_last_tick";
 const SEEN_PREFIX = "markaz_verse_seen_";
 /** A checkup is earned for every 5 minutes actually spent working. */
-const WORK_BEFORE_ASK_MS = 5 * 60 * 1000;
+const WORK_BEFORE_ASK_MS = 20 * 60 * 1000;
 const MAX_ASKS_PER_DAY = 4;
 /** Gaps longer than this mean the desk was left, not worked at. */
-const IDLE_GAP_MS = 2 * 60 * 1000;
+const IDLE_GAP_MS = 10 * 60 * 1000;
 
 export const FEELING_PROMPTS = [
   "Hey — how are you feeling today?",
