@@ -11,6 +11,8 @@ function destinationFor(note: DeskNotification): string | null {
   if (note.kind === "report") return "/reports";
   // A like points at the paper it was left on, when the slug is still there.
   if (note.kind === "like") return note.postSlug ? `/blog/${note.postSlug}` : null;
+  // A raised panic button opens the log it was written into.
+  if (note.kind === "panic") return "/panic-alerts";
   // A notice is the whole message; there is nowhere further to go.
   return null;
 }
@@ -19,6 +21,7 @@ function labelFor(kind: DeskNotification["kind"]): string {
   if (kind === "comment") return "Note";
   if (kind === "notice") return "Desk";
   if (kind === "like") return "Like";
+  if (kind === "panic") return "Panic";
   return "Report";
 }
 
@@ -107,7 +110,7 @@ export function NotificationBell({
           {error ? <p className="bell-bar-state is-error">{error}</p> : null}
           {!loading && !error && notes.length === 0 ? (
             <p className="bell-bar-state">
-              Nothing yet. Reports, notices and readers&rsquo; notes and likes arrive here.
+              Nothing yet. Reports, raised alarms and readers&rsquo; notes and likes arrive here.
             </p>
           ) : null}
           {notes.length > 0 ? (

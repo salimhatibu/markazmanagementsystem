@@ -4432,27 +4432,6 @@ body:has(.app.is-panicked) {
 .bell-row > button.is-static:hover { background: none; }
 .bell-row.is-new > button.is-static:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
 
-.notice-writer-lead {
-  margin: -4px 0 16px;
-  max-width: 44rem;
-  color: var(--text-2);
-  font-size: 14.5px;
-  line-height: 1.55;
-}
-
-.notice-writer .form-grid textarea {
-  width: 100%;
-  border: 1px solid var(--line-2);
-  border-radius: 12px;
-  background: var(--card);
-  color: var(--text);
-  font: inherit;
-  padding: 11px 12px;
-  resize: vertical;
-}
-
-.notice-writer-actions { align-items: center; gap: 12px; flex-wrap: wrap; }
-
 /* ---------- Notification rows ---------- */
 
 .bell-list {
@@ -4505,6 +4484,8 @@ body:has(.app.is-panicked) {
 .bell-kind.is-comment { color: #7a1f2b; }
 .bell-kind.is-notice { color: #1b365d; }
 .bell-kind.is-like { color: #a3572f; }
+/* A raised panic button should read as the loudest thing in the bar. */
+.bell-kind.is-panic { color: #b4121f; letter-spacing: 0.18em; }
 
 .bell-row-title {
   font-size: 14px;

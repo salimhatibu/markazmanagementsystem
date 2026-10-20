@@ -11,15 +11,16 @@ const ASKED_KEY = "markaz_feeling_asked";
 const ACTIVE_KEY = "markaz_feeling_active_ms";
 const TICK_KEY = "markaz_feeling_last_tick";
 const SEEN_PREFIX = "markaz_verse_seen_";
-/** A checkup is earned for every 40 minutes actually spent working. */
-const WORK_BEFORE_ASK_MS = 40 * 60 * 1000;
-const MAX_ASKS_PER_DAY = 2;
+/** A checkup is earned for every 5 minutes actually spent working. */
+const WORK_BEFORE_ASK_MS = 5 * 60 * 1000;
+const MAX_ASKS_PER_DAY = 4;
 /** Gaps longer than this mean the desk was left, not worked at. */
 const IDLE_GAP_MS = 2 * 60 * 1000;
 
 export const FEELING_PROMPTS = [
   "Hey — how are you feeling today?",
-  "Hello. Before the day runs on, how is your heart?",
+  "I hope you're not feeling bad today, if you are, close your eyes and take a deep breath, then write everything that's on your mind.",
+  "Meemy! Before the day runs on, how is your heart?",
   "Assalamu alaikum. How are you holding up today?",
   "ding ding ding. How are you not holding up today FH?",
   "Forget spirit, are you still breathing fine?",
@@ -138,7 +139,7 @@ export function canAskFeelingToday(date = eatDate()): boolean {
   return readAskState(date).count < MAX_ASKS_PER_DAY;
 }
 
-/** True when today's two checkups have already been used. */
+/** True when today's checkups have all been used. */
 export function wasFeelingAskedToday(date = eatDate()): boolean {
   return !canAskFeelingToday(date);
 }

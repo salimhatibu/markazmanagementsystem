@@ -1,12 +1,41 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "../../db/index";
-import { panicAlerts } from "../../db/schema";
+import { notificationReads, notifications, panicAlerts } from "../../db/schema";
 import { asIso, eatDate } from "../../shared/format";
 import { readAccessIdentity, requireAdmin } from "../_shared/auth";
 import { fail, handleError, json, readBody } from "../_shared/http";
 import { panicAlertFields } from "../_shared/validate";
 
 const LIST_MAX = 50;
+
+/** Kept in step with PANIC_LEVELS in src/lib/panic.ts; the worker cannot import the client. */
+const LEVEL_LABELS = ["", "Unsettled", "Worried", "Serious", "Severe", "Critical"];
+
+/**
+ * Put the alert on every keeper's bell. An emergency must never fail because the
+ * notice behind it did, so this swallows its own errors.
+ */
+async function tellTheKeepers(alert: typeof panicAlerts.$inferSelect) {
+  try {
+    const label = LEVEL_LABELS[alert.level] ?? "Raised";
+    const [created] = await db
+      .insert(notifications)
+      .values({
+        kind: "panic",
+        title: `Panic raised \u2014 level ${alert.level} \u00b7 ${label}`,
+        body: alert.note,
+        author: alert.email,
+      })
+      .returning();
+    // The keeper who raised it has plainly read their own alert.
+    await db
+      .insert(notificationReads)
+      .values({ notificationId: created.id, email: alert.email })
+      .onConflictDoNothing();
+  } catch {
+    // Deliberately quiet.
+  }
+}
 
 /** The button is deliberately a once-a-day call, counted on the East Africa calendar. */
 async function raisedToday(email: string): Promise<boolean> {
@@ -56,6 +85,7 @@ export default async (req: Request) => {
         return fail("The panic button has already been raised today. It opens again tomorrow.", 429);
       }
       const [created] = await db.insert(panicAlerts).values({ email, ...input }).returning();
+      await tellTheKeepers(created);
       return json({ alert: present(created) }, 201);
     }
 

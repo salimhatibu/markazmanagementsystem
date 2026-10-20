@@ -451,7 +451,7 @@ export function teacherToInput(teacher: Teacher): TeacherInput {
 
 export type DeskNotification = {
   id: number;
-  kind: "report" | "comment" | "notice" | "like";
+  kind: "report" | "comment" | "notice" | "like" | "panic";
   title: string;
   body: string | null;
   reportId: number | null;

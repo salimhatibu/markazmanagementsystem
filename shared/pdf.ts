@@ -815,6 +815,8 @@ export type RosterColumn = {
 };
 
 export type RosterPdf = {
+  /** Wide lists sit better on a landscape sheet; the styling is unchanged. */
+  landscape?: boolean;
   markazName: string;
   letterhead?: Letterhead;
   currencySymbol: string | null;
@@ -829,7 +831,8 @@ export type RosterPdf = {
 export async function buildRosterPdf(roster: RosterPdf): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
-  const markaz = roster.letterhead?.markazName || roster.markazName;
+  const head = roster.letterhead;
+  const markaz = head?.markazName || roster.markazName;
   pdf.setTitle(`${roster.title} — ${markaz}`);
   pdf.setAuthor(markaz);
   pdf.setCreator("Markaz Imam ash-Shafi'i");
@@ -851,111 +854,193 @@ export async function buildRosterPdf(roster: RosterPdf): Promise<Uint8Array> {
     nums = await pdf.embedFont(StandardFonts.Helvetica);
   }
 
-  let page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-  let y = PAGE_HEIGHT - 36;
-  const headerH = 22;
-  const rowH = 18;
-  const inset = 6;
-  const totalWidth = roster.columns.reduce((sum, col) => sum + col.width, 0);
-  const widths = roster.columns.map((col) => (col.width / totalWidth) * CONTENT);
+  const pageW = roster.landscape ? PAGE_HEIGHT : PAGE_WIDTH;
+  const pageH = roster.landscape ? PAGE_WIDTH : PAGE_HEIGHT;
+  const content = pageW - MARGIN * 2;
 
-  const paint = () => {
-    page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT, color: C.paper });
-    page.drawRectangle({ x: 0, y: PAGE_HEIGHT - 8, width: PAGE_WIDTH, height: 8, color: C.accent });
-    page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: 36, color: C.wash });
-  };
-  const writeLine = (
-    text: string,
+  let page = pdf.addPage([pageW, pageH]);
+  let y = pageH - 22;
+
+  const headerH = 24;
+  const rowH = 20;
+  const inset = 5;
+  const cellSize = 9.2;
+  const lineStep = 10.5;
+  const maxLines = 2;
+  const totalWidth = roster.columns.reduce((sum, col) => sum + col.width, 0);
+  const widths = roster.columns.map((col) => (col.width / totalWidth) * content);
+  const fontFor = (col: RosterColumn) => (col.align === "right" ? nums : body);
+
+  function paint() {
+    page.drawRectangle({ x: 0, y: 0, width: pageW, height: pageH, color: BW.paper });
+  }
+
+  function clip(value: string, font: PDFFont, size: number, width: number): string {
+    if (font.widthOfTextAtSize(value, size) <= width) return value;
+    const ell = "...";
+    let cut = value;
+    while (cut.length > 1 && font.widthOfTextAtSize(`${cut}${ell}`, size) > width) cut = cut.slice(0, -1);
+    return `${cut}${ell}`;
+  }
+
+  function write(
+    value: string,
     x: number,
-    top: number,
+    baseline: number,
     size: number,
     font: PDFFont,
     color: RGB,
-    maxWidth?: number,
-    align: "left" | "right" = "left",
-  ) => {
-    const lines = maxWidth ? wrap(text, font, size, maxWidth) : [text];
-    lines.forEach((line, index) => {
-      let drawX = x;
-      if (align === "right" && maxWidth) {
-        drawX = x + maxWidth - font.widthOfTextAtSize(line, size);
-      }
-      page.drawText(line, { x: drawX, y: top - index * (size + 2), size, font, color });
-    });
-    return lines.length * (size + 2);
-  };
-  const drawHeader = () => {
-    page.drawRectangle({ x: MARGIN, y: y - headerH, width: CONTENT, height: headerH, color: C.header });
+    width?: number,
+    align: "left" | "right" | "center" = "left",
+  ) {
+    const text = width ? clip(value, font, size, width) : value;
+    const total = font.widthOfTextAtSize(text, size);
+    let left = x;
+    if (align === "right" && width) left = x + width - total;
+    if (align === "center") left = width ? x + (width - total) / 2 : x - total / 2;
+    page.drawText(text, { x: left, y: baseline, size, font, color });
+  }
+
+  function newPage() {
+    page = pdf.addPage([pageW, pageH]);
+    paint();
+    y = pageH - 44;
+  }
+
+  function ensure(height: number) {
+    if (y - height < FOOTER) newPage();
+  }
+
+  function drawHead() {
+    ensure(headerH + rowH + 4);
+    page.drawRectangle({ x: MARGIN, y: y - headerH, width: content, height: headerH, color: BW.headerFill });
+    page.drawRectangle({ x: MARGIN, y: y - headerH, width: content, height: 1.25, color: BW.rule });
     let x = MARGIN;
     roster.columns.forEach((col, index) => {
-      writeLine(col.label, x + inset, y - 14, 8, bodyBold, C.ink, widths[index] - inset * 2, col.align ?? "left");
+      write(col.label, x + inset, y - 15, 8, bodyBold, BW.ink, widths[index] - inset * 2, col.align ?? "left");
       x += widths[index];
     });
     y -= headerH;
-  };
-  const ensure = (height: number, withHeader = false) => {
-    if (y - height < FOOTER) {
-      page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-      paint();
-      y = PAGE_HEIGHT - 36;
-      writeLine(`${roster.title}  ·  continued`, MARGIN, y, 10, display, C.mute);
-      y -= 26;
-      if (withHeader) drawHeader();
-    }
-  };
+  }
 
   paint();
-  writeLine(markaz, MARGIN, y, 11, bodyBold, C.mute);
-  y -= 22;
-  writeLine(roster.title, MARGIN, y, 22, display, C.ink, CONTENT);
-  y -= 30;
-  writeLine(`Printed ${formatShortDate(roster.generatedAt.slice(0, 10))}`, MARGIN, y, 9, body, C.mute);
-  y -= 18;
-  if (roster.subtitle) {
-    writeLine(roster.subtitle, MARGIN, y, 10, body, C.text2, CONTENT);
-    y -= 20;
-  } else {
-    y -= 8;
-  }
 
-  ensure(headerH + rowH + 4, false);
-  drawHeader();
+  // Letterhead, matching the monthly report.
+  y = pageH - 44;
+  const nameSize = 13;
+  for (const line of wrap(markaz.toUpperCase(), bodyBold, nameSize, content)) {
+    write(line, pageW / 2, y - nameSize, nameSize, bodyBold, BW.ink, undefined, "center");
+    y -= nameSize + 4;
+  }
+  if (head?.address) {
+    write(head.address, pageW / 2, y - 9, 9, body, BW.mute, undefined, "center");
+    y -= 18;
+  }
+  y -= 10;
+  write(roster.title, pageW / 2, y - 26, 26, display, BW.ink, undefined, "center");
+  y -= 36;
+  if (roster.subtitle) {
+    write(roster.subtitle, pageW / 2, y - 10, 10, body, BW.text2, undefined, "center");
+    y -= 14;
+  }
+  write(
+    `Printed ${formatShortDate(roster.generatedAt.slice(0, 10))}`,
+    pageW / 2,
+    y - 9,
+    8.5,
+    body,
+    BW.mute,
+    undefined,
+    "center",
+  );
+  y -= 20;
+  page.drawRectangle({ x: MARGIN, y, width: content, height: 1.5, color: BW.rule });
+  y -= 22;
+
+  drawHead();
 
   if (roster.rows.length === 0) {
-    ensure(28);
-    page.drawRectangle({ x: MARGIN, y: y - 28, width: CONTENT, height: 28, color: C.card });
-    writeLine(roster.empty, MARGIN + inset, y - 18, 9, body, C.mute, CONTENT - inset * 2);
+    ensure(30);
+    page.drawRectangle({
+      x: MARGIN,
+      y: y - 28,
+      width: content,
+      height: 28,
+      color: BW.card,
+      borderColor: BW.line,
+      borderWidth: 1,
+    });
+    write(roster.empty, MARGIN + inset, y - 18, 9, body, BW.mute, content - inset * 2);
     y -= 40;
   } else {
-    roster.rows.forEach((row, rowIndex) => {
-      ensure(rowH + 2, true);
+    // One size for every cell; a long name runs onto a second line and the row
+    // grows to hold it, rather than being set smaller or spilling into the next.
+    const laidOut = roster.rows.map((row) =>
+      row.map((cell, index) => {
+        const usable = widths[index] - inset * 2;
+        const font = fontFor(roster.columns[index]);
+        const lines = wrap(cell, font, cellSize, usable);
+        if (lines.length <= maxLines) return lines;
+        return [lines[0], clip(lines.slice(1).join(" "), font, cellSize, usable)];
+      }),
+    );
+
+    laidOut.forEach((cells, rowIndex) => {
+      const lineCount = Math.max(1, ...cells.map((lines) => lines.length));
+      const height = rowH + (lineCount - 1) * lineStep;
+      if (y - height < FOOTER) {
+        newPage();
+        drawHead();
+      }
       page.drawRectangle({
         x: MARGIN,
-        y: y - rowH,
-        width: CONTENT,
-        height: rowH,
-        color: rowIndex % 2 === 0 ? C.card : C.blush,
+        y: y - height,
+        width: content,
+        height,
+        color: rowIndex % 2 === 0 ? BW.card : BW.zebra,
       });
       let x = MARGIN;
-      row.forEach((cell, index) => {
+      cells.forEach((lines, index) => {
         const col = roster.columns[index];
-        const font = col.align === "right" ? nums : body;
-        writeLine(cell, x + inset, y - 12, 8.5, font, C.ink, widths[index] - inset * 2, col.align ?? "left");
+        lines.forEach((line, lineIndex) => {
+          write(
+            line,
+            x + inset,
+            y - 13 - lineIndex * lineStep,
+            cellSize,
+            fontFor(col),
+            BW.ink,
+            widths[index] - inset * 2,
+            col.align ?? "left",
+          );
+        });
         x += widths[index];
       });
-      y -= rowH;
+      page.drawRectangle({ x: MARGIN, y: y - height, width: content, height: 0.5, color: BW.line });
+      y -= height;
     });
+    page.drawRectangle({ x: MARGIN, y, width: content, height: 1.25, color: BW.rule });
+    y -= 14;
   }
 
-  y -= 18;
+  y -= 12;
   ensure(24);
-  writeLine(BLESSING, PAGE_WIDTH / 2 - 80, y, 12, display, C.accent);
+  write(BLESSING, pageW / 2, y - 12, 12, display, BW.ink, undefined, "center");
 
   const pages = pdf.getPages();
   pages.forEach((item, index) => {
     const current = page;
     page = item;
-    writeLine(`Markaz Imam ash-Shafi'i    ${index + 1} / ${pages.length}`, PAGE_WIDTH / 2 - 70, 18, 8, body, C.mute);
+    write(
+      `Markaz Imam ash-Shafi'i    ${index + 1} / ${pages.length}`,
+      pageW / 2,
+      18,
+      8,
+      body,
+      BW.mute,
+      undefined,
+      "center",
+    );
     page = current;
   });
 

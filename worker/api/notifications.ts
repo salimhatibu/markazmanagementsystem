@@ -4,9 +4,9 @@ import { notificationReads, notifications, posts } from "../../db/schema";
 import { asIso } from "../../shared/format";
 import { readAccessIdentity, requireAdmin } from "../_shared/auth";
 import { fail, handleError, json, readBody } from "../_shared/http";
-import { oneOf, optionalMessage, requiredText } from "../_shared/validate";
+import { oneOf } from "../_shared/validate";
 
-const KINDS = ["report", "comment", "notice", "like"] as const;
+const KINDS = ["report", "comment", "notice", "like", "panic"] as const;
 
 export default async (req: Request) => {
   const denied = await requireAdmin();
@@ -48,24 +48,6 @@ export default async (req: Request) => {
           .onConflictDoNothing();
       }
       return json({ ok: true, marked: pending.length });
-    }
-
-    if (req.method === "POST") {
-      // A keeper writing a notice for the other keepers.
-      const body = await readBody(req);
-      if (!body) return fail("Request body must be an object.", 400);
-      const title = requiredText(body.title, "Title", 200);
-      const text = optionalMessage(body.body, "Message", 4000);
-      const [created] = await db
-        .insert(notifications)
-        .values({ kind: "notice", title, body: text, author: email })
-        .returning();
-      // The writer has plainly read their own notice.
-      await db
-        .insert(notificationReads)
-        .values({ notificationId: created.id, email })
-        .onConflictDoNothing();
-      return json({ notification: { id: created.id, title: created.title } }, 201);
     }
 
     if (req.method !== "GET") return fail("Method not allowed.", 405);
