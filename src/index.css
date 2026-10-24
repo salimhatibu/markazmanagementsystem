@@ -742,6 +742,39 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-family: var(--serif); }
   }
 }
 
+/* ---- Mobile: collapse to a dot so the bell stays reachable ---- */
+@media (max-width: 600px) {
+  .presence-island-wrap {
+    /* Park it beside (but not over) the bell / top-actions area */
+    left: auto;
+    right: 80px;
+    transform: none;
+    top: max(12px, calc(env(safe-area-inset-top) + 4px));
+    max-width: none;
+  }
+
+  /* Collapsed state: just the dot + a tight dark circle */
+  .presence-island-pill {
+    min-width: 0;
+    min-height: 0;
+    padding: 9px;
+    border-radius: 50%;
+    gap: 0;
+  }
+
+  .presence-island-summary {
+    display: none;
+  }
+
+  /* Expanded state: show the full card */
+  .presence-island.is-expanded .presence-island-pill {
+    min-width: 200px;
+    padding: 12px 14px;
+    border-radius: 22px;
+    gap: 10px;
+  }
+}
+
 .presence-island {
   pointer-events: auto;
   appearance: none;
