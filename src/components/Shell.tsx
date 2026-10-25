@@ -57,7 +57,7 @@ export type WorkspaceContext = {
  * Typed as boolean so the hidden branch stays live code rather than being
  * narrowed away as unreachable.
  */
-const SHOW_PRESENCE_ISLAND: boolean = true;
+const SHOW_PRESENCE_ISLAND: boolean = false;
 
 const WORK_TICK_MS = 30 * 1000;
 
