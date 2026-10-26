@@ -3,10 +3,20 @@ const ALLOWED_IFRAME =
 const ALLOWED_MEDIA = /^\/api\/blog-media\/blog\/[A-Za-z0-9._-]+$/;
 const ALLOWED_LINK = /^(?:https?:\/\/(?!\/)|mailto:|\/(?!\/))/i;
 
+/** Pre-compiled patterns for the attribute names we actually look up. */
+const ATTR_RE: Record<string, { double: RegExp; single: RegExp }> = {};
+function attrRe(name: string) {
+  return (ATTR_RE[name] ??= {
+    double: new RegExp(`${name}\\s*=\\s*"([^"]*)"`, "i"),
+    single: new RegExp(`${name}\\s*=\\s*'([^']*)'`, "i"),
+  });
+}
+
 function attrValue(attrs: string, name: string): string {
-  const double = new RegExp(`${name}\\s*=\\s*"([^"]*)"`, "i").exec(attrs);
+  const re = attrRe(name);
+  const double = re.double.exec(attrs);
   if (double) return double[1];
-  const single = new RegExp(`${name}\\s*=\\s*'([^']*)'`, "i").exec(attrs);
+  const single = re.single.exec(attrs);
   return single?.[1] ?? "";
 }
 

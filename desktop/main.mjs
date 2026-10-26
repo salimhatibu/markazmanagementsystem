@@ -28,10 +28,9 @@ async function waitFor(url) {
 }
 
 function startVite() {
-  vite = spawn("npm", ["run", "dev"], {
+  vite = spawn(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "dev"], {
     cwd: root,
     stdio: "inherit",
-    shell: true,
     env: process.env,
   });
   startedVite = true;
@@ -40,7 +39,7 @@ function startVite() {
 function stopVite() {
   if (!startedVite || !vite) return;
   if (process.platform === "win32" && vite.pid) {
-    spawn("taskkill", ["/pid", String(vite.pid), "/T", "/F"], { stdio: "ignore", shell: true });
+    spawn("taskkill", ["/pid", String(vite.pid), "/T", "/F"], { stdio: "ignore" });
   } else {
     vite.kill("SIGTERM");
   }

@@ -7,13 +7,12 @@ const dir = dirname(fileURLToPath(import.meta.url));
 const dist = process.argv.includes("--dist");
 
 if (!existsSync(join(dir, "node_modules", "electron"))) {
-  const install = spawnSync("npm", ["install"], { cwd: dir, stdio: "inherit", shell: true });
+  const install = spawnSync(process.platform === "win32" ? "npm.cmd" : "npm", ["install"], { cwd: dir, stdio: "inherit" });
   if (install.status) process.exit(install.status ?? 1);
 }
 
-const result = spawnSync("npm", ["run", dist ? "dist" : "start"], {
+const result = spawnSync(process.platform === "win32" ? "npm.cmd" : "npm", ["run", dist ? "dist" : "start"], {
   cwd: dir,
   stdio: "inherit",
-  shell: true,
 });
 process.exit(result.status ?? 1);
