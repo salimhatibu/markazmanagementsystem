@@ -3,17 +3,16 @@ const ALLOWED_IFRAME =
 const ALLOWED_MEDIA = /^\/api\/blog-media\/blog\/[A-Za-z0-9._-]+$/;
 const ALLOWED_LINK = /^(?:https?:\/\/(?!\/)|mailto:|\/(?!\/))/i;
 
-/** Pre-compiled patterns for the attribute names we actually look up. */
-const ATTR_RE: Record<string, { double: RegExp; single: RegExp }> = {};
-function attrRe(name: string) {
-  return (ATTR_RE[name] ??= {
-    double: new RegExp(`${name}\\s*=\\s*"([^"]*)"`, "i"),
-    single: new RegExp(`${name}\\s*=\\s*'([^']*)'`, "i"),
-  });
-}
+/** Hardcoded attribute-extraction patterns — no dynamic RegExp. */
+const ATTR_PATTERNS: Record<string, { double: RegExp; single: RegExp }> = {
+  src:   { double: /src\s*=\s*"([^"]*)"/i,   single: /src\s*=\s*'([^']*)'/i },
+  href:  { double: /href\s*=\s*"([^"]*)"/i,  single: /href\s*=\s*'([^']*)'/i },
+  class: { double: /class\s*=\s*"([^"]*)"/i, single: /class\s*=\s*'([^']*)'/i },
+};
 
 function attrValue(attrs: string, name: string): string {
-  const re = attrRe(name);
+  const re = ATTR_PATTERNS[name];
+  if (!re) return "";
   const double = re.double.exec(attrs);
   if (double) return double[1];
   const single = re.single.exec(attrs);

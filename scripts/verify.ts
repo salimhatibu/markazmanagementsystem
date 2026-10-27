@@ -221,13 +221,13 @@ assert.equal(slugFromTitle("A Quiet Morning"), "a-quiet-morning");
 assert.equal(slugFromTitle("  "), "post");
 
 {
-  const clean = sanitizePostHtml(
+  const sanitized = sanitizePostHtml(
     `<p onclick="alert(1)">Peace</p><script>alert(1)</script><img src="/api/blog-media/blog/cover.jpg"><iframe src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"></iframe>`,
   );
-  assert.equal(clean.includes("onclick"), false);
-  assert.equal(clean.includes("<script"), false);
-  assert.ok(clean.includes("/api/blog-media/blog/cover.jpg"));
-  assert.ok(clean.includes("youtube-nocookie.com/embed/dQw4w9WgXcQ"));
+  assert.equal(sanitized.includes("onclick"), false);
+  assert.equal(sanitized.includes("<script"), false);
+  assert.ok(sanitized.includes("/api/blog-media/blog/cover.jpg"));
+  assert.ok(sanitized.includes("youtube-nocookie.com/embed/dQw4w9WgXcQ"));
   assert.equal(excerptFromHtml("<p>A short note about the markaz.</p>"), "A short note about the markaz.");
   const shaped = sanitizePostHtml(
     `<img src="/api/blog-media/blog/cover.jpg" class="blog-figure is-rect onclick-bad">`,
