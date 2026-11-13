@@ -16,8 +16,6 @@
     "db:migrate": "node ./node_modules/wrangler/bin/wrangler.js d1 migrations apply markaz --remote",
     "verify": "tsx scripts/verify.ts",
     "og:image": "node scripts/build-og-image.mjs",
-    "desktop": "node desktop/run.mjs",
-    "desktop:dist": "node desktop/run.mjs --dist",
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
