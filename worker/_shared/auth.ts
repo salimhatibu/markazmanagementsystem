@@ -33,9 +33,6 @@ function readAccessToken(req: Request): string | null {
   }
 }
 
-/** Emails permanently locked out of the desk, regardless of Access policy. */
-const BLOCKED_EMAILS = ["salimhtb0000@gmail.com"];
-
 export async function requireAdmin(_req?: Request): Promise<Response | null> {
   const req = _req ?? currentRequest();
   const env = getEnv();
@@ -55,7 +52,6 @@ export async function requireAdmin(_req?: Request): Promise<Response | null> {
     });
     const email = typeof payload.email === "string" ? payload.email.toLowerCase() : "";
     if (!email) return fail("Sign in to continue.", 401);
-    if (BLOCKED_EMAILS.includes(email)) return fail("This account is not permitted to access the desk.", 403);
     return null;
   } catch {
     return fail("Sign in to continue.", 401);

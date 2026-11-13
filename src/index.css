@@ -4449,13 +4449,17 @@ body:has(.app.is-panicked) {
 /* On a phone the bar spans the screen under the topbar, well clear of the
    presence island that used to sit over the old pop-up. */
 @media (max-width: 560px) {
+  .topbar {
+    padding-top: max(12px, calc(env(safe-area-inset-top) + 8px));
+  }
+
   .bell-bar {
     position: fixed;
-    top: 64px;
+    top: calc(env(safe-area-inset-top) + 64px);
     left: 12px;
     right: 12px;
     width: auto;
-    max-height: calc(100dvh - 92px);
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 92px);
   }
 }
 
