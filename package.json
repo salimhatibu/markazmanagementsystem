@@ -16,8 +16,6 @@
     "db:migrate": "node ./node_modules/wrangler/bin/wrangler.js d1 migrations apply markaz --remote",
     "verify": "tsx scripts/verify.ts",
     "og:image": "node scripts/build-og-image.mjs",
-    "desktop": "node desktop/run.mjs",
-    "desktop:dist": "node desktop/run.mjs --dist",
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
@@ -38,10 +36,10 @@
     "pdf-lib": "^1.17.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.30.6"
+    "react-router-dom": "^7.18.5"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.65.0",
+    "@cloudflare/vite-plugin": "^1.69.1",
     "@cloudflare/workers-types": "^5.20261003.1",
     "@types/node": "^26.6.3",
     "@types/nodemailer": "^8.0.2",
@@ -52,7 +50,7 @@
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vite": "^8.3.5",
-    "wrangler": "^4.152.0"
+    "wrangler": "^4.161.0"
   },
   "overrides": {
     "undici": ">=7.30.1"

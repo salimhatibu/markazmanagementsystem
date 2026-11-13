@@ -10,8 +10,6 @@ dist
 !.dev.vars.example
 *.log
 .DS_Store
-desktop/node_modules
-desktop/release
 tmp/
 .tools/
 *.sql.dump
