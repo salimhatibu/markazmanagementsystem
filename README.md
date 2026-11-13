@@ -44,7 +44,7 @@ The SPA build reads the same names via Vite (`.env.production`: `VITE_PUBLIC_HOS
 
 ## Run locally
 
-Requires **Node.js 22+**.
+Requires **Node.js 22.23.4+**.
 
 ```bash
 npm install
