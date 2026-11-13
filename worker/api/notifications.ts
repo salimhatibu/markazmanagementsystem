@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, notInArray } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "../../db/index";
 import { notificationReads, notifications, posts } from "../../db/schema";
 import { asIso } from "../../shared/format";
@@ -25,20 +25,21 @@ export default async (req: Request) => {
       const body = (await readBody(req)) ?? {};
       const kind = body.kind == null ? null : oneOf(body.kind, KINDS, "Kind");
 
-      const mine = await db
-        .select({ notificationId: notificationReads.notificationId })
-        .from(notificationReads)
-        .where(eq(notificationReads.email, email));
-      const already = mine.map((row) => row.notificationId);
-
       const pending = await db
         .select({ id: notifications.id })
         .from(notifications)
+        .leftJoin(
+          notificationReads,
+          and(
+            eq(notificationReads.notificationId, notifications.id),
+            eq(notificationReads.email, email),
+          ),
+        )
         .where(
           and(
             isNull(notifications.readAt),
             kind ? eq(notifications.kind, kind) : undefined,
-            already.length > 0 ? notInArray(notifications.id, already) : undefined,
+            isNull(notificationReads.notificationId),
           ),
         );
       if (pending.length > 0) {
@@ -64,25 +65,22 @@ export default async (req: Request) => {
         legacyReadAt: notifications.readAt,
         createdAt: notifications.createdAt,
         postSlug: posts.slug,
+        personalReadAt: notificationReads.readAt,
       })
       .from(notifications)
       .leftJoin(posts, eq(notifications.postId, posts.id))
+      .leftJoin(
+        notificationReads,
+        and(
+          eq(notificationReads.notificationId, notifications.id),
+          eq(notificationReads.email, email),
+        ),
+      )
       .orderBy(desc(notifications.createdAt));
 
-    const ids = rows.map((row) => row.id);
-    const readRows =
-      ids.length > 0
-        ? await db
-            .select({ notificationId: notificationReads.notificationId, readAt: notificationReads.readAt })
-            .from(notificationReads)
-            .where(and(eq(notificationReads.email, email), inArray(notificationReads.notificationId, ids)))
-        : [];
-    const readByMe = new Map(readRows.map((row) => [row.notificationId, row.readAt]));
-
     const items = rows.map((row) => {
-      const mine = readByMe.get(row.id) ?? null;
       // Anything marked read before per-keeper tracking stays read for everyone.
-      const readAt = mine ?? row.legacyReadAt;
+      const readAt = row.personalReadAt ?? row.legacyReadAt;
       return {
         id: row.id,
         kind: row.kind,
